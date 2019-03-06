@@ -26,14 +26,14 @@ class Activity
         $historyData = EnglishWord::getWordDetail($historyData);
 
         $new_arr = [];
-//        foreach ($historyData as $key=>$val){
-//            array_push($new_arr,[
-//                'create_time'=>&$val['create_time'],
-//                'stage_name'=>&$val['stage_name'],
-//                'group_name'=>&$val['group_name'],
-//                'son'=>&$val['son'],
-//            ]);
-//        }
+        foreach ($historyData as $key=>$val){
+            array_push($new_arr,[
+                'create_time'=>&$val['create_time'],
+                'stage_name'=>&$val['stage_name'],
+                'group_name'=>&$val['group_name'],
+                'son'=>&$val['son'],
+            ]);
+        }
 
        return  json(['msg'=>'查询成功','error_code'=>0,'data'=>$historyData]);
     }

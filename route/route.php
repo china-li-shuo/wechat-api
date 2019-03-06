@@ -42,5 +42,9 @@ Route::post('api/:version/learned/click', 'api/:version.Learned/clickNext');
 //单词本
 Route::post('api/:version/activity/already', 'api/:version.Activity/alreadyStudied');
 
+//首页信息
+Route::post('api/:version/index/info', 'api/:version.Index/getUserInfo');
+
+
 
 

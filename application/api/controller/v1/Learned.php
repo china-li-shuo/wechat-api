@@ -10,6 +10,8 @@ namespace app\api\controller\v1;
 
 use app\api\model\EnglishWord;
 use app\api\model\ErrorBook;
+use app\api\model\Group;
+use app\api\model\GroupWord;
 use app\api\model\LearnedHistory as LearnedHistoryModel;
 use app\api\service\Token;
 use app\api\validate\LearnedHistory;
@@ -28,31 +30,32 @@ class Learned
 
         //如果用户没有学习记录，直接查询第一组单词
         if(empty($LearnedData)){
-
-            $data = EnglishWord::findFirst();
-
-            foreach ($data as $key=>$val){
-                $data[$key]['chinese_word'] = explode('@',$val['chinese_word']);
-                $data[$key]['options'] = json_decode($val['options'],true);
-                $data[$key]['sentence'] = json_decode($val['sentence'],true);
-                $data[$key]['current_number'] = $key+1;
-            }
-            $data['count'] = count($data);
-            return json($data);
+            $notLearnedData = GroupWord::findFirst();
+            $notLearnedData = Group::correspondingStage($notLearnedData);
+            $notWordData = EnglishWord::notWordData($notLearnedData);
+            $notLearnedData = EnglishWord::formatConversion($notWordData,1);
+            $notLearnedData['count'] = count($notLearnedData);
+            return json($notLearnedData);
         }
 
-        $lastWord = EnglishWord::findLastWord($LearnedData);
-        $currentNumber =  LearnedHistoryModel::UserCountGroup($uid);
-        $data = $lastWord['data'];
+        //用户最后一次学习第几组共有多少单词
+        $allData = Group::getAllData($LearnedData);   //25
 
-        foreach ($data as $key=>$val){
-            $data[$key]['chinese_word'] = explode('@',$val['chinese_word']);
-            $data[$key]['options'] = json_decode($val['options'],true);
-            $data[$key]['sentence'] = json_decode($val['sentence'],true);
-            $data[$key]['current_number'] = $currentNumber+$key;
-        }
-        $data['count'] = $lastWord['count'];
-        return json($data);
+        //用户还未学习的组信息
+        $notLearnedData = Group::getGroupData($LearnedData);  //23
+
+        //查询此组对应的阶段
+        $notLearnedData = Group::correspondingStage($notLearnedData);
+
+        //用户已学习这组下的第几个数量
+        $currentNumber =  LearnedHistoryModel::userLearnedCurrentNumber($LearnedData);  //2
+
+        //用户还没有学习单词的详情
+        $notWordData = EnglishWord::notWordData($notLearnedData);
+        $notWordData = EnglishWord::formatConversion($notWordData,$currentNumber+1);
+
+        $notWordData['count'] = count($allData);
+        return json($notWordData);
     }
 
     public function clickNext()

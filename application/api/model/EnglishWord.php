@@ -55,6 +55,29 @@ class EnglishWord extends Model
         return ['data'=>$data,'count'=>$count];
     }
 
+    public static function notWordData($notLearnedData)
+    {
+        foreach ($notLearnedData as $key=>$val){
+            $data = EnglishWord::where('id',$val['wid'])->find()->toArray();
+            $notLearnedData[$key]['son']=$data;
+        }
+        return $notLearnedData;
+    }
+
+    public static function formatConversion($notWordData,$currentNumber)
+    {
+        foreach ($notWordData as $key=>$val){
+            foreach ($val as $k=>$v){
+                $notWordData[$key]['son']['chinese_word'] = explode('@',$v['chinese_word']);
+                $notWordData[$key]['son']['options'] = json_decode($v['options'],true);
+                $notWordData[$key]['son']['sentence'] = json_decode($v['sentence'],true);
+                $notWordData[$key]['son']['currentNumber'] = $currentNumber+$key;
+            }
+
+        }
+
+       return $notWordData;
+    }
     /**
      * 判断用户答题结果
      */

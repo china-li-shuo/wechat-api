@@ -74,4 +74,19 @@ class Stage extends Model
         }
         return $historyData;
     }
+
+    /**
+     * 根据已学单词数量获取目前阶段名称
+     * @param $allLearnedNumber
+     */
+    public static function getStageNameByLearnedNumber($allLearnedNumber)
+    {
+        $data = Db::table(self::PREFIX.'stage')->where('parent_id','<>',0)->field('stage_name,word_num')->select();
+        foreach (array_reverse($data) as $key=>$val){
+            if($allLearnedNumber > $val['word_num']){
+                return $val['stage_name'];
+            }
+        }
+        return $data[0]['stage_name'];
+    }
 }

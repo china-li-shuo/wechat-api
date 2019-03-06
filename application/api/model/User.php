@@ -45,4 +45,13 @@ class User extends Model
                 'avatar_url' => $data['avatar_url']
             ]);
     }
+
+    public static function getIsTeacher($uid)
+    {
+        $data = User::get($uid)->toArray();
+        if(empty($data['is_teacher'])){
+            return 'false';
+        }
+        return $data['is_teacher'];
+    }
 }
