@@ -27,9 +27,9 @@ Route::post('api/:version/sms/mobile', 'api/:version.Sms/sendSms');
 Route::post('api/:version/sms/bind', 'api/:version.Sms/bindMobile');
 
 //学习阶段
-Route::get('api/:version/stage/info', 'api/:version.Stage/getStages');
-Route::get('api/:version/stage/all', 'api/:version.Stage/getAllStage');
-Route::get('api/:version/stage/detail', 'api/:version.Stage/getDetail');
+Route::post('api/:version/stage/info', 'api/:version.Stage/getStages');
+Route::post('api/:version/stage/all', 'api/:version.Stage/getAllStage');
+Route::post('api/:version/stage/detail', 'api/:version.Stage/getDetail');
 
 //分享打卡
 Route::post('api/:version/share/punch', 'api/:version.Share/punchCard');
@@ -44,6 +44,9 @@ Route::post('api/:version/activity/already', 'api/:version.Activity/alreadyStudi
 
 //首页信息
 Route::post('api/:version/index/info', 'api/:version.Index/getUserInfo');
+
+//背单词结算
+Route::post('api/:version/settlement/info', 'api/:version.Settlement/getSettlementInfo');
 
 
 

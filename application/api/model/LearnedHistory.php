@@ -29,18 +29,52 @@ class LearnedHistory extends Model
 
     }
 
+    /**
+     * 获取用户历史共学了多少单词
+     * @param $uid
+     * @return int
+     */
     public static function UserCountGroup($uid)
     {
-        $currentNumber =  Db::table('yx_learned_history')->where('user_id',$uid)->field('id,group,user_id,stage,word_id,is_true')->select();
-        return count($currentNumber);
+
+        return  Db::table('yx_learned_history')->where('user_id',$uid)->field('id,group,user_id,stage,word_id,is_true')->count();
+
     }
 
+    /**
+     * 用户历史共学了多少组,分别每个组的信息
+     * @param $uid
+     */
+    public static function getUserGroupData($uid)
+    {
+        return  Db::table('yx_learned_history')->where('user_id',$uid)->group('group')->field('group')->select();
+    }
+
+    /**
+     * 返回用户最后一次学习了第几组的第几个单词
+     * @param $LearnedData
+     * @return int
+     */
     public static function userLearnedCurrentNumber($LearnedData)
     {
         $currentNumber =  Db::table('yx_learned_history')->where('user_id',$LearnedData['user_id'])->where('group',$LearnedData['group'])->field('id')->select();
 
         return count($currentNumber);
     }
+
+    /**
+     * 用户已学过的组下，在这个组学了多少个单词
+     * @param $historyGroupData
+     */
+    public static function getAlreadyLearnedGroupWordCount($uid,$historyGroupData)
+    {
+        foreach ($historyGroupData as $key=>$val){
+            $alreadyGroupNum =  Db::table('yx_learned_history')->where('user_id',$uid)->where('group',$val['group'])->count();
+            $historyGroupData[$key]['already_group_num'] = $alreadyGroupNum;
+        }
+        return $historyGroupData;
+    }
+
 
     public static function addUserHistory($uid,$data,$answerResult)
     {
@@ -78,4 +112,113 @@ class LearnedHistory extends Model
     {
         return Db::table('yx_learned_history')->where('user_id',$uid)->count();
     }
+
+    /**
+     * 用户学习 年-月-日 信息
+     * @param $uid
+     * @return array
+     */
+    public static function calendarDays($uid)
+    {
+        $data = Db::table('yx_learned_history')->where('user_id',$uid)->select();
+        $new_arr = [];
+        foreach ($data as $key=>$val){
+            $calendar = date("Y-m-d",$val['create_time']);
+            array_push($new_arr,$calendar);
+        }
+        //array_flip(array_flip($new_arr));
+
+        return array_values(array_unique($new_arr));
+    }
+
+    /**
+     * 用户每个阶段已学单词数量
+     * @param $uid
+     * @param $stages
+     * @return mixed
+     */
+    public static function getWordNumberByStage($uid,$stages)
+    {
+
+        foreach ($stages as $key=>$val){
+            $count = Db::table('yx_learned_history')->where('stage',$val['id'])->where('user_id',$uid)->count();
+            $stages[$key]['alreadyNum']=$count;
+        }
+       return $stages;
+    }
+
+    /**
+     * 获取用户最后一次答题组下的正确率
+     * @param $lastLearnedData
+     * 返回百分比
+     */
+    public static function getTrueRate($lastLearnedData)
+    {
+        $data = Db::table('yx_learned_history')->where('user_id',$lastLearnedData['user_id'])->where('group',$lastLearnedData['group'])->where('stage',$lastLearnedData['stage'])->select();
+        $i = 0;
+        foreach ($data as $key=>$val){
+            if($val['is_true'] == 1){
+                $i++;
+            }
+        }
+        $count = count($data);
+        $ct5=round($i/$count*100,2)."%";
+        return $ct5;
+    }
+
+    /**
+     * 获取用户超过所在班级的百分比
+     * @param $classData
+     * @param $lastLearnedData
+     */
+    public static function classTrueRate($classData,$lastLearnedData)
+    {
+        $allUserData = [];
+        foreach ($classData as $key=>$val){
+            $res = Db::table('yx_learned_history')->where('user_id',$val['user_id'])->where('group',$lastLearnedData['group'])->where('stage',$lastLearnedData['stage'])->select();
+            array_push($allUserData,$res);
+        }
+
+        $new_arr = [];
+
+        foreach ($allUserData as $key=>$val){
+            $i = 0;
+            foreach ($val as $k=>$v){
+                if($v['is_true'] == 1){
+                    $i++;
+                    $arr['user_id']=$v['user_id'];
+                    $arr['true_num']=$i;
+                }
+            }
+            array_push($new_arr,$arr);
+        }
+
+
+        // 取得列的列表
+        foreach ($new_arr as $key => $row)
+        {
+            $edition[$key] = $row['true_num'];
+        }
+
+        array_multisort($edition, SORT_ASC, $new_arr);
+
+
+        //$arr = array_column($new_arr,NULL,'true_num');  当true_num 值一样有bug
+        //sort($arr);
+
+
+        foreach ($new_arr as $x=>$y){
+            if($y['user_id']==$lastLearnedData['user_id']){
+                $nowNum =  $x+1;
+            }
+        }
+
+        $count = count($new_arr);
+        $classTrueRate = round($nowNum/$count*100,2)."%";
+
+        return $classTrueRate;
+
+    }
+
+
 }

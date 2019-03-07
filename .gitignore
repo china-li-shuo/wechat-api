@@ -3,5 +3,6 @@
 /vendor
 *.log
 thinkphp
+runtime
 .env
 .DS_Store

@@ -16,6 +16,11 @@ class Group extends Model
 {
     const PREFIX = 'yx_question.yx_';
 
+    /**
+     * 获取用户所有分组的名称
+     * @param $historyData
+     * @return mixed
+     */
     public static function getGroupName($historyData)
     {
         foreach ($historyData as $key=>$val){
@@ -30,7 +35,16 @@ class Group extends Model
         return $historyData;
     }
 
-
+    /**
+     * 根据阶段id获取分组名称
+     * @param $id
+     * @return mixed
+     */
+    public static function findGroupName($id)
+    {
+       $groupData =  Db::table(self::PREFIX.'group')->where('id',$id)->find();
+       return $groupData['group_name'];
+    }
 
     public static function getGroupData($lastWord)
     {
@@ -65,5 +79,14 @@ class Group extends Model
         }
 
         return $notLearnedData;
+    }
+
+    /**
+     * 此阶段下共有哪几组单词(组名称)，每个组下有多少单词
+     * @param $id
+     */
+    public static function getEachStageGroupData($id)
+    {
+        return Db::table(self::PREFIX.'group')->where('stage_id',$id)->field('id,group_name,word_num')->select();
     }
 }

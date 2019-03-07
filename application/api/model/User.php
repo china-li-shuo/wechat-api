@@ -46,12 +46,12 @@ class User extends Model
             ]);
     }
 
-    public static function getIsTeacher($uid)
+    public static function getUserInfo($uid)
     {
         $data = User::get($uid)->toArray();
         if(empty($data['is_teacher'])){
-            return 'false';
+            $data['is_teacher'] = 'false';
         }
-        return $data['is_teacher'];
+       return $data;
     }
 }

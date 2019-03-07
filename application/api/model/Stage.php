@@ -23,12 +23,9 @@ class Stage extends Model
     public static function getAllStage()
     {
 
-        $stageData =  Db::table(self::PREFIX.'stage')->hidden(['create_time'])->select();
-
-        $stageData = self::getGroup($stageData);
-
-        return createTreeBySon($stageData);
+        return Db::table(self::PREFIX.'stage')->hidden(['create_time'])->select();
     }
+
 
     protected static function getGroup($stageData)
     {
@@ -55,10 +52,14 @@ class Stage extends Model
 
     }
 
+    /**
+     * 获取某一阶段详情
+     * @param $id
+     * @return array|false|null|\PDOStatement|string|Model
+     */
     public static function findStage($id)
     {
-        $data = Db::table(self::PREFIX.'stage')->hidden(['create_time'])->where('id',$id)->find();
-        print_r($data);die;
+        return Db::table(self::PREFIX.'stage')->hidden(['create_time'])->where('id',$id)->find();
     }
 
 
@@ -76,17 +77,30 @@ class Stage extends Model
     }
 
     /**
-     * 根据已学单词数量获取目前阶段名称
-     * @param $allLearnedNumber
+     * 根据用户最后一次学习阶段返回阶段名称
+     * @param $LearnedData
+     * @return mixed
      */
-    public static function getStageNameByLearnedNumber($allLearnedNumber)
+    public static function getStageNameByLearnedNumber($LearnedData)
     {
-        $data = Db::table(self::PREFIX.'stage')->where('parent_id','<>',0)->field('stage_name,word_num')->select();
-        foreach (array_reverse($data) as $key=>$val){
-            if($allLearnedNumber > $val['word_num']){
-                return $val['stage_name'];
-            }
-        }
-        return $data[0]['stage_name'];
+        $data = Db::table(self::PREFIX.'stage')->where('id',$LearnedData['stage'])->field('stage_name,word_num')->find();
+        return $data['stage_name'];
     }
+
+
+
+//    /**
+//     * 根据已学单词数量获取目前阶段名称
+//     * @param $allLearnedNumber
+//     */
+//    public static function getStageNameByLearnedNumber($allLearnedNumber)
+//    {
+//        $data = Db::table(self::PREFIX.'stage')->where('parent_id','<>',0)->field('stage_name,word_num')->select();
+//        foreach (array_reverse($data) as $key=>$val){
+//            if($allLearnedNumber > $val['word_num']){
+//                return $val['stage_name'];
+//            }
+//        }
+//        return $data[0]['stage_name'];
+//    }
 }
