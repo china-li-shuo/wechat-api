@@ -17,6 +17,7 @@ use app\api\service\Token;
 use app\api\validate\LearnedHistory;
 use app\lib\exception\MissException;
 use app\lib\exception\SuccessMessage;
+use think\Db;
 
 class Learned
 {
@@ -73,9 +74,17 @@ class Learned
 
         $answerResult = EnglishWord::answerResult($data);
 
+        //如果答题正确，判断错题本有没有此条记录，如果有则删除
+        if($answerResult == 1){
+            ErrorBook::deleteErrorBook($uid,$data);
+        }
+
         if($answerResult == 0){
             ErrorBook::addErrorBook($uid,$data);
         }
+
+
+        $this->addUserLearnedData($uid,$data);
 
         $res = LearnedHistoryModel::addUserHistory($uid,$data,$answerResult);
 
@@ -88,4 +97,29 @@ class Learned
 
         throw new SuccessMessage();
     }
+
+    /**
+     * 把用户总共学习的单词数量，最后一次学习的阶段,最后一次学习的组写入数据库
+     * @param $data
+     */
+    private function addUserLearnedData($uid,$data)
+    {
+        $res = Db::table('yx_learned_history')->where('user_id',$uid)->where('word_id',$data['word_id'])->where('group',$data['group'])->where('stage',$data['stage'])->find();
+
+        if(empty($res)){
+
+            $userinfo = Db::table('yx_user')->where('id',$uid)->field('already_number')->find();
+
+            $arr = [
+                'already_number'=>$userinfo['already_number']+1,
+                'now_stage'=>$data['stage'],
+                'now_group'=>$data['group'],
+            ];
+
+            return Db::table('yx_user')->where('id',$uid)->update($arr);
+        }
+
+        return true;
+    }
+
 }

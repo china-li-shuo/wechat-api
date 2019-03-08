@@ -19,4 +19,13 @@ class GroupWord
     {
         return Db::table(self::PREFIX.'group_word')->where('group',1)->select();
     }
+
+    /**
+     * 根据组id查询此组下所有的单词
+     * @param $id
+     */
+    public static function selectGroupWord($id)
+    {
+        return Db::table(self::PREFIX.'group_word')->where('group',$id)->select();
+    }
 }

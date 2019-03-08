@@ -89,4 +89,21 @@ class Group extends Model
     {
         return Db::table(self::PREFIX.'group')->where('stage_id',$id)->field('id,group_name,word_num')->select();
     }
+
+    /**
+     * 返回用户最后一次学习组的id
+     * @param $historyLearnedData
+     * @return array|false|null|\PDOStatement|string|Model
+     */
+    public static function findLastGroupID($historyLearnedData)
+    {
+        $data =  Db::table(self::PREFIX.'group')->where('stage_id',$historyLearnedData['stage'])->where('id',$historyLearnedData['group'])->field('id')->find();
+        return $data['id'];
+    }
+
+    public static function userLastGroupID($userInfo)
+    {
+        $data =  Db::table(self::PREFIX.'group')->where('stage_id',$userInfo['now_stage'])->where('id',$userInfo['now_group'])->field('id')->find();
+        return $data['id'];
+    }
 }

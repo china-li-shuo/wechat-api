@@ -14,6 +14,11 @@ use think\Model;
 
 class LearnedHistory extends Model
 {
+    /**
+     * 查询用户最后一次学习的阶段和组单词行为记录
+     * @param $uid
+     * @return array|false|null|\PDOStatement|string|Model
+     */
     public static function UserLearned($uid)
     {
          //return LearnedHistory::where('user_id',$uid)->field('id,group,user_id,stage_id,word_id,is_true')->order('create_time desc')->limit(1)->find()->toArray();
@@ -132,6 +137,21 @@ class LearnedHistory extends Model
     }
 
     /**
+     * 每个用户坚持学习天数
+     * @param $userTodayLearnedNumber
+     */
+    public static function LearnedDays($userTodayLearnedNumber)
+    {
+        foreach ($userTodayLearnedNumber as $key=>$val){
+            $LearnedNumber= self::calendarDays($val['user_id']);
+            $userTodayLearnedNumber[$key]['learned_days'] = count($LearnedNumber);
+        }
+
+       return $userTodayLearnedNumber;
+    }
+
+
+    /**
      * 用户每个阶段已学单词数量
      * @param $uid
      * @param $stages
@@ -220,5 +240,32 @@ class LearnedHistory extends Model
 
     }
 
+    /**
+     * 查看班级下某个用户今天所学多少个单词
+     * @param $classData
+     */
+    public static function getUserTodayLearnedNumber($classData)
+    {
 
+        $beginToday=mktime(0,0,0,date('m'),date('d'),date('Y'));
+        $endToday=mktime(0,0,0,date('m'),date('d')+1,date('Y'))-1;
+        $where[] = ['create_time', 'between time', [$beginToday, $endToday]];
+
+
+        foreach ($classData as $key=>$val){
+
+             $count = Db::table('yx_learned_history')->where('user_id',$val['user_id'])->where($where)->count();
+             $classData[$key]['today_learned_number'] = $count;
+        }
+
+        // 取得列的列表
+        foreach ($classData as $key => $row)
+        {
+            $edition[$key] = $row['today_learned_number'];
+        }
+
+        array_multisort($edition, SORT_DESC, $classData);
+
+        return $classData;
+    }
 }

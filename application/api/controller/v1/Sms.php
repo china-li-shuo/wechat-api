@@ -9,6 +9,7 @@
 namespace app\api\controller\v1;
 
 use app\api\model\User;
+use app\api\validate\MobileRule;
 use app\lib\exception\ParameterException;
 use app\lib\exception\SmsException;
 use app\lib\exception\TokenException;
@@ -33,6 +34,9 @@ class Sms
                 'mobie不允许为空'
             ]);
         }
+
+        $validate = new MobileRule();
+        $validate->goCheck();
 
         $res=Db::name('user')->field('mobile')->where('mobile',$mobile)->find();
 

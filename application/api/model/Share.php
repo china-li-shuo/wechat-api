@@ -51,7 +51,40 @@ class Share extends Model
 
     public static function getPunchDays($uid)
     {
-        $data = Share::where('user_id',$uid)->find()->toArray();
-        return $data['number'];
+        $punchDays = Share::where('user_id',$uid)->select()->count();
+
+        $res = Db::table('yx_user')->where('id',$uid)->update(['punch_days'=>$punchDays]);
+
+        if($res){
+            return $punchDays;
+        }
+    }
+
+    /**
+     * 用户进行打卡
+     * @param $uid
+     */
+    public static function userPunchCard($uid)
+    {
+
+        $beginToday=mktime(0,0,0,date('m'),date('d'),date('Y'));
+        $endToday=mktime(0,0,0,date('m'),date('d')+1,date('Y'))-1;
+        $nowTime = time();
+        $where[] = ['create_time', 'between time', [$beginToday, $endToday]];
+
+        $data = Db::table('yx_share')->where('user_id',$uid)->where($where)->find();
+
+        if(empty($data)){
+
+            $arr = [
+                'user_id'=>$uid,
+                'create_time'=>time()
+            ];
+            return Db::table('yx_share')->insert($arr);
+
+        }
+
+        return Db::table('yx_share')->where('user_id',$uid)->where($where)->update(['create_time'=>$nowTime]);
+
     }
 }

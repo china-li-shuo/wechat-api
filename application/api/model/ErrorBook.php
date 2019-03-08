@@ -10,13 +10,12 @@ namespace app\api\model;
 
 
 use think\Db;
-use think\Model;
 
-class ErrorBook extends Model
+class ErrorBook
 {
     public static function addErrorBook($uid,$data)
     {
-        $errorData = ErrorBook::where('user_id',$uid)->where('word_id',$data['word_id'])->find();
+        $errorData = Db::table('yx_error_book')->where('user_id',$uid)->where('word_id',$data['word_id'])->where('group',$data['group'])->where('stage',$data['stage'])->find();
 
         if(empty($errorData)){
 
@@ -33,5 +32,19 @@ class ErrorBook extends Model
         }
         $arr = ['user_opt'=>$data['useropt'],'create_time'=>time()];
         return Db::table('yx_error_book')->where('user_id',$uid)->where('word_id',$data['word_id'])->update($arr);
+    }
+
+    public static function deleteErrorBook($uid,$data)
+    {
+
+        $errorData = Db::table('yx_error_book')->where('user_id',$uid)->where('word_id',$data['word_id'])->where('group',$data['group'])->where('stage',$data['stage'])->find();
+
+        if(!empty($errorData)){
+
+           return Db::table('yx_error_book')->delete($errorData['id']);
+
+        }
+
+        return true;
     }
 }

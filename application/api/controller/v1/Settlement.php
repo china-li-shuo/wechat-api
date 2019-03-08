@@ -8,6 +8,8 @@
 
 namespace app\api\controller\v1;
 
+use app\api\model\EnglishWord;
+use app\api\model\GroupWord;
 use app\api\model\UserClass;
 use app\api\model\Group;
 use app\api\model\LearnedHistory;
@@ -16,14 +18,31 @@ use app\api\model\User;
 use app\api\model\Share;
 use app\api\service\Token;
 use app\lib\exception\MissException;
+use app\lib\exception\SuccessMessage;
 
 class Settlement
 {
+
+    /**
+     * 请求结算页说明完成本组学习，则用户打卡
+     * @return \think\response\Json
+     * @throws MissException
+     */
     public function getSettlementInfo()
     {
         //根据token获取用户刚才所学阶段名称，组名称
         //用户头像，昵称，学习天数，正确率，超过班级百分比
         $uid = Token::getCurrentTokenVar('uid');
+
+        $res = Share::userPunchCard($uid);
+
+        if(!$res){
+            throw new MissException([
+                'msg' => '打卡时间发生了错误',
+                'errorCode' => 50000
+            ]);
+        }
+
         $lastLearnedData = LearnedHistory::UserLearned($uid);
         //获取用户最后一次答题组下的正确率
         $trueRate = LearnedHistory::getTrueRate($lastLearnedData);
@@ -68,5 +87,54 @@ class Settlement
         //判断此阶段下此组，所有用户答对的单词
         $classTrueRate = LearnedHistory::classTrueRate($classData,$lastLearnedData);
         return $classTrueRate;
+    }
+
+    public function getAgainInfo()
+    {
+        //根据token获取用户最后一次学习的哪一阶段，哪一组信息，重新查询一遍详情进行返回
+        $uid = Token::getCurrentTokenVar('uid');
+        $historyLearnedData = LearnedHistory::UserLearned($uid);
+        //根据最后一次阶段id和组id查询group表确定属于某阶段的某一组信息
+        $lastGroupID = Group::findLastGroupID($historyLearnedData);
+        //然后最后一次学习组的id进行查询这组下共有多少个单词
+        $groupWord = GroupWord::selectGroupWord($lastGroupID);
+        //然后根据每个组的详情进行查询每个单词的详情
+        $wordDetail = EnglishWord::getNextWordDetail($groupWord);
+        if(!$wordDetail){
+            throw new MissException([
+                'msg' => '重新来过信息查询失败',
+                'errorCode' => 50000
+            ]);
+        }
+
+        return json($wordDetail);
+    }
+
+
+    public function nextGroupInfo()
+    {
+        $uid = Token::getCurrentTokenVar('uid');
+        $userInfo = User::getUserInfo($uid);
+        $lastGroupID = Group::userLastGroupID($userInfo);
+        $nextGroupID = $lastGroupID+1;
+        //先判断下一组还有没有单词
+        $res = Group::findLastGroupID(['stage'=>$userInfo['now_stage'],'group'=>$nextGroupID]);
+
+        if(empty($res)){
+            throw new SuccessMessage([
+                'msg' => '此阶段已经没有下一组单词了呀'
+            ]);
+        }
+
+        $groupWord = GroupWord::selectGroupWord($nextGroupID);
+        $wordDetail = EnglishWord::getNextWordDetail($groupWord);
+
+        if($wordDetail['count'] == 0){
+            throw new SuccessMessage([
+                'msg' => '此分组下没有单词啦呀'
+            ]);
+        }
+
+        return json($wordDetail);
     }
 }

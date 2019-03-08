@@ -4,5 +4,6 @@
 *.log
 thinkphp
 runtime
+config
 .env
 .DS_Store

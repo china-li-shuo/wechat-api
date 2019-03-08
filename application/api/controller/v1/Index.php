@@ -27,6 +27,7 @@ class Index
         if(empty($classInfo)){
             throw new UserClassException();
         }
+
         $calendar = LearnedHistory::calendarDays($uid);
         $UserInfo = User::getUserInfo($uid);
         $className = UserClass::getClassName($classInfo);
@@ -37,7 +38,6 @@ class Index
         $stageName = Stage::getStageNameByLearnedNumber($LearnedData);
         $wordCount = EnglishWord::count();
         $surplusWord = $wordCount-$allLearnedNumber;
-
         $data = [
             'nick_name'=>&$UserInfo['nick_name'],
             'user_name'=>&$UserInfo['user_name'],
