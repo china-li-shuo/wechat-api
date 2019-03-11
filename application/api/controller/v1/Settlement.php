@@ -33,12 +33,11 @@ class Settlement
         //根据token获取用户刚才所学阶段名称，组名称
         //用户头像，昵称，学习天数，正确率，超过班级百分比
         $uid = Token::getCurrentTokenVar('uid');
-
         $res = Share::userPunchCard($uid);
 
         if(!$res){
             throw new MissException([
-                'msg' => '打卡时间发生了错误',
+                'msg' => '你今天已经打过卡了',
                 'errorCode' => 50000
             ]);
         }
@@ -83,6 +82,7 @@ class Settlement
      */
     private function percentageOfClass($uid,$lastLearnedData)
     {
+
         $classData = UserClass::getAllUserByUid($uid);
         //判断此阶段下此组，所有用户答对的单词
         $classTrueRate = LearnedHistory::classTrueRate($classData,$lastLearnedData);
@@ -94,8 +94,9 @@ class Settlement
         //根据token获取用户最后一次学习的哪一阶段，哪一组信息，重新查询一遍详情进行返回
         $uid = Token::getCurrentTokenVar('uid');
         $historyLearnedData = LearnedHistory::UserLearned($uid);
+        $lastGroupID = Group::userLastSortID($historyLearnedData);
         //根据最后一次阶段id和组id查询group表确定属于某阶段的某一组信息
-        $lastGroupID = Group::findLastGroupID($historyLearnedData);
+
         //然后最后一次学习组的id进行查询这组下共有多少个单词
         $groupWord = GroupWord::selectGroupWord($lastGroupID);
         //然后根据每个组的详情进行查询每个单词的详情
@@ -115,18 +116,19 @@ class Settlement
     {
         $uid = Token::getCurrentTokenVar('uid');
         $userInfo = User::getUserInfo($uid);
-        $lastGroupID = Group::userLastGroupID($userInfo);
-        $nextGroupID = $lastGroupID+1;
+        $lastSortID = Group::userLastGroupID($userInfo);
+        $nextSortID = $lastSortID+1;
         //先判断下一组还有没有单词
-        $res = Group::findLastGroupID(['stage'=>$userInfo['now_stage'],'group'=>$nextGroupID]);
+        $res = Group::findLastGroupID(['stage'=>$userInfo['now_stage'],'sort'=>$nextSortID]);
 
         if(empty($res)){
             throw new SuccessMessage([
                 'msg' => '此阶段已经没有下一组单词了呀'
             ]);
+            //return json(['msg'=>'此阶段已经没有下一组单词了呀','errorCode'=>6000]);
         }
 
-        $groupWord = GroupWord::selectGroupWord($nextGroupID);
+        $groupWord = GroupWord::selectGroupWord($res);
         $wordDetail = EnglishWord::getNextWordDetail($groupWord);
 
         if($wordDetail['count'] == 0){

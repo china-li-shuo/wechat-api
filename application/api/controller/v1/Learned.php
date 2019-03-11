@@ -53,6 +53,14 @@ class Learned
 
         //用户还没有学习单词的详情
         $notWordData = EnglishWord::notWordData($notLearnedData);
+
+        if(empty($notWordData)){
+            throw new MissException([
+                'msg' => '没有查到此分组下单词详情',
+                'errorCode' => 50000
+            ]);
+        }
+
         $notWordData = EnglishWord::formatConversion($notWordData,$currentNumber+1);
 
         $notWordData['count'] = count($allData);
@@ -94,8 +102,8 @@ class Learned
                 'errorCode' => 50000
             ]);
         }
-
-        throw new SuccessMessage();
+        return json(['msg'=>'ok','code'=>200]);
+        //throw new SuccessMessage();
     }
 
     /**

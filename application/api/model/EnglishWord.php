@@ -60,10 +60,13 @@ class EnglishWord extends Model
 
     public static function notWordData($notLearnedData)
     {
+        $prefix = config('secure.prefix');
         foreach ($notLearnedData as $key=>$val){
-            $data = EnglishWord::where('id',$val['wid'])->find()->toArray();
+            $data = Db::table($prefix.'english_word')->where('id',$val['wid'])->find();
+
             $notLearnedData[$key]['son']=$data;
         }
+
         return $notLearnedData;
     }
 
@@ -154,4 +157,28 @@ class EnglishWord extends Model
         return $groupWord;
     }
 
+    /**
+     * 查询每个单词的详情
+     * @param $data
+     */
+    public static function selectWordDetail($result)
+    {
+        foreach ($result as $key=>$val){
+            $data = Db::table(self::PREFIX.'english_word')->where('id',$val['word_id'])->find();
+            if($val['word_id'] == $data['id']){
+            $result[$key]['son'] = $data;
+           }
+        }
+
+        foreach ($result as $key=>$val){
+            if(array_key_exists('son',$val)){
+                $result[$key]['son']['chinese_word'] = explode('@',$val['son']['chinese_word']);
+                $result[$key]['son']['sentence'] = json_decode($val['son']['sentence'],true);
+                unset($result[$key]['son']['options']);
+                unset($result[$key]['son']['answer']);
+            }
+
+        }
+        return $result;
+    }
 }

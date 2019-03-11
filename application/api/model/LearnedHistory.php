@@ -35,6 +35,46 @@ class LearnedHistory extends Model
     }
 
     /**
+     * 用户所学所有阶段信息,阶段名称
+     * @param $uid
+     */
+    public static function LearnedStage($uid)
+    {
+        $data = Db::table('yx_learned_history')->where('user_id',$uid)->group('stage')->field('id,stage')->select();
+        $prefix = config('secure.prefix');
+
+        foreach ($data as $key=>$val){
+            $stage = Db::table($prefix.'stage')->where('id',$val['stage'])->field('stage_name')->find();
+            $data[$key]['stage_name'] = &$stage['stage_name'];
+        }
+
+        return $data;
+    }
+
+    /**
+     * 获取阶段下所有组，组名称
+     * @param $historyData
+     */
+    public static function LearnedGroup($uid,$historyData)
+    {
+        $prefix = config('secure.prefix');
+
+        foreach ($historyData as $key=>$val){
+            $data = Db::table('yx_learned_history')->where('user_id',$uid)->where('stage',$val['stage'])->group('group')->field('id,stage,group')->select();
+
+            foreach ($data as $k=>$v){
+
+                $group = Db::table($prefix.'group')->where('id',$v['group'])->field('id,group_name')->find();
+                $data[$k]['son'] = $group;
+                $data[$k]['stage_name'] = $val['stage_name'];
+            }
+            $historyData[$key]['data'] = $data;
+        }
+
+        return $historyData;
+    }
+
+    /**
      * 获取用户历史共学了多少单词
      * @param $uid
      * @return int
@@ -202,6 +242,11 @@ class LearnedHistory extends Model
         $new_arr = [];
 
         foreach ($allUserData as $key=>$val){
+
+            if(empty($val)){
+               unset($allUserData[$key]);
+            }
+
             $i = 0;
             foreach ($val as $k=>$v){
                 if($v['is_true'] == 1){
@@ -268,4 +313,29 @@ class LearnedHistory extends Model
 
         return $classData;
     }
+
+    /**
+     * 查看班级下每个用户一共学了多少单词
+     * @param $classData
+     */
+    public static function getUseLearnedNumber($classData)
+    {
+        foreach ($classData as $key=>$val){
+
+            $count = Db::table('yx_learned_history')->where('user_id',$val['user_id'])->count();
+            $classData[$key]['all_learned_number'] = $count;
+        }
+
+        // 取得列的列表
+        foreach ($classData as $key => $row)
+        {
+            $edition[$key] = $row['all_learned_number'];
+        }
+
+        array_multisort($edition, SORT_DESC, $classData);
+
+        return $classData;
+    }
+
+
 }

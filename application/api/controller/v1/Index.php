@@ -24,6 +24,7 @@ class Index
         //根据token获取用户昵称，头像，所属班级,阶段名称，打卡天数，今日已学，已掌握，所剩新词，日历
         $uid = Token::getCurrentTokenVar('uid');
         $classInfo = UserClass::getClassInfo($uid);
+
         if(empty($classInfo)){
             throw new UserClassException();
         }

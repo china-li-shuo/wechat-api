@@ -63,4 +63,50 @@ class Top
 
        return $userTodayLearnedNumber;
     }
+
+
+    public function getHistoryList()
+    {
+        $uid = Token::getCurrentTokenVar('uid');
+        $classData = UserClass::getAllUserByUid($uid);
+        $allLearnedNumber = LearnedHistory::getUseLearnedNumber($classData);
+        $classData = LearnedHistory::LearnedDays($allLearnedNumber);
+        $userList = $this->getHistoryUserList($classData);
+
+        if(!$userList){
+            throw new MissException([
+                'msg' => '今日榜单信息查询失败',
+                'errorCode' => 50000
+            ]);
+        }
+
+        $new_arr['data'] = $userList;
+
+        foreach ($userList as $key=>$val){
+            if($val['user_id'] == $uid){
+                $top = $key+1;
+                $new_arr['mine']=$val;
+                $new_arr['mine']['history_top']=&$top;
+            }
+
+        }
+        return json($new_arr);
+    }
+
+    /**
+     * 获取历史排行榜用户信息
+     * @param $userTodayLearnedNumber
+     */
+    private function getHistoryUserList($userTodayLearnedNumber)
+    {
+
+        foreach ($userTodayLearnedNumber as $key=>$val){
+            $user = User::where('id',$val['user_id'])->find()->toArray();
+            $userTodayLearnedNumber[$key]['user_name'] = &$user['user_name'];
+            $userTodayLearnedNumber[$key]['nick_name'] = &$user['nick_name'];
+            $userTodayLearnedNumber[$key]['avatar_url'] = &$user['avatar_url'];
+        }
+
+        return $userTodayLearnedNumber;
+    }
 }

@@ -97,13 +97,30 @@ class Group extends Model
      */
     public static function findLastGroupID($historyLearnedData)
     {
-        $data =  Db::table(self::PREFIX.'group')->where('stage_id',$historyLearnedData['stage'])->where('id',$historyLearnedData['group'])->field('id')->find();
+
+        $data =  Db::table(self::PREFIX.'group')->where('stage_id',$historyLearnedData['stage'])->where('sort',$historyLearnedData['sort'])->field('id,sort')->find();
         return $data['id'];
     }
 
+    /**
+     * 获取词组的排序id
+     * @param $userInfo
+     * @return mixed
+     */
     public static function userLastGroupID($userInfo)
     {
-        $data =  Db::table(self::PREFIX.'group')->where('stage_id',$userInfo['now_stage'])->where('id',$userInfo['now_group'])->field('id')->find();
+        $data =  Db::table(self::PREFIX.'group')->where('stage_id',$userInfo['now_stage'])->where('id',$userInfo['now_group'])->field('id,sort')->find();
+        return $data['sort'];
+    }
+
+    /**
+     * 返回词组的排序id
+     * @param $historyLearnedData
+     */
+    public static function userLastSortID($historyLearnedData)
+    {
+
+        $data =  Db::table(self::PREFIX.'group')->where('stage_id',$historyLearnedData['stage'])->where('id',$historyLearnedData['group'])->field('id,sort')->find();
         return $data['id'];
     }
 }

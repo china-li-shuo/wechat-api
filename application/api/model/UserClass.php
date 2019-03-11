@@ -19,7 +19,7 @@ class UserClass
      */
     public static function getAllUserByUid($uid)
     {
-        $classData = Db::table('yx_user_class')->where('user_id',$uid)->find();
+        $classData = Db::table('yx_user_class')->where('user_id',$uid)->where('status',1)->find();
 
         if ($classData){
             return Db::table('yx_user_class')->where('class_id',$classData['class_id'])->where('status',1)->field('user_id,class_id')->select();
