@@ -48,7 +48,7 @@ class ExceptionHandler extends Handle
             'error_code' => $this->errorCode,
             'request_url' => $request = $request->url()
         ];
-        echo json_encode($result, $this->code);
+         return returnJson($result,$this->code);
     }
 
     /*
@@ -58,7 +58,7 @@ class ExceptionHandler extends Handle
     {
         Log::init([
             'type'  =>  'File',
-            'path'  =>  LOG_PATH,
+            //'path'  =>  LOG_PATH,
             'level' => ['error']
         ]);
 //        Log::record($e->getTraceAsString());

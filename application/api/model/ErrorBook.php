@@ -45,7 +45,7 @@ class ErrorBook
 
         }
 
-        return true;
+        return false;
     }
 
     /**

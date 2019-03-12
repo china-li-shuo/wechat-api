@@ -37,6 +37,7 @@ Route::post('api/:version/share/punch', 'api/:version.Share/punchCard');
 //开始学习
 Route::post('api/:version/learned/list', 'api/:version.Learned/getList');
 Route::post('api/:version/learned/click', 'api/:version.Learned/clickNext');
+Route::post('api/:version/learned/collection', 'api/:version.Learned/collection');
 
 
 //单词本
@@ -44,6 +45,9 @@ Route::post('api/:version/activity/already', 'api/:version.Activity/alreadyStudi
 Route::post('api/:version/activity/detail', 'api/:version.Activity/alreadyDetail');
 Route::post('api/:version/activity/error', 'api/:version.Activity/errorBook');
 Route::post('api/:version/activity/list', 'api/:version.Activity/errorDetail');
+Route::post('api/:version/activity/remove', 'api/:version.Activity/errorRemove');
+Route::post('api/:version/activity/collection', 'api/:version.Activity/collection');
+Route::post('api/:version/activity/info', 'api/:version.Activity/collectionDetail');
 
 //首页信息
 Route::post('api/:version/index/info', 'api/:version.Index/getUserInfo');

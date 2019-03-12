@@ -12,8 +12,11 @@ use app\api\model\EnglishWord;
 use app\api\model\ErrorBook;
 use app\api\model\Group;
 use app\api\model\GroupWord;
+use app\api\model\Collection as CollectionModel;
 use app\api\model\LearnedHistory as LearnedHistoryModel;
+use app\api\model\User;
 use app\api\service\Token;
+use app\api\validate\Collection;
 use app\api\validate\LearnedHistory;
 use app\lib\exception\MissException;
 use app\lib\exception\SuccessMessage;
@@ -26,7 +29,6 @@ class Learned
         //先根据token获取用户的uid
         //根据uid去学习记录表中查询用户最后一次学到了第几组的第几个单词
         $uid = Token::getCurrentTokenVar('uid');
-
         $LearnedData = LearnedHistoryModel::UserLearned($uid);
 
         //如果用户没有学习记录，直接查询第一组单词
@@ -45,9 +47,13 @@ class Learned
         //用户还未学习的组信息
         $notLearnedData = Group::getGroupData($LearnedData);  //23
 
+        if (empty($notLearnedData)){
+            $wordDetail = $this->nextGroupInfo($uid);
+            return json($wordDetail);
+        }
+
         //查询此组对应的阶段
         $notLearnedData = Group::correspondingStage($notLearnedData);
-
         //用户已学习这组下的第几个数量
         $currentNumber =  LearnedHistoryModel::userLearnedCurrentNumber($LearnedData);  //2
 
@@ -84,7 +90,13 @@ class Learned
 
         //如果答题正确，判断错题本有没有此条记录，如果有则删除
         if($answerResult == 1){
-            ErrorBook::deleteErrorBook($uid,$data);
+            $res = ErrorBook::deleteErrorBook($uid,$data);
+            if(!$res){
+                throw new MissException([
+                    'msg' => '错题已经移除,请刷新重试',
+                    'errorCode' => 50000
+                ]);
+            }
         }
 
         if($answerResult == 0){
@@ -105,6 +117,40 @@ class Learned
         return json(['msg'=>'ok','code'=>200]);
         //throw new SuccessMessage();
     }
+
+    /**
+     * 收藏
+     */
+    public function collection()
+    {
+        $uid = Token::getCurrentTokenVar('uid');
+        $validate = new Collection();
+        $validate->goCheck();
+        $data = $validate->getDataByRule(input('post.'));
+        //is_collection  1  为收藏  0 为取消收藏
+        if($data['is_collection'] == 2){
+            $res = CollectionModel::deleteCollection($uid,$data);
+            if(!$res){
+                throw new MissException([
+                    'msg' => '你已经取消收藏该单词了呀',
+                    'errorCode' => 50000
+                ]);
+            }
+            return json(['msg'=>'取消收藏成功','code'=>200]);
+        }
+
+        $res = CollectionModel::addCollection($uid,$data);
+
+        if(!$res){
+            throw new MissException([
+                'msg' => '你已经收藏过该单词了呀',
+                'errorCode' => 50000
+            ]);
+        }
+        return json(['msg'=>'收藏成功','code'=>200]);
+    }
+
+
 
     /**
      * 把用户总共学习的单词数量，最后一次学习的阶段,最后一次学习的组写入数据库
@@ -130,4 +176,36 @@ class Learned
         return true;
     }
 
+    private function nextGroupInfo($uid)
+    {
+
+        $userInfo = User::getUserInfo($uid);
+        $lastSortID = Group::userLastGroupID($userInfo);
+        $nextSortID = $lastSortID+1;
+
+        //先判断下一组还有没有单词
+        $res = Group::findLastGroupID(['stage'=>$userInfo['now_stage'],'sort'=>$nextSortID]);
+        $stage = Group::findStageID($res);
+        if(empty($res)){
+            throw new SuccessMessage([
+                'msg' => '此阶段已经没有下一组单词了呀'
+            ]);
+            //return json(['msg'=>'此阶段已经没有下一组单词了呀','errorCode'=>6000]);
+        }
+        $groupWord = GroupWord::selectGroupWord($res);
+
+        foreach ($groupWord as $key=>$val){
+            $groupWord[$key]['stage'] = $stage;
+        }
+
+        $wordDetail = EnglishWord::getNextWordDetail($groupWord);
+
+        if($wordDetail['count'] == 0){
+            throw new SuccessMessage([
+                'msg' => '此分组下没有单词啦呀'
+            ]);
+        }
+
+        return $wordDetail;
+    }
 }

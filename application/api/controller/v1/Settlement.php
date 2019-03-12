@@ -34,7 +34,6 @@ class Settlement
         //用户头像，昵称，学习天数，正确率，超过班级百分比
         $uid = Token::getCurrentTokenVar('uid');
         $res = Share::userPunchCard($uid);
-
         if(!$res){
             throw new MissException([
                 'msg' => '你今天已经打过卡了',
@@ -43,6 +42,13 @@ class Settlement
         }
 
         $lastLearnedData = LearnedHistory::UserLearned($uid);
+
+        if(empty($lastLearnedData)){
+            throw new MissException([
+                'msg' => '请先进行学习，在计算(⊙o⊙)哦',
+                'errorCode' => 50000
+            ]);
+        }
         //获取用户最后一次答题组下的正确率
         $trueRate = LearnedHistory::getTrueRate($lastLearnedData);
         //超过全班百分比
@@ -53,7 +59,6 @@ class Settlement
         $groupName = Group::findGroupName($lastLearnedData['group']);
         $userInfo = User::getUserInfo($uid);
         $punchDays = Share::getPunchDays($uid);
-
         $data = [
             'stage_name'=>&$stageName,
             'group_name'=>&$groupName,
@@ -84,6 +89,12 @@ class Settlement
     {
 
         $classData = UserClass::getAllUserByUid($uid);
+        if(empty($classData)){
+            throw new MissException([
+                'msg' => '你不是班级学员(⊙o⊙)哦',
+                'errorCode' => 50000
+            ]);
+        }
         //判断此阶段下此组，所有用户答对的单词
         $classTrueRate = LearnedHistory::classTrueRate($classData,$lastLearnedData);
         return $classTrueRate;

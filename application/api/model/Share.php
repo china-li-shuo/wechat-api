@@ -53,11 +53,14 @@ class Share extends Model
     {
         $punchDays = Share::where('user_id',$uid)->select()->count();
 
-        $res = Db::table('yx_user')->where('id',$uid)->update(['punch_days'=>$punchDays]);
+        $userInfo = Db::table('yx_user')->where('id',$uid)->field('punch_days')->find();
 
-        if($res){
-            return $punchDays;
+        if($userInfo['punch_days'] < $punchDays){
+            Db::table('yx_user')->where('id',$uid)->update(['punch_days'=>$punchDays]);
         }
+
+        return $punchDays;
+
     }
 
     /**

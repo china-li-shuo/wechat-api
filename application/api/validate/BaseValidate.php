@@ -86,6 +86,16 @@ class BaseValidate extends Validate
             return $field . '答案不在规定的选项内';
         }
     }
+
+    protected function isCollection($value, $rule='', $data='', $field='')
+    {
+        if($value == 1 | $value == 2){
+            return true;
+        }else {
+            return $field . '不是指定规则内容';
+        }
+    }
+
     //没有使用TP的正则验证，集中在一处方便以后修改
     //不推荐使用正则，因为复用性太差
     //手机号的验证规则

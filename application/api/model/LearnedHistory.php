@@ -252,12 +252,13 @@ class LearnedHistory extends Model
                 if($v['is_true'] == 1){
                     $i++;
                     $arr['user_id']=$v['user_id'];
-                    $arr['true_num']=$i;
+                    $arr['true_num']=$i+1;
                 }
+                $arr['user_id']=$v['user_id'];
+                $arr['true_num']=$i+1;
             }
             array_push($new_arr,$arr);
         }
-
 
         // 取得列的列表
         foreach ($new_arr as $key => $row)

@@ -102,6 +102,11 @@ class Group extends Model
         return $data['id'];
     }
 
+    public static function findStageID($groupID)
+    {
+        $data =  Db::table(self::PREFIX.'group')->where('id',$groupID)->field('stage_id')->find();
+        return $data['stage_id'];
+    }
     /**
      * 获取词组的排序id
      * @param $userInfo

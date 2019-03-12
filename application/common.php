@@ -145,3 +145,7 @@ function createTreeBySon($data,$parent_id=0)
     return $new_arr;
 }
 
+function returnJson($result, $code)
+{
+    echo json_encode($result,$code,JSON_UNESCAPED_UNICODE|JSON_UNESCAPED_SLASHES);
+}

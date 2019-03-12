@@ -146,10 +146,12 @@ class EnglishWord extends Model
         foreach ($groupWord as $key=>$val){
               if(array_key_exists('son',$val)){
                   $groupWord[$key]['son']['chinese_word'] = explode('@',$val['son']['chinese_word']);
+                  $groupWord[$key]['son']['options'] = json_decode($val['son']['options'],true);
+                  $groupWord[$key]['son']['answer'] = $val['son']['answer'];
                   $groupWord[$key]['son']['sentence'] = json_decode($val['son']['sentence'],true);
                   $groupWord[$key]['son']['currentNumber'] = $key+1;
-                  unset($groupWord[$key]['son']['options']);
-                  unset($groupWord[$key]['son']['answer']);
+                  //unset($groupWord[$key]['son']['options']);
+                  //unset($groupWord[$key]['son']['answer']);
               }
 
         }
