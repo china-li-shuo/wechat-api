@@ -8,6 +8,7 @@
 
 namespace app\api\controller\v1;
 
+use app\api\model\Collection;
 use app\api\model\EnglishWord;
 use app\api\model\GroupWord;
 use app\api\model\UserClass;
@@ -35,18 +36,20 @@ class Settlement
         $uid = Token::getCurrentTokenVar('uid');
         $res = Share::userPunchCard($uid);
         if(!$res){
-            throw new MissException([
+            return json([
                 'msg' => '你今天已经打过卡了',
-                'errorCode' => 50000
+                'errorCode' => 50000,
+                'request_url' => errorUrl()
             ]);
         }
 
         $lastLearnedData = LearnedHistory::UserLearned($uid);
 
         if(empty($lastLearnedData)){
-            throw new MissException([
+            return json([
                 'msg' => '请先进行学习，在计算(⊙o⊙)哦',
-                'errorCode' => 50000
+                'errorCode' => 50000,
+                'request_url' => errorUrl()
             ]);
         }
         //获取用户最后一次答题组下的正确率
@@ -71,9 +74,10 @@ class Settlement
         ];
 
         if(!$data){
-            throw new MissException([
+            return json([
                 'msg' => '用户结算信息查询失败',
-                'errorCode' => 50000
+                'errorCode' => 50000,
+                'request_url' => errorUrl()
             ]);
         }
 
@@ -90,9 +94,10 @@ class Settlement
 
         $classData = UserClass::getAllUserByUid($uid);
         if(empty($classData)){
-            throw new MissException([
+            return json([
                 'msg' => '你不是班级学员(⊙o⊙)哦',
-                'errorCode' => 50000
+                'errorCode' => 50000,
+                'request_url' => errorUrl()
             ]);
         }
         //判断此阶段下此组，所有用户答对的单词
@@ -112,10 +117,13 @@ class Settlement
         $groupWord = GroupWord::selectGroupWord($lastGroupID);
         //然后根据每个组的详情进行查询每个单词的详情
         $wordDetail = EnglishWord::getNextWordDetail($groupWord);
+        //判断是否收藏过该单词
+        $wordDetail = Collection::isCollection($uid,$wordDetail);
         if(!$wordDetail){
-            throw new MissException([
+            return json([
                 'msg' => '重新来过信息查询失败',
-                'errorCode' => 50000
+                'errorCode' => 50000,
+                'request_url' => errorUrl()
             ]);
         }
 
@@ -129,22 +137,27 @@ class Settlement
         $userInfo = User::getUserInfo($uid);
         $lastSortID = Group::userLastGroupID($userInfo);
         $nextSortID = $lastSortID+1;
+
         //先判断下一组还有没有单词
         $res = Group::findLastGroupID(['stage'=>$userInfo['now_stage'],'sort'=>$nextSortID]);
 
         if(empty($res)){
-            throw new SuccessMessage([
-                'msg' => '此阶段已经没有下一组单词了呀'
+            return json([
+                'msg' => '此阶段已经没有下一组单词了呀',
+                'errorCode' => 50000,
+                'request_url' => errorUrl()
             ]);
-            //return json(['msg'=>'此阶段已经没有下一组单词了呀','errorCode'=>6000]);
         }
 
         $groupWord = GroupWord::selectGroupWord($res);
         $wordDetail = EnglishWord::getNextWordDetail($groupWord);
-
+        $wordDetail = Collection::isCollection($uid,$wordDetail);
         if($wordDetail['count'] == 0){
-            throw new SuccessMessage([
-                'msg' => '此分组下没有单词啦呀'
+
+            return json([
+                'msg' => '此分组下没有单词啦呀',
+                'errorCode' => 50000,
+                'request_url' => errorUrl()
             ]);
         }
 

@@ -30,8 +30,10 @@ class Sms
     public function sendSms($mobile = '')
     {
         if(!$mobile){
-            throw new ParameterException([
-                'mobie不允许为空'
+            return json([
+                'msg' => 'mobie不允许为空',
+                'errorCode' => 60000,
+                'request_url' => errorUrl()
             ]);
         }
 
@@ -68,29 +70,41 @@ class Sms
     public function bindMobile($mobile = '', $code = '')
     {
         if(!$mobile || !$code){
-            throw new ParameterException([
-                '你输入的参数缺失'
+            return json([
+                'msg' => '你输入的参数缺失',
+                'errorCode' => 60000,
+                'request_url' => errorUrl()
             ]);
         }
         $res = $this->checkRegSms($mobile,$code);
 
         if(!$res){
-            throw new SmsException();
+            return json([
+                'msg' => '你输入的短信验证码不正确',
+                'errorCode' => 60000,
+                'request_url' => errorUrl()
+            ]);
         }
         //获取token令牌信息，与手机号进行绑定
         $token = Request::instance()
             ->header('token');
 
         if(!$token){
-            throw new ParameterException([
-                '你输入的token参数缺失'
+            return json([
+                'msg' => '你输入的token参数缺失',
+                'errorCode' => 60000,
+                'request_url' => errorUrl()
             ]);
         }
 
         $identities = Cache::get($token);
 
         if(!$identities){
-            throw new TokenException();
+              return json([
+                  'msg' => 'Token已过期或无效Token',
+                  'errorCode' => 60000,
+                  'request_url' => errorUrl()
+              ]);
         }
 
         $res = User::bindMobile(json_decode($identities,true),$mobile);

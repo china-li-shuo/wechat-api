@@ -23,9 +23,10 @@ class Stage
         Token::getCurrentTokenVar('uid');
         $stages = StageModel::getStages();
         if(empty($stages)){
-            throw new MissException([
+            return json([
                 'msg' => '还没有任何阶段',
-                'errorCode' => 50000
+                'errorCode' => 50000,
+                'request_url' => errorUrl()
             ]);
         }
         return json(['code'=>200,'msg'=>'查询成功','data'=>$stages]);
@@ -41,9 +42,10 @@ class Stage
         $stages = LearnedHistory::getWordNumberByStage($uid,$stages);
         $stages =createTreeBySon($stages);
         if(empty($stages)){
-            throw new MissException([
+            return json([
                 'msg' => '查询失败',
-                'errorCode' => 50000
+                'errorCode' => 50000,
+                'request_url' => errorUrl()
             ]);
         }
         return json(['code'=>200,'msg'=>'查询成功','data'=>$stages]);
@@ -84,9 +86,10 @@ class Stage
         ];
 
         if(!$data){
-            throw new MissException([
+            return json([
                 'msg' => '阶段详情信息查询失败',
-                'errorCode' => 50000
+                'errorCode' => 50000,
+                'request_url' => errorUrl()
             ]);
         }
 

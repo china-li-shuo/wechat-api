@@ -149,3 +149,9 @@ function returnJson($result, $code)
 {
     echo json_encode($result,$code,JSON_UNESCAPED_UNICODE|JSON_UNESCAPED_SLASHES);
 }
+
+function errorUrl()
+{
+    $request = \think\facade\Request::instance();
+    return $request->url();
+}

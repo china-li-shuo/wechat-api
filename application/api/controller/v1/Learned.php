@@ -36,6 +36,7 @@ class Learned
             $notLearnedData = GroupWord::findFirst();
             $notLearnedData = Group::correspondingStage($notLearnedData);
             $notWordData = EnglishWord::notWordData($notLearnedData);
+            $notWordData = CollectionModel::isCollection($uid,$notWordData);
             $notLearnedData = EnglishWord::formatConversion($notWordData,1);
             $notLearnedData['count'] = count($notLearnedData);
             return json($notLearnedData);
@@ -60,10 +61,13 @@ class Learned
         //用户还没有学习单词的详情
         $notWordData = EnglishWord::notWordData($notLearnedData);
 
+        $notWordData = CollectionModel::isCollection($uid,$notWordData);
+
         if(empty($notWordData)){
-            throw new MissException([
+            return json([
                 'msg' => '没有查到此分组下单词详情',
-                'errorCode' => 50000
+                'errorCode' => 50000,
+                'request_url' => errorUrl()
             ]);
         }
 
@@ -92,9 +96,10 @@ class Learned
         if($answerResult == 1){
             $res = ErrorBook::deleteErrorBook($uid,$data);
             if(!$res){
-                throw new MissException([
+                return json([
                     'msg' => '错题已经移除,请刷新重试',
-                    'errorCode' => 50000
+                    'errorCode' => 50000,
+                    'request_url' => errorUrl()
                 ]);
             }
         }
@@ -109,13 +114,13 @@ class Learned
         $res = LearnedHistoryModel::addUserHistory($uid,$data,$answerResult);
 
         if(!$res){
-            throw new MissException([
+            return json([
                 'msg' => '用户答题记录失败',
-                'errorCode' => 50000
+                'errorCode' => 50000,
+                'request_url' => errorUrl()
             ]);
         }
         return json(['msg'=>'ok','code'=>200]);
-        //throw new SuccessMessage();
     }
 
     /**
@@ -131,9 +136,10 @@ class Learned
         if($data['is_collection'] == 2){
             $res = CollectionModel::deleteCollection($uid,$data);
             if(!$res){
-                throw new MissException([
+                return json([
                     'msg' => '你已经取消收藏该单词了呀',
-                    'errorCode' => 50000
+                    'errorCode' => 50000,
+                    'request_url' => errorUrl()
                 ]);
             }
             return json(['msg'=>'取消收藏成功','code'=>200]);
@@ -142,9 +148,10 @@ class Learned
         $res = CollectionModel::addCollection($uid,$data);
 
         if(!$res){
-            throw new MissException([
+            return json([
                 'msg' => '你已经收藏过该单词了呀',
-                'errorCode' => 50000
+                'errorCode' => 50000,
+                'request_url' => errorUrl()
             ]);
         }
         return json(['msg'=>'收藏成功','code'=>200]);
@@ -187,10 +194,11 @@ class Learned
         $res = Group::findLastGroupID(['stage'=>$userInfo['now_stage'],'sort'=>$nextSortID]);
         $stage = Group::findStageID($res);
         if(empty($res)){
-            throw new SuccessMessage([
-                'msg' => '此阶段已经没有下一组单词了呀'
+            return json([
+                'msg' => '此阶段已经没有下一组单词了呀',
+                'errorCode' => 50000,
+                'request_url' => errorUrl()
             ]);
-            //return json(['msg'=>'此阶段已经没有下一组单词了呀','errorCode'=>6000]);
         }
         $groupWord = GroupWord::selectGroupWord($res);
 
@@ -201,8 +209,11 @@ class Learned
         $wordDetail = EnglishWord::getNextWordDetail($groupWord);
 
         if($wordDetail['count'] == 0){
-            throw new SuccessMessage([
-                'msg' => '此分组下没有单词啦呀'
+
+            return json([
+                'msg' => '此分组下没有单词啦呀',
+                'errorCode' => 50000,
+                'request_url' => errorUrl()
             ]);
         }
 

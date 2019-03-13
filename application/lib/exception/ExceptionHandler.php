@@ -48,7 +48,8 @@ class ExceptionHandler extends Handle
             'error_code' => $this->errorCode,
             'request_url' => $request = $request->url()
         ];
-         return returnJson($result,$this->code);
+
+         echo json($result,$this->code)->getcontent();die;
     }
 
     /*

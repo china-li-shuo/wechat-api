@@ -16,6 +16,7 @@ use app\api\validate\StageID;
 use app\lib\exception\MissException;
 use app\api\validate\ErrorBook AS ErrorBookValidate;
 use think\Db;
+use think\facade\Request;
 
 class Activity
 {
@@ -28,13 +29,15 @@ class Activity
     {
         //根据token获取用户学习所有阶段,每个阶段下所有组
         $uid = Token::getCurrentTokenVar('uid');
-        $historyData = LearnedHistory::LearnedStage($uid);
-        $historyData = LearnedHistory::LearnedGroup($uid,$historyData);
+        $historyData= LearnedHistory::learnedInfo($uid);
+        //$historyData = LearnedHistory::LearnedStage($uid);
+        //$historyData = LearnedHistory::LearnedGroup($uid,$historyData);
 
         if (empty($historyData)){
-            throw new MissException([
-                'msg' => '用户已学习信息查询失败',
-                'errorCode' => 50000
+            return json([
+                'msg' => '你还有任何学习记录呢,请开始你的表演',
+                'errorCode' => 50000,
+                'request_url' => errorUrl()
             ]);
         }
         return json($historyData);
@@ -50,9 +53,10 @@ class Activity
         $uid = Token::getCurrentTokenVar('uid');
         $data = ErrorBook::errorInfo($uid);
         if(empty($data)){
-            throw new MissException([
-                'msg' => '用户错题本信息查询失败',
-                'errorCode' => 50000
+            return json([
+                'msg' => '学霸，还没有答错任何题呢',
+                'errorCode' => 50000,
+                'request_url' => errorUrl()
             ]);
         }
 
@@ -114,9 +118,10 @@ class Activity
         $res = ErrorBook::deleteErrorBook($uid,$data);
 
         if(!$res){
-            throw new MissException([
+            return json([
                 'msg' => '错题已经移除,请刷新重试',
-                'errorCode' => 50000
+                'errorCode' => 50000,
+                'request_url' => errorUrl()
             ]);
         }
 
@@ -131,9 +136,10 @@ class Activity
         $uid = Token::getCurrentTokenVar('uid');
         $data = Collection::collectionInfo($uid);
         if(empty($data)){
-            throw new MissException([
-                'msg' => '用户收藏首页信息查询失败',
-                'errorCode' => 50000
+            return json([
+                'msg' => '空空如也，请先收藏单词(⊙o⊙)哦',
+                'errorCode' => 50000,
+                'request_url' => errorUrl()
             ]);
         }
 
@@ -187,9 +193,10 @@ class Activity
         }
 
         if (!$data){
-            throw new MissException([
-                'msg' => '用户已学习信息查询失败',
-                'errorCode' => 50000
+            return json([
+                'msg' => '空空如也，请先开始进行你的表演',
+                'errorCode' => 50000,
+                'request_url' => errorUrl()
             ]);
         }
         return $data;
@@ -222,9 +229,10 @@ class Activity
         }
 
         if (!$data){
-            throw new MissException([
-                'msg' => '用户已学习信息查询失败',
-                'errorCode' => 50000
+            return json([
+                'msg' => '空空如也，请先开始进行你的表演',
+                'errorCode' => 50000,
+                'request_url' => errorUrl()
             ]);
         }
         return $data;
@@ -257,9 +265,10 @@ class Activity
         }
 
         if (!$data){
-            throw new MissException([
-                'msg' => '用户已学习信息查询失败',
-                'errorCode' => 50000
+            return json([
+                'msg' => '空空如也，请先开始进行你的表演',
+                'errorCode' => 50000,
+                'request_url' => errorUrl()
             ]);
         }
         return $data;

@@ -37,9 +37,10 @@ class Share
 
         $data = $this->sharePage($uid);
         if(!$data){
-            throw new MissException([
+            return json([
                 'msg' => '分享页面信息加载失败',
-                'errorCode' => 50000
+                'errorCode' => 50000,
+                'request_url' => errorUrl()
             ]);
         }
 

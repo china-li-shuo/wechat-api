@@ -26,9 +26,10 @@ class Top
         $userList = $this->getUserList($userTodayLearnedNumber);
 
         if(!$userList){
-            throw new MissException([
+            return json([
                 'msg' => '今日榜单信息查询失败',
-                'errorCode' => 50000
+                'errorCode' => 50000,
+                'request_url' => errorUrl()
             ]);
         }
 
@@ -74,9 +75,10 @@ class Top
         $userList = $this->getHistoryUserList($classData);
 
         if(!$userList){
-            throw new MissException([
+            return json([
                 'msg' => '今日榜单信息查询失败',
-                'errorCode' => 50000
+                'errorCode' => 50000,
+                'request_url' => errorUrl()
             ]);
         }
 

@@ -114,7 +114,9 @@ class Group extends Model
      */
     public static function userLastGroupID($userInfo)
     {
+
         $data =  Db::table(self::PREFIX.'group')->where('stage_id',$userInfo['now_stage'])->where('id',$userInfo['now_group'])->field('id,sort')->find();
+
         return $data['sort'];
     }
 

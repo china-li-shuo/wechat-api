@@ -63,7 +63,7 @@ class EnglishWord extends Model
         $prefix = config('secure.prefix');
         foreach ($notLearnedData as $key=>$val){
             $data = Db::table($prefix.'english_word')->where('id',$val['wid'])->find();
-
+            $notLearnedData[$key]['is_collection'] = 2;
             $notLearnedData[$key]['son']=$data;
         }
 
@@ -137,21 +137,22 @@ class EnglishWord extends Model
 
         foreach ($groupWord as $key=>$val){
             $data = Db::table(self::PREFIX.'english_word')->where('id',$val['wid'])->find();
+            $stage = Db::table(self::PREFIX.'group')->where('id',$val['group'])->field('stage_id')->find();
+            $groupWord[$key]['stage'] = $stage['stage_id'];
             if($val['wid'] == $data['id']){
+                $groupWord[$key]['is_collection'] = 2;
                 $groupWord[$key]['son'] = $data;
             }
-
         }
 
         foreach ($groupWord as $key=>$val){
+            //查询是否收藏过该单词
               if(array_key_exists('son',$val)){
                   $groupWord[$key]['son']['chinese_word'] = explode('@',$val['son']['chinese_word']);
                   $groupWord[$key]['son']['options'] = json_decode($val['son']['options'],true);
                   $groupWord[$key]['son']['answer'] = $val['son']['answer'];
                   $groupWord[$key]['son']['sentence'] = json_decode($val['son']['sentence'],true);
                   $groupWord[$key]['son']['currentNumber'] = $key+1;
-                  //unset($groupWord[$key]['son']['options']);
-                  //unset($groupWord[$key]['son']['answer']);
               }
 
         }

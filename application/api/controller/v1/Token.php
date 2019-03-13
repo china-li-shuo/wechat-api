@@ -65,8 +65,10 @@ class Token
     public function verifyToken($token='')
     {
         if(!$token){
-            throw new ParameterException([
-                'token不允许为空'
+            return json([
+                'msg' => 'token不允许为空',
+                'errorCode' => 60000,
+                'request_url' => errorUrl()
             ]);
         }
         $valid = TokenService::verifyToken($token);

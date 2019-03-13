@@ -71,4 +71,20 @@ class Collection
 
         return $data;
     }
+
+    /**
+     * 判断当前用户是否收藏过该单词
+     * @param $wordDetail
+     */
+    public static function isCollection($uid,$wordDetail)
+    {
+        foreach ($wordDetail as $key=>$val){
+            $collection = Db::table('yx_collection')->where('user_id',$uid)->where('stage',$val['stage'])->where('group',$val['group'])->where('word_id',$val['wid'])->find();
+            if(!empty($collection)){
+                $wordDetail[$key]['is_collection'] = 1;
+            }
+        }
+
+        return $wordDetail;
+    }
 }
