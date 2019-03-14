@@ -87,7 +87,48 @@ class Stage extends Model
         return $data['stage_name'];
     }
 
+    /**
+     * 找出下一阶段下一组id
+     * @param $stageID
+     */
+    public static function nextStageGroupInfo($userInfo)
+    {
+        //进行阶段排序
+        $stageData = Db::table(self::PREFIX.'stage')->order('sort')->select();
+        //找出当前阶段
+        $nowStage = Db::table(self::PREFIX.'stage')->where('id',$userInfo['now_stage'])->find();
+        foreach ($stageData as $key=>$val){
+            if($nowStage == $stageData[$key]){
+                $k = $key+1;
+            }
+        }
 
+        //如果下一阶段信息非空
+        if(!empty($stageData[$k])){
+            return $stageData[$k]['id'];
+
+        }
+        return false;
+
+
+        //先根据阶段进行排序小组
+        $data = Db::table(self::PREFIX.'stage')->where('stage_id',$userInfo['now_stage'])->order('sort')->select();
+        //找出当前小组
+        $res = Db::table(self::PREFIX.'group')->where('stage_id',$userInfo['now_stage'])->where('id',$userInfo['now_group'])->find();
+        //确定下一组单词的信息
+        foreach ($data as $key=>$val){
+            if($res == $data[$key]){
+                $k = $key+1;
+            }
+        }
+
+        //如果下一组单词信息非空，返回组id
+        if(!empty($data[$k])){
+            return $data[$k]['id'];
+        }
+
+        return false;
+    }
 
 //    /**
 //     * 根据已学单词数量获取目前阶段名称

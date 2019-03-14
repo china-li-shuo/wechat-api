@@ -13,6 +13,7 @@ use app\api\model\User;
 use app\api\model\UserClass;
 use app\api\service\Token;
 use app\lib\exception\MissException;
+use think\Db;
 
 class Top
 {
@@ -24,6 +25,12 @@ class Top
         $userTodayLearnedNumber = LearnedHistory::getUserTodayLearnedNumber($classData);
         $userTodayLearnedNumber = LearnedHistory::LearnedDays($userTodayLearnedNumber);
         $userList = $this->getUserList($userTodayLearnedNumber);
+        //当前页
+        $page = empty(input('post.page'))?1:input('post.page');
+        //每页显示条数
+        $pageSize = 5;
+        //偏移量
+        $limit = ($page-1)*$pageSize;
 
         if(!$userList){
             return json([
@@ -43,7 +50,8 @@ class Top
             }
 
         }
-
+        //这个查询分页数据
+        $new_arr['data'] = array_slice($new_arr['data'],$limit,$pageSize,true);
         return json($new_arr);
     }
 
@@ -73,7 +81,10 @@ class Top
         $allLearnedNumber = LearnedHistory::getUseLearnedNumber($classData);
         $classData = LearnedHistory::LearnedDays($allLearnedNumber);
         $userList = $this->getHistoryUserList($classData);
-
+        $page = empty(input('post.page'))?1:input('post.page');
+        //每页显示条数
+        $pageSize = 5;
+        $limit = ($page-1)*$pageSize;
         if(!$userList){
             return json([
                 'msg' => '今日榜单信息查询失败',
@@ -92,6 +103,8 @@ class Top
             }
 
         }
+        //这个查询分页数据
+        $new_arr['data'] = array_slice($new_arr['data'],$limit,$pageSize,true);
         return json($new_arr);
     }
 
@@ -111,4 +124,5 @@ class Top
 
         return $userTodayLearnedNumber;
     }
+
 }

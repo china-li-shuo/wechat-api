@@ -98,7 +98,7 @@ class Group extends Model
     public static function findLastGroupID($historyLearnedData)
     {
 
-        $data =  Db::table(self::PREFIX.'group')->where('stage_id',$historyLearnedData['stage'])->where('sort',$historyLearnedData['sort'])->field('id,sort')->find();
+        $data =  Db::table(self::PREFIX.'group')->where('stage_id',$historyLearnedData['stage'])->where('sort',$historyLearnedData['sort'])->field('id,sort,stage_id')->find();
         return $data['id'];
     }
 
@@ -114,11 +114,39 @@ class Group extends Model
      */
     public static function userLastGroupID($userInfo)
     {
+        //先根据阶段进行排序小组
+        $data = Db::table(self::PREFIX.'group')->where('stage_id',$userInfo['now_stage'])->order('sort')->select();
+        //找出当前小组
+        $res = Db::table(self::PREFIX.'group')->where('stage_id',$userInfo['now_stage'])->where('id',$userInfo['now_group'])->find();
+        //确定下一组单词的信息
+        foreach ($data as $key=>$val){
+            if($res == $data[$key]){
+                $k = $key+1;
+            }
+        }
 
-        $data =  Db::table(self::PREFIX.'group')->where('stage_id',$userInfo['now_stage'])->where('id',$userInfo['now_group'])->field('id,sort')->find();
+        //如果下一组单词信息非空，返回组id
+        if(!empty($data[$k])){
+            return $data[$k]['id'];
+        }
 
-        return $data['sort'];
+        return false;
+
     }
+
+    //去找下一阶段的第一组id
+    public static function nextStageFirstGroupID($nextStageID)
+    {
+        //先根据阶段进行排序小组
+        $data = Db::table(self::PREFIX.'group')->where('stage_id',$nextStageID)->order('sort')->select();
+        //如果下一组单词信息非空，返回组id
+        if(!empty($data)){
+            return $data[0]['id'];
+        }
+
+        return false;
+    }
+
 
     /**
      * 返回词组的排序id

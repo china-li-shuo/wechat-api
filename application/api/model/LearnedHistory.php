@@ -121,6 +121,18 @@ class LearnedHistory extends Model
     }
 
 
+    /**
+     * 添加历史学习记录，并且用户表记录对应修改
+     * @param $uid
+     * @param $data
+     * @param $answerResult
+     * @return int|string
+     * @throws \think\Exception
+     * @throws \think\db\exception\DataNotFoundException
+     * @throws \think\db\exception\ModelNotFoundException
+     * @throws \think\exception\DbException
+     * @throws \think\exception\PDOException
+     */
     public static function addUserHistory($uid,$data,$answerResult)
     {
         $result = Db::table('yx_learned_history')->where('user_id',$uid)->where('word_id',$data['word_id'])->field('id,group,user_id,stage,word_id,is_true')->find();
@@ -134,7 +146,17 @@ class LearnedHistory extends Model
                 'is_true'=>$answerResult,
                 'create_time'=>time()
             ];
-            return Db::table('yx_learned_history')->insert($arr);
+            $res = Db::table('yx_learned_history')->insert($arr);
+            //学习记录表数据能够进行插入才修改用户记录信息
+            if($res){
+                $userinfo = Db::table('yx_user')->where('id',$uid)->field('already_number')->find();
+                $arr = [
+                    'already_number'=>$userinfo['already_number']+1,
+                    'now_stage'=>$data['stage'],
+                    'now_group'=>$data['group'],
+                ];
+                return Db::table('yx_user')->where('id',$uid)->update($arr);
+            }
         }
 
         return Db::table('yx_learned_history')->where('user_id',$uid)->where('word_id',$data['word_id'])->update(['is_true'=>$answerResult,'create_time'=>time()]);

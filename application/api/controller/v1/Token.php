@@ -37,10 +37,10 @@ class Token
         $data = $validate->getDataByRule(input('post.'));
         $wx = new UserToken($data['code']);
         $token = $wx->get();
-        User::addUserInfo($data,$token);
-
+        $mobile_bind = User::addUserInfo($data,$token);
         return json_encode([
-            'token'=>$token
+            'token'=>$token,
+            'mobile_bind'=>$mobile_bind
         ]);
     }
 

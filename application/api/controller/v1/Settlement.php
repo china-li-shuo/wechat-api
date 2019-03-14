@@ -20,6 +20,7 @@ use app\api\model\Share;
 use app\api\service\Token;
 use app\lib\exception\MissException;
 use app\lib\exception\SuccessMessage;
+use think\Db;
 
 class Settlement
 {
@@ -135,32 +136,63 @@ class Settlement
     {
         $uid = Token::getCurrentTokenVar('uid');
         $userInfo = User::getUserInfo($uid);
-        $lastSortID = Group::userLastGroupID($userInfo);
-        $nextSortID = $lastSortID+1;
+        $LastGroupID= Group::userLastGroupID($userInfo);
 
+        if(empty($groupWord)){
+            throw new SuccessMessage([
+                'msg'=>'你太厉害了，所有阶段都已经通关了'
+            ]);
+        }
+        //$nextSortID = $lastSortID+1;
         //先判断下一组还有没有单词
-        $res = Group::findLastGroupID(['stage'=>$userInfo['now_stage'],'sort'=>$nextSortID]);
-
-        if(empty($res)){
-            return json([
-                'msg' => '此阶段已经没有下一组单词了呀',
-                'errorCode' => 50000,
-                'request_url' => errorUrl()
-            ]);
+        //$res 下一组单词的id
+        //$res = Group::findLastGroupID(['stage'=>$userInfo['now_stage'],'sort'=>$nextSortID]);
+        //$stage = Group::findStageID($res);
+        if(empty($LastGroupID)){
+            $prefix = config('secure.prefix');
+            $stage = Db::table($prefix.'stage')->where('id',$userInfo['now_stage'])->field('stage_desc')->find();
+            //echo json_encode(['msg' => $stage['stage_desc'],'code'=>200,'msg2'=>'即将进入下一阶段进行学习'],JSON_UNESCAPED_UNICODE);
+            //去找下一阶段,第一组单词
+            $nextStageID = Stage::nextStageGroupInfo($userInfo);
+            if(empty($nextStageID)){
+                throw new SuccessMessage([
+                    'msg'=>'你太厉害了，所有阶段都已经通关了'
+                ]);
+            }
+            //如果不为空，去找下一阶段的第一组id
+            $nextStageFirstGroupID = Group::nextStageFirstGroupID($nextStageID);
+            $wordDetail = $this->getWordDetail($nextStageFirstGroupID,$nextStageID);
+            return json($wordDetail);
         }
 
-        $groupWord = GroupWord::selectGroupWord($res);
-        $wordDetail = EnglishWord::getNextWordDetail($groupWord);
-        $wordDetail = Collection::isCollection($uid,$wordDetail);
-        if($wordDetail['count'] == 0){
-
-            return json([
-                'msg' => '此分组下没有单词啦呀',
-                'errorCode' => 50000,
-                'request_url' => errorUrl()
-            ]);
-        }
-
+        $wordDetail = $this->getWordDetail($LastGroupID,$userInfo['now_stage']);
         return json($wordDetail);
+    }
+
+    private function getWordDetail($LastGroupID,$nowStageID)
+    {
+        $groupWord = GroupWord::selectGroupWord($LastGroupID);
+
+        if(empty($groupWord)){
+            throw new MissException([
+                'msg' => '亲，此小组下没有任何单词(⊙o⊙)哦',
+                'errorCode' => 50000
+            ]);
+        }
+
+        foreach ($groupWord as $key=>$val){
+            $groupWord[$key]['stage'] = $nowStageID;
+        }
+
+        $wordDetail = EnglishWord::getNextWordDetail($groupWord);
+
+        if($wordDetail['count'] == 0){
+            throw new MissException([
+                'msg' => '亲，此小组下没有任何单词(⊙o⊙)哦',
+                'errorCode' => 50000
+            ]);
+        }
+
+        return $wordDetail;
     }
 }

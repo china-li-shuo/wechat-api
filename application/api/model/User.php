@@ -3,6 +3,7 @@
 namespace app\api\model;
 
 
+use think\Db;
 use think\Facade\Cache;
 use think\Model;
 
@@ -38,12 +39,19 @@ class User extends Model
         $vars = Cache::get($token);
         $arr = json_decode($vars,true);
         $uid = $arr['uid'];
+        $userInfo = Db::table('yx_user')->where('id',$uid)->find();
+        if(empty($userInfo['mobile'])){
+            $mobile_bind = 2;
+        }else{
+            $mobile_bind = 1;
+        }
+        User::where('id',$uid)->update(
+        [
+            'nick_name' => $data['nick_name'],
+            'avatar_url' => $data['avatar_url']
+        ]);
 
-        return User::where('id',$uid)->update(
-            [
-                'nick_name' => $data['nick_name'],
-                'avatar_url' => $data['avatar_url']
-            ]);
+        return $mobile_bind;
     }
 
     public static function getUserInfo($uid)

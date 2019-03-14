@@ -67,15 +67,28 @@ class Stage
         $eachGroupData = Group::getEachStageGroupData($id);
         $historyGroupWordCount = LearnedHistory::getAlreadyLearnedGroupWordCount($uid,$historyGroupData);
 
+        //查看此阶段下，每组学习下多少个单词
         if (!empty($eachGroupData) && !empty($historyGroupWordCount)){
             foreach ($eachGroupData as $key=>$val){
                 foreach ($historyGroupWordCount as $k=>$v){
                         if($val['id'] == $v['group']){
-                            $eachGroupData[$key]['already_group_num'] = &$v['already_group_num'];
+                            $eachGroupData[$key]['already_group_num'] = $v['already_group_num'];
                         }
+                }
+
+                if(!array_key_exists('already_group_num',$eachGroupData[$key])){
+                    $eachGroupData[$key]['already_group_num'] = 0;
                 }
             }
         }
+
+        //如果没有学习记录 则每组学习0个单词
+        if(empty($historyGroupWordCount)){
+            foreach ($eachGroupData as $key=>$val){
+                $eachGroupData[$key]['already_group_num'] = 0;
+            }
+        }
+
         $data = [
             'stage_name'=>$stageData['stage_name'],
             'stage_group_num'=>$stageData['group_num'],

@@ -44,7 +44,6 @@ class Learned
 
         //用户最后一次学习第几组共有多少单词
         $allData = Group::getAllData($LearnedData);   //25
-
         //用户还未学习的组信息
         $notLearnedData = Group::getGroupData($LearnedData);  //23
 
@@ -94,22 +93,14 @@ class Learned
 
         //如果答题正确，判断错题本有没有此条记录，如果有则删除
         if($answerResult == 1){
-            $res = ErrorBook::deleteErrorBook($uid,$data);
-            if(!$res){
-                return json([
-                    'msg' => '错题已经移除,请刷新重试',
-                    'errorCode' => 50000,
-                    'request_url' => errorUrl()
-                ]);
-            }
+            ErrorBook::deleteErrorBook($uid,$data);
         }
 
         if($answerResult == 0){
             ErrorBook::addErrorBook($uid,$data);
         }
 
-
-        $this->addUserLearnedData($uid,$data);
+        //$this->addUserLearnedData($uid,$data);
 
         $res = LearnedHistoryModel::addUserHistory($uid,$data,$answerResult);
 
@@ -120,7 +111,21 @@ class Learned
                 'request_url' => errorUrl()
             ]);
         }
-        return json(['msg'=>'ok','code'=>200]);
+        //判断是此用户是否学完此阶段，获得此勋章
+        $userInfo = User::get($uid)->toArray();
+        $prefix = config('secure.prefix');
+        $stageData = Db::table($prefix.'stage')->where('id',$data['stage'])->field('stage_name,stage_desc,word_num')->find();
+
+        if($userInfo['already_number']>=$stageData['word_num']){
+            $arr = [
+                'stage_name'=>$stageData['stage_name'],
+                'stage_desc'=>$stageData['stage_desc'],
+                ];
+            return json(['msg'=>'ok','code'=>200,'data'=>$arr]);
+        }
+
+        return json(['msg'=>'ok','code'=>200,'data'=>'']);
+
     }
 
     /**
@@ -185,35 +190,60 @@ class Learned
 
     private function nextGroupInfo($uid)
     {
-
         $userInfo = User::getUserInfo($uid);
-        $lastSortID = Group::userLastGroupID($userInfo);
-        $nextSortID = $lastSortID+1;
+        $LastGroupID= Group::userLastGroupID($userInfo);
 
-        //先判断下一组还有没有单词
-        $res = Group::findLastGroupID(['stage'=>$userInfo['now_stage'],'sort'=>$nextSortID]);
-        $stage = Group::findStageID($res);
-        if(empty($res)){
-            return json([
-                'msg' => '此阶段已经没有下一组单词了呀',
-                'errorCode' => 50000,
-                'request_url' => errorUrl()
+        if(empty($groupWord)){
+            throw new SuccessMessage([
+                'msg'=>'你太厉害了，所有阶段都已经通关了'
             ]);
         }
-        $groupWord = GroupWord::selectGroupWord($res);
+        //$nextSortID = $lastSortID+1;
+        //先判断下一组还有没有单词
+        //$res 下一组单词的id
+        //$res = Group::findLastGroupID(['stage'=>$userInfo['now_stage'],'sort'=>$nextSortID]);
+        //$stage = Group::findStageID($res);
+        if(empty($LastGroupID)){
+            $prefix = config('secure.prefix');
+            $stage = Db::table($prefix.'stage')->where('id',$userInfo['now_stage'])->field('stage_desc')->find();
+            //echo json_encode(['msg' => $stage['stage_desc'],'code'=>200,'msg2'=>'即将进入下一阶段进行学习'],JSON_UNESCAPED_UNICODE);
+            //去找下一阶段,第一组单词
+            $nextStageID = Stage::nextStageGroupInfo($userInfo);
+            if(empty($nextStageID)){
+                throw new SuccessMessage([
+                    'msg'=>'你太厉害了，所有阶段都已经通关了'
+                ]);
+            }
+            //如果不为空，去找下一阶段的第一组id
+            $nextStageFirstGroupID = Group::nextStageFirstGroupID($nextStageID);
+            $wordDetail = $this->getWordDetail($nextStageFirstGroupID,$nextStageID);
+            return $wordDetail;
+        }
+        $wordDetail = $this->getWordDetail($LastGroupID,$userInfo['now_stage']);
+        return $wordDetail;
+    }
+
+    private function getWordDetail($LastGroupID,$nowStageID)
+    {
+        $groupWord = GroupWord::selectGroupWord($LastGroupID);
+
+        if(empty($groupWord)){
+            throw new MissException([
+                'msg' => '亲，此小组下没有任何单词(⊙o⊙)哦',
+                'errorCode' => 50000
+            ]);
+        }
 
         foreach ($groupWord as $key=>$val){
-            $groupWord[$key]['stage'] = $stage;
+            $groupWord[$key]['stage'] = $nowStageID;
         }
 
         $wordDetail = EnglishWord::getNextWordDetail($groupWord);
 
         if($wordDetail['count'] == 0){
-
-            return json([
-                'msg' => '此分组下没有单词啦呀',
-                'errorCode' => 50000,
-                'request_url' => errorUrl()
+            throw new MissException([
+                'msg' => '亲，此小组下没有任何单词(⊙o⊙)哦',
+                'errorCode' => 50000
             ]);
         }
 
