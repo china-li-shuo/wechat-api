@@ -40,9 +40,9 @@ class Sms
         $validate = new MobileRule();
         $validate->goCheck();
 
-        $res=Db::name('user')->field('mobile')->where('mobile',$mobile)->find();
+        $res=Db::name('user')->field('mobile,mobile_bind')->where('mobile',$mobile)->find();
 
-        if (empty($res)){
+        if (empty($res) || $res['mobile_bind']==2){
 
             $vcode=rand(1000, 9999);
             $this->setRegSmsCache(['mobile'=>$mobile,'vcode'=>$vcode,'times'=>time()]);
@@ -105,9 +105,10 @@ class Sms
                   'errorCode' => 60000,
                   'request_url' => errorUrl()
               ]);
-        }
+        };
+        $identities = json_decode($identities,true);
 
-        $res = User::bindMobile(json_decode($identities,true),$mobile);
+        $res = User::bindMobile($identities,$mobile);
 
         if(!$res){
             return json_encode(['msg'=>'绑定失败','error_code'=>6001],JSON_UNESCAPED_UNICODE);

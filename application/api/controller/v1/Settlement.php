@@ -37,11 +37,10 @@ class Settlement
         $uid = Token::getCurrentTokenVar('uid');
         $res = Share::userPunchCard($uid);
         if(!$res){
-            return json([
+            echo json_encode([
                 'msg' => '你今天已经打过卡了',
-                'errorCode' => 50000,
-                'request_url' => errorUrl()
-            ]);
+                'errorCode' => 0
+            ],JSON_UNESCAPED_UNICODE);
         }
 
         $lastLearnedData = LearnedHistory::UserLearned($uid);
@@ -138,11 +137,6 @@ class Settlement
         $userInfo = User::getUserInfo($uid);
         $LastGroupID= Group::userLastGroupID($userInfo);
 
-        if(empty($groupWord)){
-            throw new SuccessMessage([
-                'msg'=>'你太厉害了，所有阶段都已经通关了'
-            ]);
-        }
         //$nextSortID = $lastSortID+1;
         //先判断下一组还有没有单词
         //$res 下一组单词的id
@@ -161,12 +155,16 @@ class Settlement
             }
             //如果不为空，去找下一阶段的第一组id
             $nextStageFirstGroupID = Group::nextStageFirstGroupID($nextStageID);
+            if(empty($nextStageFirstGroupID)){
+                throw new SuccessMessage([
+                    'msg'=>'亲，暂你已经学完所有单词了，因为下一阶段，没有任何分组哦！'
+                ]);
+            }
             $wordDetail = $this->getWordDetail($nextStageFirstGroupID,$nextStageID);
-            return json($wordDetail);
+            return json($wordDetail);           //这个是return json  数据
         }
-
         $wordDetail = $this->getWordDetail($LastGroupID,$userInfo['now_stage']);
-        return json($wordDetail);
+        return json($wordDetail);               //这个是return json  数据
     }
 
     private function getWordDetail($LastGroupID,$nowStageID)

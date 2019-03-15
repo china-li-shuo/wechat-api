@@ -116,7 +116,6 @@ class UserToken extends Token
         //        $token = Request::instance()->token('token', 'md5');
         $openid = $wxResult['openid'];
         $user = User::getByOpenID($openid);
-
         if (!$user)
             // 借助微信的openid作为用户标识
             // 但在系统中的相关查询还是使用自己的uid

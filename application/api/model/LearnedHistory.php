@@ -266,7 +266,8 @@ class LearnedHistory extends Model
         foreach ($allUserData as $key=>$val){
 
             if(empty($val)){
-               unset($allUserData[$key]);
+                unset($allUserData[$key]);
+                continue;
             }
 
             $i = 0;

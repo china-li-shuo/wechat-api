@@ -28,7 +28,7 @@ class Top
         //当前页
         $page = empty(input('post.page'))?1:input('post.page');
         //每页显示条数
-        $pageSize = 5;
+        $pageSize = 10;
         //偏移量
         $limit = ($page-1)*$pageSize;
 
@@ -51,7 +51,12 @@ class Top
 
         }
         //这个查询分页数据
+        $arr = [];
         $new_arr['data'] = array_slice($new_arr['data'],$limit,$pageSize,true);
+        foreach ($new_arr['data'] as $key=>$val){
+            $arr[$key+1] = $val;
+        }
+        $new_arr['data']=&$arr;
         return json($new_arr);
     }
 
@@ -83,7 +88,7 @@ class Top
         $userList = $this->getHistoryUserList($classData);
         $page = empty(input('post.page'))?1:input('post.page');
         //每页显示条数
-        $pageSize = 5;
+        $pageSize = 10;
         $limit = ($page-1)*$pageSize;
         if(!$userList){
             return json([
@@ -104,7 +109,12 @@ class Top
 
         }
         //这个查询分页数据
+        $arr = [];
         $new_arr['data'] = array_slice($new_arr['data'],$limit,$pageSize,true);
+        foreach ($new_arr['data'] as $key=>$val){
+            $arr[$key+1] = $val;
+        }
+        $new_arr['data']=&$arr;
         return json($new_arr);
     }
 

@@ -193,11 +193,6 @@ class Learned
         $userInfo = User::getUserInfo($uid);
         $LastGroupID= Group::userLastGroupID($userInfo);
 
-        if(empty($groupWord)){
-            throw new SuccessMessage([
-                'msg'=>'你太厉害了，所有阶段都已经通关了'
-            ]);
-        }
         //$nextSortID = $lastSortID+1;
         //先判断下一组还有没有单词
         //$res 下一组单词的id
@@ -205,7 +200,7 @@ class Learned
         //$stage = Group::findStageID($res);
         if(empty($LastGroupID)){
             $prefix = config('secure.prefix');
-            $stage = Db::table($prefix.'stage')->where('id',$userInfo['now_stage'])->field('stage_desc')->find();
+            $stageDesc = Db::table($prefix.'stage')->where('id',$userInfo['now_stage'])->field('stage_desc')->find();
             //echo json_encode(['msg' => $stage['stage_desc'],'code'=>200,'msg2'=>'即将进入下一阶段进行学习'],JSON_UNESCAPED_UNICODE);
             //去找下一阶段,第一组单词
             $nextStageID = Stage::nextStageGroupInfo($userInfo);
@@ -216,11 +211,16 @@ class Learned
             }
             //如果不为空，去找下一阶段的第一组id
             $nextStageFirstGroupID = Group::nextStageFirstGroupID($nextStageID);
+            if(empty($nextStageFirstGroupID)){
+                throw new SuccessMessage([
+                    'msg'=>'亲，暂你已经学完所有单词了，因为下一阶段，没有任何分组哦！'
+                ]);
+            }
             $wordDetail = $this->getWordDetail($nextStageFirstGroupID,$nextStageID);
-            return $wordDetail;
+            return $wordDetail;      //这个是return array  数据
         }
         $wordDetail = $this->getWordDetail($LastGroupID,$userInfo['now_stage']);
-        return $wordDetail;
+        return $wordDetail;          //这个是return array  数据
     }
 
     private function getWordDetail($LastGroupID,$nowStageID)
