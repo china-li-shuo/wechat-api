@@ -70,7 +70,7 @@ class User extends Model
     {
         $data = User::get($uid)->toArray();
         if(empty($data['is_teacher'])){
-            $data['is_teacher'] = 'false';
+            $data['is_teacher'] = 0;
         }
        return $data;
     }

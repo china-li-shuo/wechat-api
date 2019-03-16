@@ -130,6 +130,20 @@ class Stage extends Model
         return false;
     }
 
+    /**
+     * 根据不是父级分类进行排序，获取第一阶段id
+     */
+    public static function FirstStageID()
+    {
+        $stageData = Db::table(self::PREFIX.'stage')->where('parent_id','<>',0)->order('sort')->field('id')->select();
+        if (!empty($stageData)){
+            return $stageData[0]['id'];
+        }
+
+        return false;
+    }
+
+
 //    /**
 //     * 根据已学单词数量获取目前阶段名称
 //     * @param $allLearnedNumber

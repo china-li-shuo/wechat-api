@@ -158,4 +158,15 @@ class Group extends Model
         $data =  Db::table(self::PREFIX.'group')->where('stage_id',$historyLearnedData['stage'])->where('id',$historyLearnedData['group'])->field('id,sort')->find();
         return $data['id'];
     }
+
+
+    public static function firstGroupID($stageID)
+    {
+        $data = Db::table(self::PREFIX.'group')->where('stage_id',$stageID)->order('sort')->field('id')->select();
+        if(empty($data)){
+            return false;
+        }
+
+        return $data[0]['id'];
+    }
 }

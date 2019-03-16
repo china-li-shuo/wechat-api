@@ -62,6 +62,11 @@ Route::post('api/:version/top/today', 'api/:version.Top/getTodayList');
 Route::post('api/:version/top/history', 'api/:version.Top/getHistoryList');
 
 
+//今日榜单
+Route::post('api/:version/teacher/status', 'api/:version.Teacher/getClassStatus');
+Route::post('api/:version/teacher/screen', 'api/:version.Teacher/getScreenInfo');
+
+
 
 
 

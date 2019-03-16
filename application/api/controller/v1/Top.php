@@ -9,7 +9,6 @@
 namespace app\api\controller\v1;
 
 use app\api\model\LearnedHistory;
-use app\api\model\User;
 use app\api\model\UserClass;
 use app\api\service\Token;
 use app\lib\exception\MissException;
@@ -22,6 +21,12 @@ class Top
         //根据id获取用户所属班级，并且获得此班级级所有学员，查看每个用户当天学习了多少单词，多少天进行排名
         $uid = Token::getCurrentTokenVar('uid');
         $classData = UserClass::getAllUserByUid($uid);
+        if(empty($classData)){
+            throw new MissException([
+                'msg' => '你暂时不是班级学员,请先加入学习再来哦！',
+                'errorCode' => 50000
+            ]);
+        }
         $userTodayLearnedNumber = LearnedHistory::getUserTodayLearnedNumber($classData);
         $userTodayLearnedNumber = LearnedHistory::LearnedDays($userTodayLearnedNumber);
         $userList = $this->getUserList($userTodayLearnedNumber);
@@ -66,9 +71,12 @@ class Top
      */
     private function getUserList($userTodayLearnedNumber)
     {
-
         foreach ($userTodayLearnedNumber as $key=>$val){
-            $user = User::where('id',$val['user_id'])->find()->toArray();
+            $user = Db::table('yx_user')->where('id',$val['user_id'])->find();
+            if(empty($user)){
+                unset($userTodayLearnedNumber[$key]);
+                continue;
+            }
             $userTodayLearnedNumber[$key]['user_name'] = &$user['user_name'];
             $userTodayLearnedNumber[$key]['nick_name'] = &$user['nick_name'];
             $userTodayLearnedNumber[$key]['avatar_url'] = &$user['avatar_url'];
@@ -83,6 +91,12 @@ class Top
     {
         $uid = Token::getCurrentTokenVar('uid');
         $classData = UserClass::getAllUserByUid($uid);
+        if(empty($classData)){
+            throw new MissException([
+                'msg' => '你暂时不是班级学员,请先加入学习再来哦！',
+                'errorCode' => 50000
+            ]);
+        }
         $allLearnedNumber = LearnedHistory::getUseLearnedNumber($classData);
         $classData = LearnedHistory::LearnedDays($allLearnedNumber);
         $userList = $this->getHistoryUserList($classData);
@@ -126,7 +140,11 @@ class Top
     {
 
         foreach ($userTodayLearnedNumber as $key=>$val){
-            $user = User::where('id',$val['user_id'])->find()->toArray();
+            $user = Db::table('yx_user')->where('id',$val['user_id'])->find();
+            if(empty($user)){
+                unset($userTodayLearnedNumber[$key]);
+                continue;
+            }
             $userTodayLearnedNumber[$key]['user_name'] = &$user['user_name'];
             $userTodayLearnedNumber[$key]['nick_name'] = &$user['nick_name'];
             $userTodayLearnedNumber[$key]['avatar_url'] = &$user['avatar_url'];

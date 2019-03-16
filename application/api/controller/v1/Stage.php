@@ -43,10 +43,25 @@ class Stage
         $stages = LearnedHistory::getWordNumberByStage($uid,$stages);
         $stages =createTreeBySon($stages);
         if(empty($stages)){
-            return json([
+            throw new MissException([
                 'msg' => '查询失败',
-                'errorCode' => 50000,
-                'request_url' => errorUrl()
+                'errorCode' => 50000
+            ]);
+        }
+        //根据前端需求，进行切割字符串
+        foreach ($stages as $key=>$val){
+            if(array_key_exists('son',$val)){
+               foreach ($val['son'] as $k=>$v){
+                  //$end = mb_strpos($v['stage_name'],'词');
+                  $stage_name = mb_substr($v['stage_name'],0,2);
+                  $stages[$key]['son'][$k]['stageName'] = $stage_name;
+               }
+            }
+        }
+        if(empty($stages)){
+            throw new MissException([
+                'msg' => '切割勋章字符串出错',
+                'errorCode' => 50000
             ]);
         }
         return json(['code'=>200,'msg'=>'查询成功','data'=>$stages]);
