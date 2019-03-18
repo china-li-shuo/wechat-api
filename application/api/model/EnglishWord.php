@@ -15,7 +15,6 @@ use think\Model;
 
 class EnglishWord extends Model
 {
-    const PREFIX = 'yx_question.yx_';
     protected $connection = [
         'type'            => 'mysql',
         // 服务器地址
@@ -60,9 +59,8 @@ class EnglishWord extends Model
 
     public static function notWordData($notLearnedData)
     {
-        $prefix = config('secure.prefix');
         foreach ($notLearnedData as $key=>$val){
-            $data = Db::table($prefix.'english_word')->where('id',$val['wid'])->find();
+            $data = Db::table(YX_QUESTION.'english_word')->where('id',$val['wid'])->find();
             $notLearnedData[$key]['is_collection'] = 2;
             $notLearnedData[$key]['son']=$data;
         }
@@ -136,8 +134,8 @@ class EnglishWord extends Model
     {
 
         foreach ($groupWord as $key=>$val){
-            $data = Db::table(self::PREFIX.'english_word')->where('id',$val['wid'])->find();
-            $stage = Db::table(self::PREFIX.'group')->where('id',$val['group'])->field('stage_id')->find();
+            $data = Db::table(YX_QUESTION.'english_word')->where('id',$val['wid'])->find();
+            $stage = Db::table(YX_QUESTION.'group')->where('id',$val['group'])->field('stage_id')->find();
             $groupWord[$key]['stage'] = $stage['stage_id'];
             if($val['wid'] == $data['id']){
                 $groupWord[$key]['is_collection'] = 2;
@@ -167,7 +165,7 @@ class EnglishWord extends Model
     public static function selectWordDetail($result)
     {
         foreach ($result as $key=>$val){
-            $data = Db::table(self::PREFIX.'english_word')->where('id',$val['word_id'])->find();
+            $data = Db::table(YX_QUESTION.'english_word')->where('id',$val['word_id'])->find();
             if($val['word_id'] == $data['id']){
             $result[$key]['son'] = $data;
            }

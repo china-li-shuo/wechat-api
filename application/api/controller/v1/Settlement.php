@@ -143,8 +143,7 @@ class Settlement
         //$res = Group::findLastGroupID(['stage'=>$userInfo['now_stage'],'sort'=>$nextSortID]);
         //$stage = Group::findStageID($res);
         if(empty($LastGroupID)){
-            $prefix = config('secure.prefix');
-            $stage = Db::table($prefix.'stage')->where('id',$userInfo['now_stage'])->field('stage_desc')->find();
+            $stage = Db::table(YX_QUESTION.'stage')->where('id',$userInfo['now_stage'])->field('stage_desc')->find();
             //echo json_encode(['msg' => $stage['stage_desc'],'code'=>200,'msg2'=>'即将进入下一阶段进行学习'],JSON_UNESCAPED_UNICODE);
             //去找下一阶段,第一组单词
             $nextStageID = Stage::nextStageGroupInfo($userInfo);

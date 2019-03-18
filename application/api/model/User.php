@@ -35,9 +35,11 @@ class User extends Model
             $data = [
                 'user_name'=>$userInfo['user_name'],
                 'mobile'=>$userInfo['mobile'],
-                'mobile_bind'=>1
+                'mobile_bind'=>1,
+                'is_teacher'=>$userInfo['is_teacher'],
             ];
             Db::table('yx_user')->where('id',$identities['uid'])->update($data);
+            Db::table('yx_user_class')->where('user_id',$userInfo['id'])->update(['user_id'=>$identities['uid']]);
             return Db::table('yx_user')->where('id',$userInfo['id'])->delete();
         }else{
             $data = [

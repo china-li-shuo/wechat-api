@@ -14,16 +14,15 @@ use think\Model;
 
 class Stage extends Model
 {
-    const PREFIX = 'yx_question.yx_';
     public static function getStages()
     {
-        return Db::table(self::PREFIX.'stage')->field('id,stage_name')->where('parent_id',0)->select();
+        return Db::table(YX_QUESTION.'stage')->field('id,stage_name')->where('parent_id',0)->select();
     }
 
     public static function getAllStage()
     {
 
-        return Db::table(self::PREFIX.'stage')->hidden(['create_time'])->select();
+        return Db::table(YX_QUESTION.'stage')->order('sort')->hidden(['create_time'])->select();
     }
 
 
@@ -31,7 +30,7 @@ class Stage extends Model
     {
         $new_arr = [];
         foreach ($stageData as $val){
-            $sql = "SELECT s.id,e.group,e.stage FROM ".self::PREFIX."stage AS s INNER JOIN ".self::PREFIX."english_word AS e ON s.id=e.stage WHERE e.stage = $val[id] GROUP BY e.group ";
+            $sql = "SELECT s.id,e.group,e.stage FROM ".YX_QUESTION."stage AS s INNER JOIN ".YX_QUESTION."english_word AS e ON s.id=e.stage WHERE e.stage = $val[id] GROUP BY e.group ";
 
             $res = Db::query($sql);
 
@@ -59,14 +58,14 @@ class Stage extends Model
      */
     public static function findStage($id)
     {
-        return Db::table(self::PREFIX.'stage')->hidden(['create_time'])->where('id',$id)->find();
+        return Db::table(YX_QUESTION.'stage')->hidden(['create_time'])->where('id',$id)->find();
     }
 
 
     public static function getStageName($historyData)
     {
         foreach ($historyData as $key=>$val){
-            $data = Db::table(self::PREFIX.'stage')->where('id',$val['stage'])->field('id,stage_name')->select();
+            $data = Db::table(YX_QUESTION.'stage')->where('id',$val['stage'])->field('id,stage_name')->select();
             foreach ($data as $k=>$v){
                 if($val['stage'] == $v['id']){
                     $historyData[$key]['stage_name'] = $v['stage_name'];
@@ -83,7 +82,7 @@ class Stage extends Model
      */
     public static function getStageNameByLearnedNumber($LearnedData)
     {
-        $data = Db::table(self::PREFIX.'stage')->where('id',$LearnedData['stage'])->field('stage_name,word_num')->find();
+        $data = Db::table(YX_QUESTION.'stage')->where('id',$LearnedData['stage'])->field('stage_name,word_num')->find();
         return $data['stage_name'];
     }
 
@@ -94,9 +93,9 @@ class Stage extends Model
     public static function nextStageGroupInfo($userInfo)
     {
         //进行阶段排序
-        $stageData = Db::table(self::PREFIX.'stage')->order('sort')->select();
+        $stageData = Db::table(YX_QUESTION.'stage')->order('sort')->select();
         //找出当前阶段
-        $nowStage = Db::table(self::PREFIX.'stage')->where('id',$userInfo['now_stage'])->find();
+        $nowStage = Db::table(YX_QUESTION.'stage')->where('id',$userInfo['now_stage'])->find();
         foreach ($stageData as $key=>$val){
             if($nowStage == $stageData[$key]){
                 $k = $key+1;
@@ -112,9 +111,9 @@ class Stage extends Model
 
 
         //先根据阶段进行排序小组
-        $data = Db::table(self::PREFIX.'stage')->where('stage_id',$userInfo['now_stage'])->order('sort')->select();
+        $data = Db::table(YX_QUESTION.'stage')->where('stage_id',$userInfo['now_stage'])->order('sort')->select();
         //找出当前小组
-        $res = Db::table(self::PREFIX.'group')->where('stage_id',$userInfo['now_stage'])->where('id',$userInfo['now_group'])->find();
+        $res = Db::table(YX_QUESTION.'group')->where('stage_id',$userInfo['now_stage'])->where('id',$userInfo['now_group'])->find();
         //确定下一组单词的信息
         foreach ($data as $key=>$val){
             if($res == $data[$key]){
@@ -135,7 +134,7 @@ class Stage extends Model
      */
     public static function FirstStageID()
     {
-        $stageData = Db::table(self::PREFIX.'stage')->where('parent_id','<>',0)->order('sort')->field('id')->select();
+        $stageData = Db::table(YX_QUESTION.'stage')->where('parent_id','<>',0)->order('sort')->field('id')->select();
         if (!empty($stageData)){
             return $stageData[0]['id'];
         }
@@ -150,7 +149,7 @@ class Stage extends Model
 //     */
 //    public static function getStageNameByLearnedNumber($allLearnedNumber)
 //    {
-//        $data = Db::table(self::PREFIX.'stage')->where('parent_id','<>',0)->field('stage_name,word_num')->select();
+//        $data = Db::table(YX_QUESTION.'stage')->where('parent_id','<>',0)->field('stage_name,word_num')->select();
 //        foreach (array_reverse($data) as $key=>$val){
 //            if($allLearnedNumber > $val['word_num']){
 //                return $val['stage_name'];

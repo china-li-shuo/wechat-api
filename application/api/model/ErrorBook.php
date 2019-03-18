@@ -55,9 +55,8 @@ class ErrorBook
     public static function errorInfo($uid)
     {
         $data = Db::table('yx_error_book')->where('user_id',$uid)->group('stage')->field('stage')->select();
-        $prefix = config('secure.prefix');
         foreach ($data as $key=>$val){
-            $stage = Db::table($prefix.'stage')->where('id',$val['stage'])->field('stage_name')->find();
+            $stage = Db::table(YX_QUESTION.'stage')->where('id',$val['stage'])->field('stage_name')->find();
             $data[$key]['stage_name'] = &$stage['stage_name'];
         }
         //print_r($data);
@@ -66,7 +65,7 @@ class ErrorBook
             $group = Db::table('yx_error_book')->where('user_id',$uid)->where('stage',$v['stage'])->group('group')->field('group,stage')->select();
             $data[$k]['group'] = $group;
             foreach ($group as $i=>$j){
-                $group_name = Db::table($prefix.'group')->where('id',$j['group'])->field('group_name')->find();
+                $group_name = Db::table(YX_QUESTION.'group')->where('id',$j['group'])->field('group_name')->find();
                 $data[$k]['group'][$i]['group_name'] = $group_name['group_name'];
             }
         }

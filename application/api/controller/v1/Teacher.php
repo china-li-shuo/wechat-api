@@ -78,11 +78,10 @@ class Teacher
      */
     public function getScreenInfo()
     {
-        $prefix = config('secure.prefix');
-        $stageData = Db::table($prefix.'stage')->where('parent_id','<>',0)->order('sort')->field('id,stage_name')->select();
+        $stageData = Db::table(YX_QUESTION.'stage')->where('parent_id','<>',0)->order('sort')->field('id,stage_name')->select();
 
         foreach ($stageData as $key=>$val){
-            $groupData = Db::table($prefix.'group')->where('stage_id',$val['id'])->field('id,group_name')->select();
+            $groupData = Db::table(YX_QUESTION.'group')->where('stage_id',$val['id'])->field('id,group_name')->select();
             if (empty($groupData)){
                 unset($stageData[$key]);
                 continue;

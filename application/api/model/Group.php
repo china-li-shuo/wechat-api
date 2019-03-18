@@ -14,7 +14,6 @@ use think\Model;
 
 class Group extends Model
 {
-    const PREFIX = 'yx_question.yx_';
 
     /**
      * 获取用户所有分组的名称
@@ -24,7 +23,7 @@ class Group extends Model
     public static function getGroupName($historyData)
     {
         foreach ($historyData as $key=>$val){
-            $data = Db::table(self::PREFIX.'group')->where('id',$val['group'])->field('id,group_name')->select();
+            $data = Db::table(YX_QUESTION.'group')->where('id',$val['group'])->field('id,group_name')->select();
             foreach ($data as $k=>$v){
                 if($val['group'] == $v['id']){
                     $historyData[$key]['group_name'] = $v['group_name'];
@@ -42,14 +41,14 @@ class Group extends Model
      */
     public static function findGroupName($id)
     {
-       $groupData =  Db::table(self::PREFIX.'group')->where('id',$id)->find();
+       $groupData =  Db::table(YX_QUESTION.'group')->where('id',$id)->find();
        return $groupData['group_name'];
     }
 
     public static function getGroupData($lastWord)
     {
         //返回用户这组下还未学习的单词 = 这组下所有的单词-用户这组下所有学过的单词
-        $allData =  Db::table(self::PREFIX.'group_word')->where('group',$lastWord['group'])->select();
+        $allData =  Db::table(YX_QUESTION.'group_word')->where('group',$lastWord['group'])->select();
 
         $learnedData = Db::table('yx_learned_history')->where('user_id',$lastWord['user_id'])->where('group',$lastWord['group'])->field('group,word_id')->select();
 
@@ -66,14 +65,13 @@ class Group extends Model
 
     public static function getAllData($lastWord)
     {
-
-        return Db::table(self::PREFIX.'group_word')->where('group',$lastWord['group'])->select();
+        return Db::table(YX_QUESTION.'group_word')->where('group',$lastWord['group'])->select();
 
     }
     public static function correspondingStage($notLearnedData)
     {
         foreach ($notLearnedData as $key=>$val){
-            $data = Db::table(self::PREFIX.'group')->where('id',$val['group'])->find();
+            $data = Db::table(YX_QUESTION.'group')->where('id',$val['group'])->find();
             $notLearnedData[$key]['stage'] = $data['stage_id'];
 
         }
@@ -87,7 +85,7 @@ class Group extends Model
      */
     public static function getEachStageGroupData($id)
     {
-        return Db::table(self::PREFIX.'group')->where('stage_id',$id)->field('id,group_name,word_num')->select();
+        return Db::table(YX_QUESTION.'group')->where('stage_id',$id)->order('sort')->field('id,group_name,word_num')->select();
     }
 
     /**
@@ -98,13 +96,13 @@ class Group extends Model
     public static function findLastGroupID($historyLearnedData)
     {
 
-        $data =  Db::table(self::PREFIX.'group')->where('stage_id',$historyLearnedData['stage'])->where('sort',$historyLearnedData['sort'])->field('id,sort,stage_id')->find();
+        $data =  Db::table(YX_QUESTION.'group')->where('stage_id',$historyLearnedData['stage'])->where('sort',$historyLearnedData['sort'])->field('id,sort,stage_id')->find();
         return $data['id'];
     }
 
     public static function findStageID($groupID)
     {
-        $data =  Db::table(self::PREFIX.'group')->where('id',$groupID)->field('stage_id')->find();
+        $data =  Db::table(YX_QUESTION.'group')->where('id',$groupID)->field('stage_id')->find();
         return $data['stage_id'];
     }
     /**
@@ -115,9 +113,9 @@ class Group extends Model
     public static function userLastGroupID($userInfo)
     {
         //先根据阶段进行排序小组
-        $data = Db::table(self::PREFIX.'group')->where('stage_id',$userInfo['now_stage'])->order('sort')->select();
+        $data = Db::table(YX_QUESTION.'group')->where('stage_id',$userInfo['now_stage'])->order('sort')->select();
         //找出当前小组
-        $res = Db::table(self::PREFIX.'group')->where('stage_id',$userInfo['now_stage'])->where('id',$userInfo['now_group'])->find();
+        $res = Db::table(YX_QUESTION.'group')->where('stage_id',$userInfo['now_stage'])->where('id',$userInfo['now_group'])->find();
         //确定下一组单词的信息
         foreach ($data as $key=>$val){
             if($res == $data[$key]){
@@ -138,7 +136,7 @@ class Group extends Model
     public static function nextStageFirstGroupID($nextStageID)
     {
         //先根据阶段进行排序小组
-        $data = Db::table(self::PREFIX.'group')->where('stage_id',$nextStageID)->order('sort')->select();
+        $data = Db::table(YX_QUESTION.'group')->where('stage_id',$nextStageID)->order('sort')->select();
         //如果下一组单词信息非空，返回组id
         if(!empty($data)){
             return $data[0]['id'];
@@ -155,14 +153,14 @@ class Group extends Model
     public static function userLastSortID($historyLearnedData)
     {
 
-        $data =  Db::table(self::PREFIX.'group')->where('stage_id',$historyLearnedData['stage'])->where('id',$historyLearnedData['group'])->field('id,sort')->find();
+        $data =  Db::table(YX_QUESTION.'group')->where('stage_id',$historyLearnedData['stage'])->where('id',$historyLearnedData['group'])->field('id,sort')->find();
         return $data['id'];
     }
 
 
     public static function firstGroupID($stageID)
     {
-        $data = Db::table(self::PREFIX.'group')->where('stage_id',$stageID)->order('sort')->field('id')->select();
+        $data = Db::table(YX_QUESTION.'group')->where('stage_id',$stageID)->order('sort')->field('id')->select();
         if(empty($data)){
             return false;
         }

@@ -169,16 +169,15 @@ class Activity
 
     private function getStageGroup($uid,$stageID)
     {
-        $prefix = config('secure.prefix');
         //获取阶段名称
-        $stage = Db::table($prefix.'stage')->where('id',$stageID)->field('stage_name')->find();
+        $stage = Db::table(YX_QUESTION.'stage')->where('id',$stageID)->field('stage_name')->find();
         $data = Db::table('yx_learned_history')->where('user_id',$uid)->where('stage',$stageID)->group('group')->field('id,stage,group')->select();
         foreach ($data as $key=>$val){
             $data[$key]['stage_name'] = &$stage['stage_name'];
         }
         //获取每组的名称
         foreach ($data as $k=>$v){
-            $group = Db::table($prefix.'group')->where('id',$v['group'])->field('group_name')->find();
+            $group = Db::table(YX_QUESTION.'group')->where('id',$v['group'])->field('group_name')->find();
             $lastLearnedTime = Db::table('yx_learned_history')->where('user_id',$uid)->where('stage',$stageID)->where('group',$v['group'])->order('create_time DESC')->field('group,create_time')->find();
             $data[$k]['group_name'] = &$group['group_name'];
             $data[$k]['last_learned_time'] = date('Y-m-d',$lastLearnedTime['create_time']);
@@ -205,16 +204,15 @@ class Activity
 
     private function collectStageGroup($uid,$stageID)
     {
-        $prefix = config('secure.prefix');
         //获取阶段名称
-        $stage = Db::table($prefix.'stage')->where('id',$stageID)->field('stage_name')->find();
+        $stage = Db::table(YX_QUESTION.'stage')->where('id',$stageID)->field('stage_name')->find();
         $data = Db::table('yx_collection')->where('user_id',$uid)->where('stage',$stageID)->group('group')->field('id,stage,group')->select();
         foreach ($data as $key=>$val){
             $data[$key]['stage_name'] = &$stage['stage_name'];
         }
         //获取每组的名称
         foreach ($data as $k=>$v){
-            $group = Db::table($prefix.'group')->where('id',$v['group'])->field('group_name')->find();
+            $group = Db::table(YX_QUESTION.'group')->where('id',$v['group'])->field('group_name')->find();
             $lastLearnedTime = Db::table('yx_collection')->where('user_id',$uid)->where('stage',$stageID)->where('group',$v['group'])->order('create_time DESC')->field('group,create_time')->find();
             $data[$k]['group_name'] = &$group['group_name'];
             $data[$k]['last_learned_time'] = date('Y-m-d',$lastLearnedTime['create_time']);
@@ -241,16 +239,15 @@ class Activity
 
     private function errorStageGroup($uid,$stageID)
     {
-        $prefix = config('secure.prefix');
         //获取阶段名称
-        $stage = Db::table($prefix.'stage')->where('id',$stageID)->field('stage_name')->find();
+        $stage = Db::table(YX_QUESTION.'stage')->where('id',$stageID)->field('stage_name')->find();
         $data = Db::table('yx_error_book')->where('user_id',$uid)->where('stage',$stageID)->group('group')->field('id,stage,group')->select();
         foreach ($data as $key=>$val){
             $data[$key]['stage_name'] = &$stage['stage_name'];
         }
         //获取每组的名称
         foreach ($data as $k=>$v){
-            $group = Db::table($prefix.'group')->where('id',$v['group'])->field('group_name')->find();
+            $group = Db::table(YX_QUESTION.'group')->where('id',$v['group'])->field('group_name')->find();
             $lastLearnedTime = Db::table('yx_error_book')->where('user_id',$uid)->where('stage',$stageID)->where('group',$v['group'])->order('create_time DESC')->field('group,create_time')->find();
             $data[$k]['group_name'] = &$group['group_name'];
             $data[$k]['last_learned_time'] = date('Y-m-d',$lastLearnedTime['create_time']);

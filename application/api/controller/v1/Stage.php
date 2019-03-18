@@ -18,7 +18,6 @@ use think\Db;
 
 class Stage
 {
-    const PREFIX = 'yx_question.yx_';
     public function getStages()
     {
         Token::getCurrentTokenVar('uid');
@@ -127,11 +126,10 @@ class Stage
 
     public static function nextStageGroupInfo($userInfo)
     {
-
         //先根据阶段进行排序小组
-        $data = Db::table(self::PREFIX.'stage')->order('sort')->select();
+        $data = Db::table(YX_QUESTION.'stage')->order('sort')->select();
         //找出当前小组
-        $res = Db::table(self::PREFIX.'stage')->where('id',$userInfo['now_stage'])->find();
+        $res = Db::table(YX_QUESTION.'stage')->where('id',$userInfo['now_stage'])->find();
         //确定下一组单词的信息
         foreach ($data as $key=>$val){
             if($res == $data[$key]){

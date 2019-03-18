@@ -13,11 +13,10 @@ use think\Db;
 
 class GroupWord
 {
-    const PREFIX = 'yx_question.yx_';
 
     public static function findFirst()
     {
-        return Db::table(self::PREFIX.'group_word')->where('group',1)->select();
+        return Db::table(YX_QUESTION.'group_word')->where('group',1)->select();
     }
 
     /**
@@ -26,6 +25,6 @@ class GroupWord
      */
     public static function selectGroupWord($id)
     {
-        return Db::table(self::PREFIX.'group_word')->where('group',$id)->select();
+        return Db::table(YX_QUESTION.'group_word')->where('group',$id)->select();
     }
 }
