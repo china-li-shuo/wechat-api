@@ -30,12 +30,6 @@ class Top
         $userTodayLearnedNumber = LearnedHistory::getUserTodayLearnedNumber($classData);
         $userTodayLearnedNumber = LearnedHistory::LearnedDays($userTodayLearnedNumber);
         $userList = $this->getUserList($userTodayLearnedNumber);
-        //当前页
-        $page = empty(input('post.page'))?1:input('post.page');
-        //每页显示条数
-        $pageSize = 10;
-        //偏移量
-        $limit = ($page-1)*$pageSize;
 
         if(!$userList){
             return json([
@@ -55,13 +49,17 @@ class Top
             }
 
         }
-        //这个查询分页数据
-        $arr = [];
-        $new_arr['data'] = array_slice($new_arr['data'],$limit,$pageSize,true);
-        foreach ($new_arr['data'] as $key=>$val){
-            $arr[$key+1] = $val;
+
+        $new_arr['data'] = array_values($new_arr['data']);
+
+        if(!$new_arr){
+          throw new MissException([
+              'msg'=>'请求超时,程序员小哥正在努力修复',
+              'errorCode'=>5000
+          ]);
         }
-        $new_arr['data']=&$arr;
+
+
         return json($new_arr);
     }
 
@@ -100,10 +98,6 @@ class Top
         $allLearnedNumber = LearnedHistory::getUseLearnedNumber($classData);
         $classData = LearnedHistory::LearnedDays($allLearnedNumber);
         $userList = $this->getHistoryUserList($classData);
-        $page = empty(input('post.page'))?1:input('post.page');
-        //每页显示条数
-        $pageSize = 10;
-        $limit = ($page-1)*$pageSize;
         if(!$userList){
             return json([
                 'msg' => '今日榜单信息查询失败',
@@ -122,13 +116,14 @@ class Top
             }
 
         }
-        //这个查询分页数据
-        $arr = [];
-        $new_arr['data'] = array_slice($new_arr['data'],$limit,$pageSize,true);
-        foreach ($new_arr['data'] as $key=>$val){
-            $arr[$key+1] = $val;
+        $new_arr['data'] = array_values($new_arr['data']);
+
+        if(!$new_arr){
+            throw new MissException([
+                'msg'=>'请求超时,程序员小哥正在努力修复',
+                'errorCode'=>5000
+            ]);
         }
-        $new_arr['data']=&$arr;
         return json($new_arr);
     }
 
@@ -153,4 +148,27 @@ class Top
         return $userTodayLearnedNumber;
     }
 
+    /**
+     * 这个查询分页数据
+     * @param $new_arr
+     * @param $limit
+     * @param $pageSize
+     */
+    private function limitPage()
+    {
+        $new_arr = [];
+        //当前页
+        $page = empty(input('post.page'))?1:input('post.page');
+        //每页显示条数
+        $pageSize = 10;
+        //偏移量
+        $limit = ($page-1)*$pageSize;
+
+        $arr = [];
+        $new_arr['data'] = array_slice(array_values($new_arr['data']),$limit,$pageSize,true);
+        foreach ($new_arr['data'] as $key=>$val){
+            $arr[$key+1] = $val;
+        }
+        $new_arr['data']=&$arr;
+    }
 }
