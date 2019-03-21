@@ -8,18 +8,36 @@ use think\Controller;
 
 class BaseController extends Controller
 {
+    /**
+     * 互联网用户专有权限
+     */
     protected function checkExclusiveScope()
     {
         Token::needExclusiveScope();
     }
 
+    /**
+     * 学员以上的权限
+     */
     protected function checkPrimaryScope()
     {
         Token::needPrimaryScope();
     }
 
+    /**
+     * 只有老师才能访问的权限
+     */
     protected function checkSuperScope()
     {
         Token::needSuperScope();
     }
+
+    /**
+     * 所有人都拥有的权限
+     */
+    protected function checkAllPeopleScope()
+    {
+        Token::allPeopleScope();
+    }
+
 }

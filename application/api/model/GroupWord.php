@@ -14,9 +14,9 @@ use think\Db;
 class GroupWord
 {
 
-    public static function findFirst()
+    public static function findFirst($group)
     {
-        return Db::table(YX_QUESTION.'group_word')->where('group',1)->select();
+        return Db::table(YX_QUESTION.'group_word')->where('group',$group)->select();
     }
 
     /**

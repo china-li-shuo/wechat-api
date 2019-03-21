@@ -8,6 +8,7 @@
 
 namespace app\api\controller\v1;
 
+use app\api\controller\BaseController;
 use app\api\model\EnglishWord;
 use app\api\model\ErrorBook;
 use app\api\model\Group;
@@ -20,10 +21,15 @@ use app\api\validate\Collection;
 use app\api\validate\LearnedHistory;
 use app\lib\exception\MissException;
 use app\lib\exception\SuccessMessage;
+use app\api\model\Stage;
 use think\Db;
 
-class Learned
+class Learned extends BaseController
 {
+    protected $beforeActionList = [
+        'checkPrimaryScope' => ['only' => 'getList,collection']
+    ];
+
     public function getList()
     {
         //先根据token获取用户的uid
@@ -31,9 +37,17 @@ class Learned
         $uid = Token::getCurrentTokenVar('uid');
         $LearnedData = LearnedHistoryModel::UserLearned($uid);
 
-        //如果用户没有学习记录，直接查询第一组单词
+        //如果用户没有学习记录，直接查询第一阶段下，第一组单词
         if(empty($LearnedData)){
-            $notLearnedData = GroupWord::findFirst();
+            $stage = Stage::FirstStageID();
+            $group = Group::firstGroupID($stage);
+            $notLearnedData = GroupWord::findFirst($group);
+            if(empty($notLearnedData)){
+                throw new MissException([
+                    'msg'=>'本组单词为空，请联系管理员进行添加',
+                    'errorCode'=>50000
+                ]);
+            }
             $notLearnedData = Group::correspondingStage($notLearnedData);
             $notWordData = EnglishWord::notWordData($notLearnedData);
             $notWordData = CollectionModel::isCollection($uid,$notWordData);
@@ -63,10 +77,9 @@ class Learned
         $notWordData = CollectionModel::isCollection($uid,$notWordData);
 
         if(empty($notWordData)){
-            return json([
+            throw new MissException([
                 'msg' => '没有查到此分组下单词详情',
-                'errorCode' => 50000,
-                'request_url' => errorUrl()
+                'errorCode' => 50000
             ]);
         }
 
@@ -101,14 +114,12 @@ class Learned
         }
 
         //$this->addUserLearnedData($uid,$data);
-
         $res = LearnedHistoryModel::addUserHistory($uid,$data,$answerResult);
 
         if(!$res){
-            return json([
+            throw new MissException([
                 'msg' => '用户答题记录失败',
-                'errorCode' => 50000,
-                'request_url' => errorUrl()
+                'errorCode' => 50000
             ]);
         }
         //判断是此用户是否学完此阶段，获得此勋章
@@ -142,10 +153,9 @@ class Learned
         if($data['is_collection'] == 2){
             $res = CollectionModel::deleteCollection($uid,$data);
             if(!$res){
-                return json([
+                throw new MissException([
                     'msg' => '你已经取消收藏该单词了呀',
-                    'errorCode' => 50000,
-                    'request_url' => errorUrl()
+                    'errorCode' => 50000
                 ]);
             }
             return json(['msg'=>'取消收藏成功','code'=>200]);
@@ -154,10 +164,9 @@ class Learned
         $res = CollectionModel::addCollection($uid,$data);
 
         if(!$res){
-            return json([
+            throw new MissException([
                 'msg' => '你已经收藏过该单词了呀',
-                'errorCode' => 50000,
-                'request_url' => errorUrl()
+                'errorCode' => 50000
             ]);
         }
         return json(['msg'=>'收藏成功','code'=>200]);
@@ -206,14 +215,16 @@ class Learned
             $nextStageID = Stage::nextStageGroupInfo($userInfo);
             if(empty($nextStageID)){
                 throw new SuccessMessage([
-                    'msg'=>'你太厉害了，所有阶段都已经通关了'
+                    'msg'=>'你太厉害了，所有阶段都已经通关了',
+                    'errorCode'=>50000
                 ]);
             }
             //如果不为空，去找下一阶段的第一组id
             $nextStageFirstGroupID = Group::nextStageFirstGroupID($nextStageID);
             if(empty($nextStageFirstGroupID)){
                 throw new SuccessMessage([
-                    'msg'=>'亲，暂你已经学完所有单词了，因为下一阶段，没有任何分组哦！'
+                    'msg'=>'亲，暂你已经学完所有单词了，因为下一阶段，没有任何分组哦！',
+                    'errorCode'=>50000
                 ]);
             }
             $wordDetail = $this->getWordDetail($nextStageFirstGroupID,$nextStageID);

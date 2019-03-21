@@ -10,6 +10,7 @@ namespace app\api\controller\v1;
 
 use app\api\model\User;
 use app\api\validate\MobileRule;
+use app\lib\exception\MissException;
 use app\lib\exception\ParameterException;
 use app\lib\exception\SmsException;
 use app\lib\exception\TokenException;
@@ -30,10 +31,9 @@ class Sms
     public function sendSms($mobile = '')
     {
         if(!$mobile){
-            return json([
+            throw new MissException([
                 'msg' => 'mobie不允许为空',
-                'errorCode' => 60000,
-                'request_url' => errorUrl()
+                'errorCode' => 60000
             ]);
         }
 
@@ -53,8 +53,8 @@ class Sms
                 "10"
             ];
 
-            $sign = "研线课堂";
-            $res = $new_sms->sendWithParam(86, $mobile, config('sms.tpl_id'), $params,$sign = "", $extend = "", $ext = "",$vcode);
+            $sign = "社科赛斯";
+            $res = $new_sms->sendWithParam(86, $mobile, config('sms.tpl_id'), $params,$sign, $extend = "", $ext = "",$vcode);
             echo $res;
         }else{
             return json_encode(array('sta'=>1001,'message'=>"该手机号已验证过"),JSON_UNESCAPED_UNICODE);
@@ -70,41 +70,31 @@ class Sms
     public function bindMobile($mobile = '', $code = '')
     {
         if(!$mobile || !$code){
-            return json([
+            throw new MissException([
                 'msg' => '你输入的参数缺失',
-                'errorCode' => 60000,
-                'request_url' => errorUrl()
+                'errorCode' => 60000
             ]);
         }
         $res = $this->checkRegSms($mobile,$code);
 
         if(!$res){
-            return json([
-                'msg' => '你输入的短信验证码不正确',
-                'errorCode' => 60000,
-                'request_url' => errorUrl()
-            ]);
+            throw new SmsException();
         }
         //获取token令牌信息，与手机号进行绑定
         $token = Request::instance()
             ->header('token');
 
         if(!$token){
-            return json([
+            throw new MissException([
                 'msg' => '你输入的token参数缺失',
-                'errorCode' => 60000,
-                'request_url' => errorUrl()
+                'errorCode' => 60000
             ]);
         }
 
         $identities = Cache::get($token);
 
         if(!$identities){
-              return json([
-                  'msg' => 'Token已过期或无效Token',
-                  'errorCode' => 60000,
-                  'request_url' => errorUrl()
-              ]);
+              throw new TokenException();
         };
         $identities = json_decode($identities,true);
 

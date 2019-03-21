@@ -86,6 +86,7 @@ class UserToken extends Token
     private function saveToCache($wxResult)
     {
         $key = self::generateToken();
+        $wxResult['create_time']=time();
         $value = json_encode($wxResult);
         $expire_in = config('setting.token_expire_in');
         $result = cache($key, $value, $expire_in);

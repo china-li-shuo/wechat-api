@@ -15,8 +15,11 @@ use app\api\model\Stage;
 use app\api\model\UserClass;
 use app\api\model\Share;
 use app\api\service\Token;
+use app\lib\enum\ScopeEnum;
 use app\lib\exception\MissException;
 use app\lib\exception\UserClassException;
+use think\facade\Request;
+
 class Index
 {
     public function getUserInfo()
@@ -31,6 +34,14 @@ class Index
 
         $calendar = LearnedHistory::calendarDays($uid);
         $UserInfo = User::getUserInfo($uid);
+        //根据互联网用户和班级学员老师赋值不同的权限
+        $res = $this->ScopeEnum($UserInfo);
+        if(!$res){
+            throw new MissException([
+                'msg'=>'此用户赋值权限出错',
+                'errorCode'=>50000
+            ]);
+        }
         $className = UserClass::getClassName($classInfo);
         $punchDays = Share::getPunchDays($uid);
         $todayLearnedNumber = LearnedHistory::getTodayLearnedNumber($uid);
@@ -60,5 +71,38 @@ class Index
             ]);
         }
         return json($data);
+    }
+
+    /**
+     * 赋值对应的权限
+     * @param $UserInfo
+     */
+    private function ScopeEnum($UserInfo)
+    {
+
+        $request = Request::instance();
+        $token = $request->header('token');
+        $data = cache($token);
+        $data = json_decode($data,true);
+        $create_time = time()-$data['create_time'];
+        $expire_in = config('setting.token_expire_in');
+        $expire_in = $expire_in-$create_time;
+        switch ($UserInfo['is_teacher'])
+        {
+            case 0:
+                $data['scope'] = ScopeEnum::User;
+                cache($token,json_encode($data),$expire_in);
+                return true;
+            case 1:
+                $data['scope'] = ScopeEnum::Student;
+                cache($token,json_encode($data),$expire_in);
+            return true;
+            case 2:
+                $data['scope'] = ScopeEnum::Teacher;
+                cache($token,json_encode($data),$expire_in);
+                return true;
+            default:
+                return false;
+        }
     }
 }

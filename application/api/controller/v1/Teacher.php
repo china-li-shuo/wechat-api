@@ -7,6 +7,7 @@
  */
 
 namespace app\api\controller\v1;
+use app\api\controller\BaseController;
 use app\api\model\Group;
 use app\api\model\LearnedHistory;
 use app\api\model\UserClass;
@@ -15,8 +16,12 @@ use app\api\model\Stage;
 use app\lib\exception\MissException;
 use think\Db;
 
-class Teacher
+class Teacher extends BaseController
 {
+    protected $beforeActionList = [
+        'checkSuperScope' => ['only' => 'getClassStatus']
+    ];
+
     public function getClassStatus()
     {
         //根据token获取老师所在班级的名称，班级人数，今日学习人数？

@@ -49,7 +49,7 @@ class ExceptionHandler extends Handle
             'request_url' => $request = $request->url()
         ];
 
-         return json($result,201); //http 状态码返回 200
+         return json($result,$this->code); //http 状态码返回 200
          //return json($result,$this->code);  //自定义http状态码，跨域会报错
          //return jsonp($result);  //自定义http状态码，跨域会报错
          //echo json($result,$this->code)->getcontent();die;

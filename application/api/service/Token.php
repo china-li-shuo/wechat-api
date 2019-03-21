@@ -32,7 +32,7 @@ class Token
     {
         $scope = self::getCurrentTokenVar('scope');
         if ($scope) {
-            if ($scope >= ScopeEnum::User) {
+            if ($scope >= ScopeEnum::Student) {
                 return true;
             }
             else{
@@ -58,11 +58,25 @@ class Token
         }
     }
 
+    public static function allPeopleScope()
+    {
+        $scope = self::getCurrentTokenVar('scope');
+        if ($scope){
+            if ($scope >= ScopeEnum::User) {
+                return true;
+            } else {
+                throw new ForbiddenException();
+            }
+        } else {
+            throw new TokenException();
+        }
+    }
+
     public static function needSuperScope()
     {
         $scope = self::getCurrentTokenVar('scope');
         if ($scope){
-            if ($scope == ScopeEnum::Super) {
+            if ($scope == ScopeEnum::Teacher) {
                 return true;
             } else {
                 throw new ForbiddenException();
