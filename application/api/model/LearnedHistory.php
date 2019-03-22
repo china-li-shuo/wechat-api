@@ -133,7 +133,7 @@ class LearnedHistory extends Model
      */
     public static function addUserHistory($uid,$data,$answerResult)
     {
-        $result = Db::table('yx_learned_history')->where('user_id',$uid)->where('stage',$data['stage'])->where('word_id',$data['word_id'])->field('id,group,user_id,stage,word_id,is_true')->find();
+        $result = Db::table('yx_learned_history')->where('user_id',$uid)->where('group',$data['group'])->where('word_id',$data['word_id'])->field('id,group,user_id,stage,word_id,is_true')->find();
         if(empty($result)){
             $arr = [
                 'user_id'=>$uid,

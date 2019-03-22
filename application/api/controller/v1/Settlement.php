@@ -37,19 +37,18 @@ class Settlement
         $uid = Token::getCurrentTokenVar('uid');
         $res = Share::userPunchCard($uid);
         if(!$res){
-            echo json_encode([
+            throw new MissException([
                 'msg' => '你今天已经打过卡了',
                 'errorCode' => 0
-            ],JSON_UNESCAPED_UNICODE);
+            ]);
         }
 
         $lastLearnedData = LearnedHistory::UserLearned($uid);
 
         if(empty($lastLearnedData)){
-            return json([
+            throw new MissException([
                 'msg' => '请先进行学习，在计算(⊙o⊙)哦',
-                'errorCode' => 50000,
-                'request_url' => errorUrl()
+                'errorCode' => 50000
             ]);
         }
         //获取用户最后一次答题组下的正确率
@@ -74,10 +73,9 @@ class Settlement
         ];
 
         if(!$data){
-            return json([
+            throw new MissException([
                 'msg' => '用户结算信息查询失败',
-                'errorCode' => 50000,
-                'request_url' => errorUrl()
+                'errorCode' => 50000
             ]);
         }
 
@@ -94,10 +92,9 @@ class Settlement
 
         $classData = UserClass::getAllUserByUid($uid);
         if(empty($classData)){
-            return json([
+            throw new MissException([
                 'msg' => '你不是班级学员(⊙o⊙)哦',
-                'errorCode' => 50000,
-                'request_url' => errorUrl()
+                'errorCode' => 50000
             ]);
         }
         //判断此阶段下此组，所有用户答对的单词
@@ -120,10 +117,9 @@ class Settlement
         //判断是否收藏过该单词
         $wordDetail = Collection::isCollection($uid,$wordDetail);
         if(!$wordDetail){
-            return json([
+            throw new MissException([
                 'msg' => '重新来过信息查询失败',
-                'errorCode' => 50000,
-                'request_url' => errorUrl()
+                'errorCode' => 50000
             ]);
         }
 
@@ -137,26 +133,22 @@ class Settlement
         $userInfo = User::getUserInfo($uid);
         $LastGroupID= Group::userLastGroupID($userInfo);
 
-        //$nextSortID = $lastSortID+1;
-        //先判断下一组还有没有单词
-        //$res 下一组单词的id
-        //$res = Group::findLastGroupID(['stage'=>$userInfo['now_stage'],'sort'=>$nextSortID]);
-        //$stage = Group::findStageID($res);
         if(empty($LastGroupID)){
             $stage = Db::table(YX_QUESTION.'stage')->where('id',$userInfo['now_stage'])->field('stage_desc')->find();
-            //echo json_encode(['msg' => $stage['stage_desc'],'code'=>200,'msg2'=>'即将进入下一阶段进行学习'],JSON_UNESCAPED_UNICODE);
             //去找下一阶段,第一组单词
             $nextStageID = Stage::nextStageGroupInfo($userInfo);
             if(empty($nextStageID)){
                 throw new SuccessMessage([
-                    'msg'=>'你太厉害了，所有阶段都已经通关了'
+                    'msg'=>'你太厉害了，所有阶段都已经通关了',
+                    'errorCode'=>50000
                 ]);
             }
             //如果不为空，去找下一阶段的第一组id
             $nextStageFirstGroupID = Group::nextStageFirstGroupID($nextStageID);
             if(empty($nextStageFirstGroupID)){
                 throw new SuccessMessage([
-                    'msg'=>'亲，暂你已经学完所有单词了，因为下一阶段，没有任何分组哦！'
+                    'msg'=>'亲，暂你已经学完所有单词了，因为下一阶段，没有任何分组哦！',
+                    'errorCode'=>50000
                 ]);
             }
             $wordDetail = $this->getWordDetail($nextStageFirstGroupID,$nextStageID);

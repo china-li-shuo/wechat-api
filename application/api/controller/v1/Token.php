@@ -65,10 +65,9 @@ class Token
     public function verifyToken($token='')
     {
         if(!$token){
-            return json([
+            throw new MissException([
                 'msg' => 'token不允许为空',
-                'errorCode' => 60000,
-                'request_url' => errorUrl()
+                'errorCode' => 60000
             ]);
         }
         $valid = TokenService::verifyToken($token);

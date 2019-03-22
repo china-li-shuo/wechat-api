@@ -125,7 +125,7 @@ class Learned extends BaseController
         //判断是此用户是否学完此阶段，获得此勋章
         //找本阶段的学习数量
         $already_number = Db::table('yx_learned_history')->where('user_id',$uid)->where('stage',$data['stage'])->count();
-        //$userInfo = User::get($uid)->toArray();
+
         $stageData = Db::table(YX_QUESTION.'stage')->where('id',$data['stage'])->field('stage_name,stage_desc,word_num')->find();
 
         if($already_number>=$stageData['word_num']){
@@ -203,14 +203,9 @@ class Learned extends BaseController
         $userInfo = User::getUserInfo($uid);
         $LastGroupID= Group::userLastGroupID($userInfo);
 
-        //$nextSortID = $lastSortID+1;
-        //先判断下一组还有没有单词
-        //$res 下一组单词的id
-        //$res = Group::findLastGroupID(['stage'=>$userInfo['now_stage'],'sort'=>$nextSortID]);
-        //$stage = Group::findStageID($res);
         if(empty($LastGroupID)){
             $stageDesc = Db::table(YX_QUESTION.'stage')->where('id',$userInfo['now_stage'])->field('stage_desc')->find();
-            //echo json_encode(['msg' => $stage['stage_desc'],'code'=>200,'msg2'=>'即将进入下一阶段进行学习'],JSON_UNESCAPED_UNICODE);
+
             //去找下一阶段,第一组单词
             $nextStageID = Stage::nextStageGroupInfo($userInfo);
             if(empty($nextStageID)){

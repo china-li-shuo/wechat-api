@@ -64,10 +64,9 @@ class Index
             'calendar'=>&$calendar
         ];
         if(!$data){
-            return json([
+            throw new MissException([
                 'msg' => '首页信息查询失败',
-                'errorCode' => 50000,
-                'request_url' => errorUrl()
+                'errorCode' => 50000
             ]);
         }
         return json($data);

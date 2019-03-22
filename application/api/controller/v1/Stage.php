@@ -23,10 +23,9 @@ class Stage
         Token::getCurrentTokenVar('uid');
         $stages = StageModel::getStages();
         if(empty($stages)){
-            return json([
+            throw new MissException([
                 'msg' => '还没有任何阶段',
-                'errorCode' => 50000,
-                'request_url' => errorUrl()
+                'errorCode' => 50000
             ]);
         }
         return json(['code'=>200,'msg'=>'查询成功','data'=>$stages]);
@@ -114,10 +113,9 @@ class Stage
         ];
 
         if(!$data){
-            return json([
+            throw new MissException([
                 'msg' => '阶段详情信息查询失败',
-                'errorCode' => 50000,
-                'request_url' => errorUrl()
+                'errorCode' => 50000
             ]);
         }
 

@@ -34,10 +34,9 @@ class Activity
         //$historyData = LearnedHistory::LearnedGroup($uid,$historyData);
 
         if (empty($historyData)){
-            return json([
+            throw new MissException([
                 'msg' => '你还有任何学习记录呢,请开始你的表演',
-                'errorCode' => 50000,
-                'request_url' => errorUrl()
+                'errorCode' => 50000
             ]);
         }
         return json($historyData);
@@ -53,10 +52,9 @@ class Activity
         $uid = Token::getCurrentTokenVar('uid');
         $data = ErrorBook::errorInfo($uid);
         if(empty($data)){
-            return json([
+            throw new MissException([
                 'msg' => '学霸，还没有答错任何题呢',
-                'errorCode' => 50000,
-                'request_url' => errorUrl()
+                'errorCode' => 50000
             ]);
         }
 
@@ -118,10 +116,9 @@ class Activity
         $res = ErrorBook::deleteErrorBook($uid,$data);
 
         if(!$res){
-            return json([
+            throw new MissException([
                 'msg' => '错题已经移除,请刷新重试',
-                'errorCode' => 50000,
-                'request_url' => errorUrl()
+                'errorCode' => 50000
             ]);
         }
 
@@ -136,10 +133,9 @@ class Activity
         $uid = Token::getCurrentTokenVar('uid');
         $data = Collection::collectionInfo($uid);
         if(empty($data)){
-            return json([
+            throw new MissException([
                 'msg' => '空空如也，请先收藏单词(⊙o⊙)哦',
-                'errorCode' => 50000,
-                'request_url' => errorUrl()
+                'errorCode' => 50000
             ]);
         }
 
@@ -192,10 +188,9 @@ class Activity
         }
 
         if (!$data){
-            return json([
+            throw new MissException([
                 'msg' => '空空如也，请先开始进行你的表演',
-                'errorCode' => 50000,
-                'request_url' => errorUrl()
+                'errorCode' => 50000
             ]);
         }
         return $data;
@@ -227,10 +222,9 @@ class Activity
         }
 
         if (!$data){
-            return json([
+            throw new MissException([
                 'msg' => '空空如也，请先开始进行你的表演',
-                'errorCode' => 50000,
-                'request_url' => errorUrl()
+                'errorCode' => 50000
             ]);
         }
         return $data;
@@ -262,10 +256,9 @@ class Activity
         }
 
         if (!$data){
-            return json([
+            throw new MissException([
                 'msg' => '空空如也，请先开始进行你的表演',
-                'errorCode' => 50000,
-                'request_url' => errorUrl()
+                'errorCode' => 50000
             ]);
         }
         return $data;

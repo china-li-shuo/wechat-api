@@ -28,19 +28,18 @@ class Share
         $uid = Token::getCurrentTokenVar('uid');
 
 //        $data = ShareModel::addShare($uid);
-//        if(!$data){
-//            throw new MissException([
-//                'msg' => '打卡时间发生了错误',
-//                'errorCode' => 50000
-//            ]);
-//        }
+////        if(!$data){
+////            throw new MissException([
+////                'msg' => '打卡时间发生了错误',
+////                'errorCode' => 50000
+////            ]);
+////        }
 
         $data = $this->sharePage($uid);
         if(!$data){
-            return json([
+            throw new MissException([
                 'msg' => '分享页面信息加载失败',
-                'errorCode' => 50000,
-                'request_url' => errorUrl()
+                'errorCode' => 50000
             ]);
         }
 

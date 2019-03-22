@@ -27,15 +27,21 @@ class Top
                 'errorCode' => 50000
             ]);
         }
+        //获取班级的名称
+        $className = Db::table('yx_class')->where('id',$classData[0]['class_id'])->field('class_name')->find();
+        if(!$className){
+            throw new MissException([
+                'msg'=>'查询学员班级信息失败',
+                'errorCode'=>50000
+            ]);
+        }
         $userTodayLearnedNumber = LearnedHistory::getUserTodayLearnedNumber($classData);
         $userTodayLearnedNumber = LearnedHistory::LearnedDays($userTodayLearnedNumber);
         $userList = $this->getUserList($userTodayLearnedNumber);
-
         if(!$userList){
-            return json([
+            throw new MissException([
                 'msg' => '今日榜单信息查询失败',
-                'errorCode' => 50000,
-                'request_url' => errorUrl()
+                'errorCode' => 50000
             ]);
         }
 
@@ -46,6 +52,7 @@ class Top
                 $top = $key+1;
                 $new_arr['mine']=$val;
                 $new_arr['mine']['today_top']=&$top;
+                $new_arr['mine']['class_name']=&$className['class_name'];
             }
 
         }
@@ -95,14 +102,21 @@ class Top
                 'errorCode' => 50000
             ]);
         }
+        //获取班级的名称
+        $className = Db::table('yx_class')->where('id',$classData[0]['class_id'])->field('class_name')->find();
+        if(!$className){
+            throw new MissException([
+                'msg'=>'查询学员班级信息失败',
+                'errorCode'=>50000
+            ]);
+        }
         $allLearnedNumber = LearnedHistory::getUseLearnedNumber($classData);
         $classData = LearnedHistory::LearnedDays($allLearnedNumber);
         $userList = $this->getHistoryUserList($classData);
         if(!$userList){
-            return json([
+            throw new MissException([
                 'msg' => '今日榜单信息查询失败',
-                'errorCode' => 50000,
-                'request_url' => errorUrl()
+                'errorCode' => 50000
             ]);
         }
 
@@ -113,6 +127,7 @@ class Top
                 $top = $key+1;
                 $new_arr['mine']=$val;
                 $new_arr['mine']['history_top']=&$top;
+                $new_arr['mine']['class_name']=&$className['class_name'];
             }
 
         }
