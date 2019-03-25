@@ -16,6 +16,7 @@ use app\api\validate\StageID;
 use app\lib\exception\MissException;
 use app\api\validate\ErrorBook AS ErrorBookValidate;
 use think\Db;
+use think\Exception;
 use think\facade\Request;
 
 class Activity
@@ -75,7 +76,12 @@ class Activity
 
         //根据用户id和阶段id查出此用户所有的
         $data = $this->getStageGroup($uid,$stageID);
-
+        if (empty($data)){
+            throw new MissException([
+                'msg' => '你还未学习过任何单词',
+                'errorCode' => 50000
+            ]);
+        }
         return json($data);
     }
 
@@ -163,60 +169,60 @@ class Activity
 
     private function getStageGroup($uid,$stageID)
     {
-        //获取阶段名称
-        $stage = Db::table(YX_QUESTION.'stage')
-            ->where('id',$stageID)
-            ->field('stage_name')
-            ->find();
-
-        $data = Db::table('yx_learned_history')
-            ->where('user_id',$uid)
-            ->where('stage',$stageID)
-            ->group('group')
-            ->field('id,stage,group')
-            ->select();
-
-        foreach ($data as $key=>$val){
-            $data[$key]['stage_name'] = &$stage['stage_name'];
-        }
-
-        //获取每组的名称
-        foreach ($data as $k=>$v){
-            $group = Db::table(YX_QUESTION.'group')
-                ->where('id',$v['group'])
-                ->field('group_name')
+        try {
+            //获取阶段名称
+            $stage = Db::table(YX_QUESTION . 'stage')
+                ->where('id', $stageID)
+                ->field('stage_name')
                 ->find();
 
-            $lastLearnedTime = Db::table('yx_learned_history')
-                ->where('user_id',$uid)->where('stage',$stageID)
-                ->where('group',$v['group'])->order('create_time DESC')
-                ->field('group,create_time')
-                ->find();
-
-            $data[$k]['group_name']        = &$group['group_name'];
-            $data[$k]['last_learned_time'] = date('Y-m-d', $lastLearnedTime['create_time']);
-        }
-
-        //获取每组下所有的单词,进行查询每个单词的详情
-        foreach ($data as $key=>$val){
-            $result = Db::table('yx_learned_history')
-                ->where('user_id',$uid)
-                ->where('stage',$stageID)
-                ->where('group',$val['group'])
-                ->field('stage,group,word_id')
+            $data = Db::table('yx_learned_history')
+                ->where('user_id', $uid)
+                ->where('stage', $stageID)
+                ->group('group')
+                ->field('id,stage,group')
                 ->select();
-            $new_arr = EnglishWord::selectWordDetail($result);
-            $data[$key]['word'] = $new_arr;
 
-        }
+            foreach ($data as $key => $val) {
+                $data[$key]['stage_name'] = &$stage['stage_name'];
+            }
 
-        if (!$data){
+            //获取每组的名称
+            foreach ($data as $k => $v) {
+                $group = Db::table(YX_QUESTION . 'group')
+                    ->where('id', $v['group'])
+                    ->field('group_name')
+                    ->find();
+
+                $lastLearnedTime = Db::table('yx_learned_history')
+                    ->where('user_id', $uid)->where('stage', $stageID)
+                    ->where('group', $v['group'])->order('create_time DESC')
+                    ->field('group,create_time')
+                    ->find();
+
+                $data[$k]['group_name']        = &$group['group_name'];
+                $data[$k]['last_learned_time'] = date('Y-m-d', $lastLearnedTime['create_time']);
+            }
+
+            //获取每组下所有的单词,进行查询每个单词的详情
+            foreach ($data as $key => $val) {
+                $result             = Db::table('yx_learned_history')
+                    ->where('user_id', $uid)
+                    ->where('stage', $stageID)
+                    ->where('group', $val['group'])
+                    ->field('stage,group,word_id')
+                    ->select();
+                $new_arr            = EnglishWord::selectWordDetail($result);
+                $data[$key]['word'] = $new_arr;
+            }
+            return $data;
+        }catch (\Exception $e){
             throw new MissException([
-                'msg' => '空空如也，请先开始进行你的表演',
+                'msg' => $e->getMessage(),
                 'errorCode' => 50000
             ]);
         }
-        return $data;
+
     }
 
 

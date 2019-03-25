@@ -18,6 +18,7 @@ use app\api\service\Token;
 use app\lib\enum\ScopeEnum;
 use app\lib\exception\MissException;
 use app\lib\exception\UserClassException;
+use think\Exception;
 use think\facade\Request;
 
 class Index
@@ -42,36 +43,37 @@ class Index
                 'errorCode'=>50000
             ]);
         }
-        $className          = UserClass::getClassName($classInfo);
-        $punchDays          = Share::getPunchDays($uid);
-        $todayLearnedNumber = LearnedHistory::getTodayLearnedNumber($uid);
-        $LearnedData        = LearnedHistory::UserLearned($uid);
-        $allLearnedNumber   = LearnedHistory::getAllLearnedNumber($uid);
-        $stageName          = Stage::getStageNameByLearnedNumber($LearnedData);
-        $wordCount          = EnglishWord::count();
-        $surplusWord        = $wordCount - $allLearnedNumber;
+        try {
+            $className          = UserClass::getClassName($classInfo);
+            $punchDays          = Share::getPunchDays($uid);
+            $todayLearnedNumber = LearnedHistory::getTodayLearnedNumber($uid);
+            $LearnedData        = LearnedHistory::UserLearned($uid);
+            $allLearnedNumber   = LearnedHistory::getAllLearnedNumber($uid);
+            $stageName          = Stage::getStageNameByLearnedNumber($LearnedData);
+            $wordCount          = EnglishWord::count();
+            $surplusWord        = $wordCount - $allLearnedNumber;
 
-        $data = [
-            'nick_name'            => &$UserInfo['nick_name'],
-            'user_name'            => &$UserInfo['user_name'],
-            'avatar_url'           => &$UserInfo['avatar_url'],
-            'stage_name'           => &$stageName,
-            'is_teacher'           => &$UserInfo['is_teacher'],
-            'class_name'           => &$className,
-            'punch_days'           => &$punchDays,
-            'today_learned_number' => &$todayLearnedNumber,
-            'all_learned_number'   => &$allLearnedNumber,
-            'surplus_word'         => &$surplusWord,
-            'calendar'             => &$calendar
-        ];
-
-        if(!$data){
+            $data = [
+                'nick_name'            => &$UserInfo['nick_name'],
+                'user_name'            => &$UserInfo['user_name'],
+                'avatar_url'           => &$UserInfo['avatar_url'],
+                'stage_name'           => &$stageName,
+                'is_teacher'           => &$UserInfo['is_teacher'],
+                'class_name'           => &$className,
+                'punch_days'           => &$punchDays,
+                'today_learned_number' => &$todayLearnedNumber,
+                'all_learned_number'   => &$allLearnedNumber,
+                'surplus_word'         => &$surplusWord,
+                'calendar'             => &$calendar
+            ];
+            return json($data);
+        }catch (\Exception $e){
             throw new MissException([
-                'msg' => '首页信息查询失败',
+                'msg' => $e->getMessage(),
                 'errorCode' => 50000
             ]);
         }
-        return json($data);
+
     }
 
     /**
