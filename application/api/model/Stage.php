@@ -16,32 +16,38 @@ class Stage extends Model
 {
     public static function getStages()
     {
-        return Db::table(YX_QUESTION.'stage')->field('id,stage_name')->where('parent_id',0)->select();
+        return Db::table(YX_QUESTION . 'stage')
+            ->field('id,stage_name')
+            ->where('parent_id', 0)
+            ->select();
     }
 
     public static function getAllStage()
     {
 
-        return Db::table(YX_QUESTION.'stage')->order('sort')->hidden(['create_time'])->select();
+        return Db::table(YX_QUESTION . 'stage')
+            ->order('sort')
+            ->hidden(['create_time'])
+            ->select();
     }
 
 
     protected static function getGroup($stageData)
     {
         $new_arr = [];
-        foreach ($stageData as $val){
-            $sql = "SELECT s.id,e.group,e.stage FROM ".YX_QUESTION."stage AS s INNER JOIN ".YX_QUESTION."english_word AS e ON s.id=e.stage WHERE e.stage = $val[id] GROUP BY e.group ";
+        foreach ($stageData as $val) {
+            $sql = "SELECT s.id,e.group,e.stage FROM " . YX_QUESTION . "stage AS s INNER JOIN " . YX_QUESTION . "english_word AS e ON s.id=e.stage WHERE e.stage = $val[id] GROUP BY e.group ";
 
             $res = Db::query($sql);
 
-            if(!empty($res)){
-                array_push($new_arr,$res);
+            if (!empty($res)) {
+                array_push($new_arr, $res);
             }
         }
 
-        foreach ($new_arr as $k=>$v){
-            foreach ($stageData as $kk => $z){
-                if($z['id'] == $v[0]['stage']){
+        foreach ($new_arr as $k => $v) {
+            foreach ($stageData as $kk => $z) {
+                if ($z['id'] == $v[0]['stage']) {
                     $stageData[$kk]['group'] = count($v);
                 }
             }
@@ -58,16 +64,21 @@ class Stage extends Model
      */
     public static function findStage($id)
     {
-        return Db::table(YX_QUESTION.'stage')->hidden(['create_time'])->where('id',$id)->find();
+        return Db::table(YX_QUESTION . 'stage')->hidden(['create_time'])->where('id', $id)->find();
     }
 
 
     public static function getStageName($historyData)
     {
-        foreach ($historyData as $key=>$val){
-            $data = Db::table(YX_QUESTION.'stage')->where('id',$val['stage'])->field('id,stage_name')->select();
-            foreach ($data as $k=>$v){
-                if($val['stage'] == $v['id']){
+        foreach ($historyData as $key => $val) {
+
+            $data = Db::table(YX_QUESTION . 'stage')
+                ->where('id', $val['stage'])
+                ->field('id,stage_name')
+                ->select();
+
+            foreach ($data as $k => $v) {
+                if ($val['stage'] == $v['id']) {
                     $historyData[$key]['stage_name'] = $v['stage_name'];
                 }
             }
@@ -82,7 +93,10 @@ class Stage extends Model
      */
     public static function getStageNameByLearnedNumber($LearnedData)
     {
-        $data = Db::table(YX_QUESTION.'stage')->where('id',$LearnedData['stage'])->field('stage_name,word_num')->find();
+        $data = Db::table(YX_QUESTION . 'stage')
+            ->where('id', $LearnedData['stage'])
+            ->field('stage_name,word_num')
+            ->find();
         return $data['stage_name'];
     }
 
@@ -93,17 +107,21 @@ class Stage extends Model
     public static function nextStageGroupInfo($userInfo)
     {
         //进行阶段排序
-        $stageData = Db::table(YX_QUESTION.'stage')->order('sort')->select();
+        $stageData = Db::table(YX_QUESTION . 'stage')
+            ->order('sort')
+            ->select();
         //找出当前阶段
-        $nowStage = Db::table(YX_QUESTION.'stage')->where('id',$userInfo['now_stage'])->find();
-        foreach ($stageData as $key=>$val){
-            if($nowStage == $stageData[$key]){
-                $k = $key+1;
+        $nowStage = Db::table(YX_QUESTION . 'stage')
+            ->where('id', $userInfo['now_stage'])
+            ->find();
+        foreach ($stageData as $key => $val) {
+            if ($nowStage == $stageData[$key]) {
+                $k = $key + 1;
             }
         }
 
         //如果下一阶段信息非空
-        if(!empty($stageData[$k])){
+        if (!empty($stageData[$k])) {
             return $stageData[$k]['id'];
 
         }
@@ -111,18 +129,26 @@ class Stage extends Model
 
 
         //先根据阶段进行排序小组
-        $data = Db::table(YX_QUESTION.'stage')->where('stage_id',$userInfo['now_stage'])->order('sort')->select();
+        $data = Db::table(YX_QUESTION . 'stage')
+            ->where('stage_id', $userInfo['now_stage'])
+            ->order('sort')
+            ->select();
         //找出当前小组
-        $res = Db::table(YX_QUESTION.'group')->where('stage_id',$userInfo['now_stage'])->where('id',$userInfo['now_group'])->find();
+
+        $res = Db::table(YX_QUESTION . 'group')
+            ->where('stage_id', $userInfo['now_stage'])
+            ->where('id', $userInfo['now_group'])
+            ->find();
+
         //确定下一组单词的信息
-        foreach ($data as $key=>$val){
-            if($res == $data[$key]){
-                $k = $key+1;
+        foreach ($data as $key => $val) {
+            if ($res == $data[$key]) {
+                $k = $key + 1;
             }
         }
 
         //如果下一组单词信息非空，返回组id
-        if(!empty($data[$k])){
+        if (!empty($data[$k])) {
             return $data[$k]['id'];
         }
 
@@ -134,8 +160,12 @@ class Stage extends Model
      */
     public static function FirstStageID()
     {
-        $stageData = Db::table(YX_QUESTION.'stage')->where('parent_id','<>',0)->order('sort')->field('id')->select();
-        if (!empty($stageData)){
+        $stageData = Db::table(YX_QUESTION . 'stage')
+            ->where('parent_id', '<>', 0)
+            ->order('sort')
+            ->field('id')
+            ->select();
+        if (!empty($stageData)) {
             return $stageData[0]['id'];
         }
 

@@ -30,9 +30,9 @@ class Sms
      */
     public function sendSms($mobile = '')
     {
-        if(!$mobile){
+        if (!$mobile) {
             throw new MissException([
-                'msg' => 'mobie不允许为空',
+                'msg'       => 'mobie不允许为空',
                 'errorCode' => 60000
             ]);
         }
@@ -40,24 +40,24 @@ class Sms
         $validate = new MobileRule();
         $validate->goCheck();
 
-        $res=Db::name('user')->field('mobile,mobile_bind')->where('mobile',$mobile)->find();
+        $res = Db::name('user')->field('mobile,mobile_bind')->where('mobile', $mobile)->find();
 
-        if (empty($res) || $res['mobile_bind']==2){
+        if (empty($res) || $res['mobile_bind'] == 2) {
 
-            $vcode=rand(1000, 9999);
-            $this->setRegSmsCache(['mobile'=>$mobile,'vcode'=>$vcode,'times'=>time()]);
+            $vcode = rand(1000, 9999);
+            $this->setRegSmsCache(['mobile' => $mobile, 'vcode' => $vcode, 'times' => time()]);
 
-            $new_sms = new SmsSingleSender(config('sms.app_id'),config('sms.app_key'));
-            $params = [
+            $new_sms = new SmsSingleSender(config('sms.app_id'), config('sms.app_key'));
+            $params  = [
                 "$vcode",
                 "10"
             ];
 
             $sign = "社科赛斯";
-            $res = $new_sms->sendWithParam(86, $mobile, config('sms.tpl_id'), $params,$sign, $extend = "", $ext = "",$vcode);
+            $res  = $new_sms->sendWithParam(86, $mobile, config('sms.tpl_id'), $params, $sign, $extend = "", $ext = "", $vcode);
             echo $res;
-        }else{
-            return json_encode(array('sta'=>1001,'message'=>"该手机号已验证过"),JSON_UNESCAPED_UNICODE);
+        } else {
+            return json_encode(array('sta' => 1001, 'message' => "该手机号已验证过"), JSON_UNESCAPED_UNICODE);
         }
     }
 
@@ -69,41 +69,41 @@ class Sms
      */
     public function bindMobile($mobile = '', $code = '')
     {
-        if(!$mobile || !$code){
+        if (!$mobile || !$code) {
             throw new MissException([
-                'msg' => '你输入的参数缺失',
+                'msg'       => '你输入的参数缺失',
                 'errorCode' => 60000
             ]);
         }
-        $res = $this->checkRegSms($mobile,$code);
+        $res = $this->checkRegSms($mobile, $code);
 
-        if(!$res){
+        if (!$res) {
             throw new SmsException();
         }
         //获取token令牌信息，与手机号进行绑定
         $token = Request::instance()
             ->header('token');
 
-        if(!$token){
+        if (!$token) {
             throw new MissException([
-                'msg' => '你输入的token参数缺失',
+                'msg'       => '你输入的token参数缺失',
                 'errorCode' => 60000
             ]);
         }
 
         $identities = Cache::get($token);
 
-        if(!$identities){
-              throw new TokenException();
+        if (!$identities) {
+            throw new TokenException();
         };
-        $identities = json_decode($identities,true);
+        $identities = json_decode($identities, true);
 
-        $res = User::bindMobile($identities,$mobile);
+        $res = User::bindMobile($identities, $mobile);
 
-        if(!$res){
-            return json_encode(['msg'=>'绑定失败','error_code'=>6001],JSON_UNESCAPED_UNICODE);
+        if (!$res) {
+            return json_encode(['msg' => '绑定失败', 'error_code' => 6001], JSON_UNESCAPED_UNICODE);
         }
-        return json_encode(['msg'=>'绑定成功','code'=>200],JSON_UNESCAPED_UNICODE);
+        return json_encode(['msg' => '绑定成功', 'code' => 200], JSON_UNESCAPED_UNICODE);
     }
 
     /**

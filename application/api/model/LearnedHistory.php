@@ -21,16 +21,20 @@ class LearnedHistory extends Model
      */
     public static function UserLearned($uid)
     {
-         //return LearnedHistory::where('user_id',$uid)->field('id,group,user_id,stage_id,word_id,is_true')->order('create_time desc')->limit(1)->find()->toArray();
-
-         return Db::table('yx_learned_history')->where('user_id',$uid)->field('id,group,user_id,stage,word_id,is_true')->order('create_time desc')->limit(1)->find();
-
+        return Db::table('yx_learned_history')
+            ->where('user_id', $uid)
+            ->field('id,group,user_id,stage,word_id,is_true')
+            ->order('create_time desc')
+            ->limit(1)
+            ->find();
     }
 
     public static function LearnedAll($uid)
     {
 
-        return Db::table('yx_learned_history')->where('user_id',$uid)->select();
+        return Db::table('yx_learned_history')
+            ->where('user_id', $uid)
+            ->select();
 
     }
 
@@ -40,10 +44,17 @@ class LearnedHistory extends Model
      */
     public static function LearnedStage($uid)
     {
-        $data = Db::table('yx_learned_history')->where('user_id',$uid)->group('stage')->field('id,stage')->select();
+        $data = Db::table('yx_learned_history')
+            ->where('user_id', $uid)
+            ->group('stage')
+            ->field('id,stage')
+            ->select();
 
-        foreach ($data as $key=>$val){
-            $stage = Db::table(YX_QUESTION.'stage')->where('id',$val['stage'])->field('stage_name')->find();
+        foreach ($data as $key => $val) {
+            $stage  = Db::table(YX_QUESTION . 'stage')
+                ->where('id', $val['stage'])
+                ->field('stage_name')
+                ->find();
             $data[$key]['stage_name'] = &$stage['stage_name'];
         }
 
@@ -54,17 +65,28 @@ class LearnedHistory extends Model
      * 获取阶段下所有组，组名称
      * @param $historyData
      */
-    public static function LearnedGroup($uid,$historyData)
+    public static function LearnedGroup($uid, $historyData)
     {
 
-        foreach ($historyData as $key=>$val){
-            $data = Db::table('yx_learned_history')->where('user_id',$uid)->where('stage',$val['stage'])->group('group')->field('id,stage,group')->select();
+        foreach ($historyData as $key => $val) {
 
-            foreach ($data as $k=>$v){
+            $data = Db::table('yx_learned_history')
+                ->where('user_id', $uid)
+                ->where('stage', $val['stage'])
+                ->group('group')
+                ->field('id,stage,group')
+                ->select();
 
-                $group = Db::table(YX_QUESTION.'group')->where('id',$v['group'])->field('id,group_name')->find();
-                $data[$k]['son'] = $group;
+            foreach ($data as $k => $v) {
+
+                $group  = Db::table(YX_QUESTION . 'group')
+                    ->where('id', $v['group'])
+                    ->field('id,group_name')
+                    ->find();
+
+                $data[$k]['son']        = $group;
                 $data[$k]['stage_name'] = $val['stage_name'];
+
             }
             $historyData[$key]['data'] = $data;
         }
@@ -79,9 +101,10 @@ class LearnedHistory extends Model
      */
     public static function UserCountGroup($uid)
     {
-
-        return  Db::table('yx_learned_history')->where('user_id',$uid)->field('id,group,user_id,stage,word_id,is_true')->count();
-
+        return Db::table('yx_learned_history')
+            ->where('user_id', $uid)
+            ->field('id,group,user_id,stage,word_id,is_true')
+            ->count();
     }
 
     /**
@@ -90,7 +113,11 @@ class LearnedHistory extends Model
      */
     public static function getUserGroupData($uid)
     {
-        return  Db::table('yx_learned_history')->where('user_id',$uid)->group('group')->field('group')->select();
+        return Db::table('yx_learned_history')
+            ->where('user_id', $uid)
+            ->group('group')
+            ->field('group')
+            ->select();
     }
 
     /**
@@ -100,7 +127,11 @@ class LearnedHistory extends Model
      */
     public static function userLearnedCurrentNumber($LearnedData)
     {
-        $currentNumber =  Db::table('yx_learned_history')->where('user_id',$LearnedData['user_id'])->where('group',$LearnedData['group'])->field('id')->select();
+        $currentNumber = Db::table('yx_learned_history')
+            ->where('user_id', $LearnedData['user_id'])
+            ->where('group', $LearnedData['group'])
+            ->field('id')
+            ->select();
 
         return count($currentNumber);
     }
@@ -109,10 +140,15 @@ class LearnedHistory extends Model
      * 用户已学过的组下，在这个组学了多少个单词
      * @param $historyGroupData
      */
-    public static function getAlreadyLearnedGroupWordCount($uid,$historyGroupData)
+    public static function getAlreadyLearnedGroupWordCount($uid, $historyGroupData)
     {
-        foreach ($historyGroupData as $key=>$val){
-            $alreadyGroupNum =  Db::table('yx_learned_history')->where('user_id',$uid)->where('group',$val['group'])->count();
+        foreach ($historyGroupData as $key => $val) {
+
+            $alreadyGroupNum  = Db::table('yx_learned_history')
+                ->where('user_id', $uid)
+                ->where('group', $val['group'])
+                ->count();
+
             $historyGroupData[$key]['already_group_num'] = $alreadyGroupNum;
         }
         return $historyGroupData;
@@ -131,32 +167,45 @@ class LearnedHistory extends Model
      * @throws \think\exception\DbException
      * @throws \think\exception\PDOException
      */
-    public static function addUserHistory($uid,$data,$answerResult)
+    public static function addUserHistory($uid, $data, $answerResult)
     {
-        $result = Db::table('yx_learned_history')->where('user_id',$uid)->where('group',$data['group'])->where('word_id',$data['word_id'])->field('id,group,user_id,stage,word_id,is_true')->find();
-        if(empty($result)){
+        $result = Db::table('yx_learned_history')
+            ->where('user_id', $uid)->where('group', $data['group'])
+            ->where('word_id', $data['word_id'])
+            ->field('id,group,user_id,stage,word_id,is_true')
+            ->find();
+
+        if (empty($result)) {
             $arr = [
-                'user_id'=>$uid,
-                'group'=>$data['group'],
-                'stage'=>$data['stage'],
-                'word_id'=>$data['word_id'],
-                'is_true'=>$answerResult,
-                'create_time'=>time()
+                'user_id'     => $uid,
+                'group'       => $data['group'],
+                'stage'       => $data['stage'],
+                'word_id'     => $data['word_id'],
+                'is_true'     => $answerResult,
+                'create_time' => time()
             ];
             $res = Db::table('yx_learned_history')->insert($arr);
             //学习记录表数据能够进行插入才修改用户记录信息
-            if($res){
-                $userinfo = Db::table('yx_user')->where('id',$uid)->field('already_number')->find();
-                $arr = [
-                    'already_number'=>$userinfo['already_number']+1,
-                    'now_stage'=>$data['stage'],
-                    'now_group'=>$data['group'],
+            if ($res) {
+                $userinfo = Db::table('yx_user')
+                    ->where('id', $uid)
+                    ->field('already_number')
+                    ->find();
+                $arr      = [
+                    'already_number' => $userinfo['already_number'] + 1,
+                    'now_stage'      => $data['stage'],
+                    'now_group'      => $data['group'],
                 ];
-                return Db::table('yx_user')->where('id',$uid)->update($arr);
+                return Db::table('yx_user')
+                    ->where('id', $uid)
+                    ->update($arr);
             }
         }
 
-        return Db::table('yx_learned_history')->where('user_id',$uid)->where('word_id',$data['word_id'])->update(['is_true'=>$answerResult,'create_time'=>time()]);
+        return Db::table('yx_learned_history')
+            ->where('user_id', $uid)
+            ->where('word_id', $data['word_id'])
+            ->update(['is_true' => $answerResult, 'create_time' => time()]);
     }
 
     /**
@@ -166,15 +215,20 @@ class LearnedHistory extends Model
      */
     public static function getTodayLearnedNumber($uid)
     {
-        $beginToday=mktime(0,0,0,date('m'),date('d'),date('Y'));
-        $endToday=mktime(0,0,0,date('m'),date('d')+1,date('Y'))-1;
-        $where[] = ['create_time', 'between time', [$beginToday, $endToday]];
-        return Db::table('yx_learned_history')->where('user_id',$uid)->where($where)->count();
+        $beginToday = mktime(0, 0, 0, date('m'), date('d'), date('Y'));
+        $endToday   = mktime(0, 0, 0, date('m'), date('d') + 1, date('Y')) - 1;
+        $where[]    = ['create_time', 'between time', [$beginToday, $endToday]];
+        return Db::table('yx_learned_history')
+            ->where('user_id', $uid)
+            ->where($where)
+            ->count();
     }
 
     public static function getAllLearnedNumber($uid)
     {
-        return Db::table('yx_learned_history')->where('user_id',$uid)->count();
+        return Db::table('yx_learned_history')
+            ->where('user_id', $uid)
+            ->count();
     }
 
     /**
@@ -184,11 +238,14 @@ class LearnedHistory extends Model
      */
     public static function calendarDays($uid)
     {
-        $data = Db::table('yx_learned_history')->where('user_id',$uid)->select();
+        $data    = Db::table('yx_learned_history')
+            ->where('user_id', $uid)
+            ->select();
         $new_arr = [];
-        foreach ($data as $key=>$val){
-            $calendar = date("Y-m-d",$val['create_time']);
-            array_push($new_arr,$calendar);
+
+        foreach ($data as $key => $val) {
+            $calendar = date("Y-m-d", $val['create_time']);
+            array_push($new_arr, $calendar);
         }
         //array_flip(array_flip($new_arr));
 
@@ -201,12 +258,12 @@ class LearnedHistory extends Model
      */
     public static function LearnedDays($userTodayLearnedNumber)
     {
-        foreach ($userTodayLearnedNumber as $key=>$val){
-            $LearnedNumber= self::calendarDays($val['user_id']);
+        foreach ($userTodayLearnedNumber as $key => $val) {
+            $LearnedNumber  = self::calendarDays($val['user_id']);
             $userTodayLearnedNumber[$key]['learned_days'] = count($LearnedNumber);
         }
 
-       return $userTodayLearnedNumber;
+        return $userTodayLearnedNumber;
     }
 
 
@@ -216,14 +273,19 @@ class LearnedHistory extends Model
      * @param $stages
      * @return mixed
      */
-    public static function getWordNumberByStage($uid,$stages)
+    public static function getWordNumberByStage($uid, $stages)
     {
 
-        foreach ($stages as $key=>$val){
-            $count = Db::table('yx_learned_history')->where('stage',$val['id'])->where('user_id',$uid)->count();
-            $stages[$key]['alreadyNum']=$count;
+        foreach ($stages as $key => $val) {
+
+            $count  = Db::table('yx_learned_history')
+                ->where('stage', $val['id'])
+                ->where('user_id', $uid)
+                ->count();
+
+            $stages[$key]['alreadyNum'] = $count;
         }
-       return $stages;
+        return $stages;
     }
 
     /**
@@ -233,15 +295,19 @@ class LearnedHistory extends Model
      */
     public static function getTrueRate($lastLearnedData)
     {
-        $data = Db::table('yx_learned_history')->where('user_id',$lastLearnedData['user_id'])->where('group',$lastLearnedData['group'])->where('stage',$lastLearnedData['stage'])->select();
-        $i = 0;
-        foreach ($data as $key=>$val){
-            if($val['is_true'] == 1){
+        $data = Db::table('yx_learned_history')
+            ->where('user_id', $lastLearnedData['user_id'])
+            ->where('group', $lastLearnedData['group'])
+            ->where('stage', $lastLearnedData['stage'])
+            ->select();
+        $i    = 0;
+        foreach ($data as $key => $val) {
+            if ($val['is_true'] == 1) {
                 $i++;
             }
         }
         $count = count($data);
-        $ct5=round($i/$count*100,2)."%";
+        $ct5   = round($i / $count * 100, 2) . "%";
         return $ct5;
     }
 
@@ -250,39 +316,44 @@ class LearnedHistory extends Model
      * @param $classData
      * @param $lastLearnedData
      */
-    public static function classTrueRate($classData,$lastLearnedData)
+    public static function classTrueRate($classData, $lastLearnedData)
     {
         $allUserData = [];
-        foreach ($classData as $key=>$val){
-            $res = Db::table('yx_learned_history')->where('user_id',$val['user_id'])->where('group',$lastLearnedData['group'])->where('stage',$lastLearnedData['stage'])->select();
-            array_push($allUserData,$res);
+        foreach ($classData as $key => $val) {
+
+            $res = Db::table('yx_learned_history')
+                ->where('user_id', $val['user_id'])
+                ->where('group', $lastLearnedData['group'])
+                ->where('stage', $lastLearnedData['stage'])
+                ->select();
+
+            array_push($allUserData, $res);
         }
 
         $new_arr = [];
 
-        foreach ($allUserData as $key=>$val){
+        foreach ($allUserData as $key => $val) {
 
-            if(empty($val)){
+            if (empty($val)) {
                 unset($allUserData[$key]);
                 continue;
             }
 
             $i = 0;
-            foreach ($val as $k=>$v){
-                if($v['is_true'] == 1){
+            foreach ($val as $k => $v) {
+                if ($v['is_true'] == 1) {
                     $i++;
-                    $arr['user_id']=$v['user_id'];
-                    $arr['true_num']=$i+1;
+                    $arr['user_id']  = $v['user_id'];
+                    $arr['true_num'] = $i + 1;
                 }
-                $arr['user_id']=$v['user_id'];
-                $arr['true_num']=$i+1;
+                $arr['user_id']  = $v['user_id'];
+                $arr['true_num'] = $i + 1;
             }
-            array_push($new_arr,$arr);
+            array_push($new_arr, $arr);
         }
 
         // 取得列的列表
-        foreach ($new_arr as $key => $row)
-        {
+        foreach ($new_arr as $key => $row) {
             $edition[$key] = $row['true_num'];
         }
 
@@ -293,14 +364,14 @@ class LearnedHistory extends Model
         //sort($arr);
 
 
-        foreach ($new_arr as $x=>$y){
-            if($y['user_id']==$lastLearnedData['user_id']){
-                $nowNum =  $x+1;
+        foreach ($new_arr as $x => $y) {
+            if ($y['user_id'] == $lastLearnedData['user_id']) {
+                $nowNum = $x + 1;
             }
         }
 
-        $count = count($new_arr);
-        $classTrueRate = round($nowNum/$count*100,2)."%";
+        $count         = count($new_arr);
+        $classTrueRate = round($nowNum / $count * 100, 2) . "%";
 
         return $classTrueRate;
 
@@ -313,20 +384,23 @@ class LearnedHistory extends Model
     public static function getUserTodayLearnedNumber($classData)
     {
 
-        $beginToday=mktime(0,0,0,date('m'),date('d'),date('Y'));
-        $endToday=mktime(0,0,0,date('m'),date('d')+1,date('Y'))-1;
-        $where[] = ['create_time', 'between time', [$beginToday, $endToday]];
+        $beginToday = mktime(0, 0, 0, date('m'), date('d'), date('Y'));
+        $endToday   = mktime(0, 0, 0, date('m'), date('d') + 1, date('Y')) - 1;
+        $where[]    = ['create_time', 'between time', [$beginToday, $endToday]];
 
 
-        foreach ($classData as $key=>$val){
+        foreach ($classData as $key => $val) {
 
-             $count = Db::table('yx_learned_history')->where('user_id',$val['user_id'])->where($where)->count();
-             $classData[$key]['today_learned_number'] = $count;
+            $count = Db::table('yx_learned_history')
+                ->where('user_id', $val['user_id'])
+                ->where($where)
+                ->count();
+
+            $classData[$key]['today_learned_number'] = $count;
         }
 
         // 取得列的列表
-        foreach ($classData as $key => $row)
-        {
+        foreach ($classData as $key => $row) {
             $edition[$key] = $row['today_learned_number'];
         }
 
@@ -341,15 +415,16 @@ class LearnedHistory extends Model
      */
     public static function getUseLearnedNumber($classData)
     {
-        foreach ($classData as $key=>$val){
+        foreach ($classData as $key => $val) {
 
-            $count = Db::table('yx_learned_history')->where('user_id',$val['user_id'])->count();
+            $count  = Db::table('yx_learned_history')
+                ->where('user_id', $val['user_id'])
+                ->count();
             $classData[$key]['all_learned_number'] = $count;
         }
 
         // 取得列的列表
-        foreach ($classData as $key => $row)
-        {
+        foreach ($classData as $key => $row) {
             $edition[$key] = $row['all_learned_number'];
         }
 
@@ -364,18 +439,39 @@ class LearnedHistory extends Model
      */
     public static function learnedInfo($uid)
     {
-        $data = Db::table('yx_learned_history')->where('user_id',$uid)->group('stage')->field('stage')->select();
-        foreach ($data as $key=>$val){
-            $stage = Db::table(YX_QUESTION.'stage')->where('id',$val['stage'])->field('stage_name')->find();
+        $data = Db::table('yx_learned_history')
+            ->where('user_id', $uid)
+            ->group('stage')
+            ->field('stage')
+            ->select();
+
+        foreach ($data as $key => $val) {
+
+            $stage  = Db::table(YX_QUESTION . 'stage')
+                ->where('id', $val['stage'])
+                ->field('stage_name')
+                ->find();
+
             $data[$key]['stage_name'] = &$stage['stage_name'];
         }
         //print_r($data);
         //获取阶段下所有组
-        foreach ($data as $k=>$v){
-            $group = Db::table('yx_learned_history')->where('user_id',$uid)->where('stage',$v['stage'])->group('group')->field('group,stage')->select();
+        foreach ($data as $k => $v) {
+            $group = Db::table('yx_learned_history')
+                ->where('user_id', $uid)
+                ->where('stage', $v['stage'])
+                ->group('group')
+                ->field('group,stage')
+                ->select();
+
             $data[$k]['group'] = $group;
-            foreach ($group as $i=>$j){
-                $group_name = Db::table(YX_QUESTION.'group')->where('id',$j['group'])->field('group_name')->find();
+
+            foreach ($group as $i => $j) {
+                $group_name = Db::table(YX_QUESTION . 'group')
+                    ->where('id', $j['group'])
+                    ->field('group_name')
+                    ->find();
+
                 $data[$k]['group'][$i]['group_name'] = $group_name['group_name'];
             }
         }

@@ -52,24 +52,24 @@ class Settlement
             ]);
         }
         //获取用户最后一次答题组下的正确率
-        $trueRate = LearnedHistory::getTrueRate($lastLearnedData);
+        $trueRate      = LearnedHistory::getTrueRate($lastLearnedData);
         //超过全班百分比
         //获取此用户所属班级，并且判断此班级下所有用户，并且根据用户在这一组的正确率进行求百分比
-        $classTrueRate = $this->percentageOfClass($uid,$lastLearnedData);
-        $stageData = Stage::findStage($lastLearnedData['stage']);
-        $stageName = $stageData['stage_name'];
-        $groupName = Group::findGroupName($lastLearnedData['group']);
-        $userInfo = User::getUserInfo($uid);
-        $punchDays = Share::getPunchDays($uid);
+        $classTrueRate = $this->percentageOfClass($uid, $lastLearnedData);
+        $stageData     = Stage::findStage($lastLearnedData['stage']);
+        $stageName     = $stageData['stage_name'];
+        $groupName     = Group::findGroupName($lastLearnedData['group']);
+        $userInfo      = User::getUserInfo($uid);
+        $punchDays     = Share::getPunchDays($uid);
         $data = [
-            'stage_name'=>&$stageName,
-            'group_name'=>&$groupName,
-            'user_name'=>&$userInfo['user_name'],
-            'nick_name'=>&$userInfo['nick_name'],
-            'avatar_url'=>&$userInfo['avatar_url'],
-            'punch_days'=>&$punchDays,
-            'true_rate'=>&$trueRate,
-            'class_true_rate'=>&$classTrueRate
+            'stage_name'      => &$stageName,
+            'group_name'      => &$groupName,
+            'user_name'       => &$userInfo['user_name'],
+            'nick_name'       => &$userInfo['nick_name'],
+            'avatar_url'      => &$userInfo['avatar_url'],
+            'punch_days'      => &$punchDays,
+            'true_rate'       => &$trueRate,
+            'class_true_rate' => &$classTrueRate
         ];
 
         if(!$data){
@@ -105,9 +105,9 @@ class Settlement
     public function getAgainInfo()
     {
         //根据token获取用户最后一次学习的哪一阶段，哪一组信息，重新查询一遍详情进行返回
-        $uid = Token::getCurrentTokenVar('uid');
+        $uid                = Token::getCurrentTokenVar('uid');
         $historyLearnedData = LearnedHistory::UserLearned($uid);
-        $lastGroupID = Group::userLastSortID($historyLearnedData);
+        $lastGroupID        = Group::userLastSortID($historyLearnedData);
         //根据最后一次阶段id和组id查询group表确定属于某阶段的某一组信息
 
         //然后最后一次学习组的id进行查询这组下共有多少个单词
@@ -115,7 +115,7 @@ class Settlement
         //然后根据每个组的详情进行查询每个单词的详情
         $wordDetail = EnglishWord::getNextWordDetail($groupWord);
         //判断是否收藏过该单词
-        $wordDetail = Collection::isCollection($uid,$wordDetail);
+        $wordDetail = Collection::isCollection($uid, $wordDetail);
         if(!$wordDetail){
             throw new MissException([
                 'msg' => '重新来过信息查询失败',
@@ -129,12 +129,15 @@ class Settlement
 
     public function nextGroupInfo()
     {
-        $uid = Token::getCurrentTokenVar('uid');
-        $userInfo = User::getUserInfo($uid);
-        $LastGroupID= Group::userLastGroupID($userInfo);
+        $uid         = Token::getCurrentTokenVar('uid');
+        $userInfo    = User::getUserInfo($uid);
+        $LastGroupID = Group::userLastGroupID($userInfo);
 
         if(empty($LastGroupID)){
-            $stage = Db::table(YX_QUESTION.'stage')->where('id',$userInfo['now_stage'])->field('stage_desc')->find();
+            $stage = Db::table(YX_QUESTION.'stage')
+                ->where('id',$userInfo['now_stage'])
+                ->field('stage_desc')
+                ->find();
             //去找下一阶段,第一组单词
             $nextStageID = Stage::nextStageGroupInfo($userInfo);
             if(empty($nextStageID)){

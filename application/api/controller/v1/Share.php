@@ -55,22 +55,22 @@ class Share
 
         //超过全班百分比
         //获取此用户所属班级，并且判断此班级下所有用户，并且根据用户在这一组的正确率进行求百分比
-        $classTrueRate = $this->percentageOfClass($uid,$lastLearnedData);
+        $classTrueRate = $this->percentageOfClass($uid, $lastLearnedData);
 
         $stageData = Stage::findStage($lastLearnedData['stage']);
         $stageName = $stageData['stage_name'];
         $groupName = Group::findGroupName($lastLearnedData['group']);
-        $userInfo = User::getUserInfo($uid);
+        $userInfo  = User::getUserInfo($uid);
         $punchDays = ShareModel::getPunchDays($uid);
         $data = [
-            'stage_name'=>&$stageName,
-            'group_name'=>&$groupName,
-            'user_name'=>&$userInfo['user_name'],
-            'nick_name'=>&$userInfo['nick_name'],
-            'avatar_url'=>&$userInfo['avatar_url'],
-            'punch_days'=>&$punchDays,
-            'true_rate'=>&$trueRate,
-            'class_true_rate'=>&$classTrueRate
+            'stage_name'      => &$stageName,
+            'group_name'      => &$groupName,
+            'user_name'       => &$userInfo['user_name'],
+            'nick_name'       => &$userInfo['nick_name'],
+            'avatar_url'      => &$userInfo['avatar_url'],
+            'punch_days'      => &$punchDays,
+            'true_rate'       => &$trueRate,
+            'class_true_rate' => &$classTrueRate
         ];
         return $data;
     }
@@ -84,7 +84,7 @@ class Share
     {
         $classData = UserClass::getAllUserByUid($uid);
         //判断此阶段下此组，所有用户答对的单词
-        $classTrueRate = LearnedHistory::classTrueRate($classData,$lastLearnedData);
+        $classTrueRate = LearnedHistory::classTrueRate($classData, $lastLearnedData);
         return $classTrueRate;
     }
 }

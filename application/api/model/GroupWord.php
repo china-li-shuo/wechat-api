@@ -16,7 +16,9 @@ class GroupWord
 
     public static function findFirst($group)
     {
-        return Db::table(YX_QUESTION.'group_word')->where('group',$group)->select();
+        return Db::table(YX_QUESTION . 'group_word')
+            ->where('group', $group)
+            ->select();
     }
 
     /**
@@ -25,6 +27,8 @@ class GroupWord
      */
     public static function selectGroupWord($id)
     {
-        return Db::table(YX_QUESTION.'group_word')->where('group',$id)->select();
+        return Db::table(YX_QUESTION . 'group_word')
+            ->where('group', $id)
+            ->select();
     }
 }

@@ -18,30 +18,33 @@ class Share extends Model
     public static function addShare($uid)
     {
 
-        $data = Share::where('user_id',$uid)->find()->toArray();
+        $data = Share::where('user_id', $uid)->find()->toArray();
 
-        if(empty($data)){
+        if (empty($data)) {
             $arr = [
-                'user_id'=>$uid,
-                'number'=>1,
-                'create_time'=>time()
+                'user_id'     => $uid,
+                'number'      => 1,
+                'create_time' => time()
             ];
             Db::table('yx_share')->insert($arr);
             return true;
         }
 
-        $beginToday=mktime(0,0,0,date('m'),date('d'),date('Y'));
-        $endToday=mktime(0,0,0,date('m'),date('d')+1,date('Y'))-1;
+        $beginToday = mktime(0, 0, 0, date('m'), date('d'), date('Y'));
+        $endToday   = mktime(0, 0, 0, date('m'), date('d') + 1, date('Y')) - 1;
 
-        $nowTime = time();
-        $punchRecord = Cache::get($uid.'punchRecord');
-        if($punchRecord){
+        $nowTime     = time();
+        $punchRecord = Cache::get($uid . 'punchRecord');
+        if ($punchRecord) {
             return true;
         }
-        if($nowTime >= $beginToday && $nowTime <= $endToday){
+        if ($nowTime >= $beginToday && $nowTime <= $endToday) {
             //写入缓存，缓存时间,今天结束最后时间-当前时间，如果有缓存，已打卡
-            Db::table('yx_share')->where('user_id',$uid)->update(['number'=>$data['number']+1,'create_time'=>$nowTime]);
-            Cache::set($uid.'punchRecord','已打卡',$endToday-$nowTime);
+            Db::table('yx_share')
+                ->where('user_id', $uid)
+                ->update(['number' => $data['number'] + 1, 'create_time' => $nowTime]);
+
+            Cache::set($uid . 'punchRecord', '已打卡', $endToday - $nowTime);
             return true;
         }
 
@@ -51,12 +54,15 @@ class Share extends Model
 
     public static function getPunchDays($uid)
     {
-        $punchDays = Share::where('user_id',$uid)->select()->count();
+        $punchDays = Share::where('user_id', $uid)->select()->count();
 
-        $userInfo = Db::table('yx_user')->where('id',$uid)->field('punch_days')->find();
+        $userInfo = Db::table('yx_user')->where('id', $uid)->field('punch_days')->find();
 
-        if($userInfo['punch_days'] < $punchDays){
-            Db::table('yx_user')->where('id',$uid)->update(['punch_days'=>$punchDays]);
+        if ($userInfo['punch_days'] < $punchDays) {
+
+            Db::table('yx_user')
+                ->where('id', $uid)
+                ->update(['punch_days' => $punchDays]);
         }
 
         return $punchDays;
@@ -70,24 +76,30 @@ class Share extends Model
     public static function userPunchCard($uid)
     {
 
-        $beginToday=mktime(0,0,0,date('m'),date('d'),date('Y'));
-        $endToday=mktime(0,0,0,date('m'),date('d')+1,date('Y'))-1;
-        $nowTime = time();
-        $where[] = ['create_time', 'between time', [$beginToday, $endToday]];
+        $beginToday = mktime(0, 0, 0, date('m'), date('d'), date('Y'));
+        $endToday   = mktime(0, 0, 0, date('m'), date('d') + 1, date('Y')) - 1;
+        $nowTime    = time();
+        $where[]    = ['create_time', 'between time', [$beginToday, $endToday]];
 
-        $data = Db::table('yx_share')->where('user_id',$uid)->where($where)->find();
+        $data = Db::table('yx_share')
+            ->where('user_id', $uid)
+            ->where($where)
+            ->find();
 
-        if(empty($data)){
+        if (empty($data)) {
 
             $arr = [
-                'user_id'=>$uid,
-                'create_time'=>time()
+                'user_id'     => $uid,
+                'create_time' => time()
             ];
             return Db::table('yx_share')->insert($arr);
 
         }
 
-        return Db::table('yx_share')->where('user_id',$uid)->where($where)->update(['create_time'=>$nowTime]);
+        return Db::table('yx_share')
+            ->where('user_id', $uid)
+            ->where($where)
+            ->update(['create_time' => $nowTime]);
 
     }
 }

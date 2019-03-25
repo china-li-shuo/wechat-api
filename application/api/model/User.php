@@ -26,42 +26,56 @@ class User extends Model
     }
 
 
-    public static function bindMobile($identities,$mobile)
+    public static function bindMobile($identities, $mobile)
     {
 
-        $userInfo =Db::table('yx_user')->where('mobile',$mobile)->where('mobile_bind',2)->find();
+        $userInfo = Db::table('yx_user')
+            ->where('mobile', $mobile)
+            ->where('mobile_bind', 2)
+            ->find();
 
-        if(!empty($userInfo)){
+        if (!empty($userInfo)) {
             $data = [
-                'user_name'=>$userInfo['user_name'],
-                'mobile'=>$userInfo['mobile'],
-                'mobile_bind'=>1,
-                'is_teacher'=>$userInfo['is_teacher'],
+                'user_name'   => $userInfo['user_name'],
+                'mobile'      => $userInfo['mobile'],
+                'mobile_bind' => 1,
+                'is_teacher'  => $userInfo['is_teacher'],
             ];
-            Db::table('yx_user')->where('id',$identities['uid'])->update($data);
-            Db::table('yx_user_class')->where('user_id',$userInfo['id'])->update(['user_id'=>$identities['uid']]);
-            return Db::table('yx_user')->where('id',$userInfo['id'])->delete();
-        }else{
+
+            Db::table('yx_user')
+                ->where('id', $identities['uid'])
+                ->update($data);
+
+            Db::table('yx_user_class')
+                ->where('user_id', $userInfo['id'])
+                ->update(['user_id' => $identities['uid']]);
+            return Db::table('yx_user')->where('id', $userInfo['id'])->delete();
+        } else {
             $data = [
-                'mobile'=>$mobile,
-                'mobile_bind'=>1
+                'mobile'      => $mobile,
+                'mobile_bind' => 1
             ];
-            return Db::table('yx_user')->where('id',$identities['uid'])->update($data);
+            return Db::table('yx_user')
+                ->where('id', $identities['uid'])
+                ->update($data);
         }
     }
 
-    public static function addUserInfo($data,$token)
+    public static function addUserInfo($data, $token)
     {
-        $vars = Cache::get($token);
-        $arr = json_decode($vars,true);
-        $uid = $arr['uid'];
-        $userInfo = Db::table('yx_user')->where('id',$uid)->field('mobile_bind')->find();
+        $vars     = Cache::get($token);
+        $arr      = json_decode($vars, true);
+        $uid      = $arr['uid'];
+        $userInfo = Db::table('yx_user')
+            ->where('id', $uid)
+            ->field('mobile_bind')
+            ->find();
 
-        $res = User::where('id',$uid)->update(
-        [
-            'nick_name' => $data['nick_name'],
-            'avatar_url' => $data['avatar_url']
-        ]);
+        $res = User::where('id', $uid)->update(
+            [
+                'nick_name'  => $data['nick_name'],
+                'avatar_url' => $data['avatar_url']
+            ]);
 
 
         return $userInfo['mobile_bind'];
@@ -71,9 +85,9 @@ class User extends Model
     public static function getUserInfo($uid)
     {
         $data = User::get($uid)->toArray();
-        if(empty($data['is_teacher'])){
+        if (empty($data['is_teacher'])) {
             $data['is_teacher'] = 0;
         }
-       return $data;
+        return $data;
     }
 }

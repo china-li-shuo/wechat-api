@@ -34,13 +34,13 @@ class Learned extends BaseController
     {
         //先根据token获取用户的uid
         //根据uid去学习记录表中查询用户最后一次学到了第几组的第几个单词
-        $uid = Token::getCurrentTokenVar('uid');
+        $uid         = Token::getCurrentTokenVar('uid');
         $LearnedData = LearnedHistoryModel::UserLearned($uid);
 
         //如果用户没有学习记录，直接查询第一阶段下，第一组单词
         if(empty($LearnedData)){
-            $stage = Stage::FirstStageID();
-            $group = Group::firstGroupID($stage);
+            $stage          = Stage::FirstStageID();
+            $group          = Group::firstGroupID($stage);
             $notLearnedData = GroupWord::findFirst($group);
             if(empty($notLearnedData)){
                 throw new MissException([
@@ -48,10 +48,11 @@ class Learned extends BaseController
                     'errorCode'=>50000
                 ]);
             }
-            $notLearnedData = Group::correspondingStage($notLearnedData);
-            $notWordData = EnglishWord::notWordData($notLearnedData);
-            $notWordData = CollectionModel::isCollection($uid,$notWordData);
-            $notLearnedData = EnglishWord::formatConversion($notWordData,1);
+
+            $notLearnedData          = Group::correspondingStage($notLearnedData);
+            $notWordData             = EnglishWord::notWordData($notLearnedData);
+            $notWordData             = CollectionModel::isCollection($uid, $notWordData);
+            $notLearnedData          = EnglishWord::formatConversion($notWordData, 1);
             $notLearnedData['count'] = count($notLearnedData);
             return json($notLearnedData);
         }
@@ -124,9 +125,15 @@ class Learned extends BaseController
         }
         //判断是此用户是否学完此阶段，获得此勋章
         //找本阶段的学习数量
-        $already_number = Db::table('yx_learned_history')->where('user_id',$uid)->where('stage',$data['stage'])->count();
+        $already_number = Db::table('yx_learned_history')
+            ->where('user_id',$uid)
+            ->where('stage',$data['stage'])
+            ->count();
 
-        $stageData = Db::table(YX_QUESTION.'stage')->where('id',$data['stage'])->field('stage_name,stage_desc,word_num')->find();
+        $stageData = Db::table(YX_QUESTION.'stage')
+            ->where('id',$data['stage'])
+            ->field('stage_name,stage_desc,word_num')
+            ->find();
 
         if($already_number>=$stageData['word_num']){
             $arr = [
@@ -145,7 +152,7 @@ class Learned extends BaseController
      */
     public function collection()
     {
-        $uid = Token::getCurrentTokenVar('uid');
+        $uid      = Token::getCurrentTokenVar('uid');
         $validate = new Collection();
         $validate->goCheck();
         $data = $validate->getDataByRule(input('post.'));
@@ -180,16 +187,24 @@ class Learned extends BaseController
      */
     private function addUserLearnedData($uid,$data)
     {
-        $res = Db::table('yx_learned_history')->where('user_id',$uid)->where('word_id',$data['word_id'])->where('group',$data['group'])->where('stage',$data['stage'])->find();
+        $res = Db::table('yx_learned_history')
+            ->where('user_id',$uid)
+            ->where('word_id',$data['word_id'])
+            ->where('group',$data['group'])
+            ->where('stage',$data['stage'])
+            ->find();
 
         if(empty($res)){
 
-            $userinfo = Db::table('yx_user')->where('id',$uid)->field('already_number')->find();
+            $userinfo = Db::table('yx_user')
+                ->where('id',$uid)
+                ->field('already_number')
+                ->find();
 
             $arr = [
-                'already_number'=>$userinfo['already_number']+1,
-                'now_stage'=>$data['stage'],
-                'now_group'=>$data['group'],
+                'already_number' => $userinfo['already_number'] + 1,
+                'now_stage'      => $data['stage'],
+                'now_group'      => $data['group'],
             ];
 
             return Db::table('yx_user')->where('id',$uid)->update($arr);
@@ -200,11 +215,14 @@ class Learned extends BaseController
 
     private function nextGroupInfo($uid)
     {
-        $userInfo = User::getUserInfo($uid);
-        $LastGroupID= Group::userLastGroupID($userInfo);
+        $userInfo    = User::getUserInfo($uid);
+        $LastGroupID = Group::userLastGroupID($userInfo);
 
         if(empty($LastGroupID)){
-            $stageDesc = Db::table(YX_QUESTION.'stage')->where('id',$userInfo['now_stage'])->field('stage_desc')->find();
+            $stageDesc = Db::table(YX_QUESTION.'stage')
+                ->where('id',$userInfo['now_stage'])
+                ->field('stage_desc')
+                ->find();
 
             //去找下一阶段,第一组单词
             $nextStageID = Stage::nextStageGroupInfo($userInfo);

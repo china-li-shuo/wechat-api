@@ -25,7 +25,7 @@ class Index
     public function getUserInfo()
     {
         //根据token获取用户昵称，头像，所属班级,阶段名称，打卡天数，今日已学，已掌握，所剩新词，日历
-        $uid = Token::getCurrentTokenVar('uid');
+        $uid       = Token::getCurrentTokenVar('uid');
         $classInfo = UserClass::getClassInfo($uid);
 
         if(empty($classInfo)){
@@ -42,27 +42,29 @@ class Index
                 'errorCode'=>50000
             ]);
         }
-        $className = UserClass::getClassName($classInfo);
-        $punchDays = Share::getPunchDays($uid);
+        $className          = UserClass::getClassName($classInfo);
+        $punchDays          = Share::getPunchDays($uid);
         $todayLearnedNumber = LearnedHistory::getTodayLearnedNumber($uid);
-        $LearnedData = LearnedHistory::UserLearned($uid);
-        $allLearnedNumber = LearnedHistory::getAllLearnedNumber($uid);
-        $stageName = Stage::getStageNameByLearnedNumber($LearnedData);
-        $wordCount = EnglishWord::count();
-        $surplusWord = $wordCount-$allLearnedNumber;
+        $LearnedData        = LearnedHistory::UserLearned($uid);
+        $allLearnedNumber   = LearnedHistory::getAllLearnedNumber($uid);
+        $stageName          = Stage::getStageNameByLearnedNumber($LearnedData);
+        $wordCount          = EnglishWord::count();
+        $surplusWord        = $wordCount - $allLearnedNumber;
+
         $data = [
-            'nick_name'=>&$UserInfo['nick_name'],
-            'user_name'=>&$UserInfo['user_name'],
-            'avatar_url'=>&$UserInfo['avatar_url'],
-            'stage_name'=>&$stageName,
-            'is_teacher'=>&$UserInfo['is_teacher'],
-            'class_name'=>&$className,
-            'punch_days'=>&$punchDays,
-            'today_learned_number'=>&$todayLearnedNumber,
-            'all_learned_number'=>&$allLearnedNumber,
-            'surplus_word'=>&$surplusWord,
-            'calendar'=>&$calendar
+            'nick_name'            => &$UserInfo['nick_name'],
+            'user_name'            => &$UserInfo['user_name'],
+            'avatar_url'           => &$UserInfo['avatar_url'],
+            'stage_name'           => &$stageName,
+            'is_teacher'           => &$UserInfo['is_teacher'],
+            'class_name'           => &$className,
+            'punch_days'           => &$punchDays,
+            'today_learned_number' => &$todayLearnedNumber,
+            'all_learned_number'   => &$allLearnedNumber,
+            'surplus_word'         => &$surplusWord,
+            'calendar'             => &$calendar
         ];
+
         if(!$data){
             throw new MissException([
                 'msg' => '首页信息查询失败',
@@ -79,13 +81,13 @@ class Index
     private function ScopeEnum($UserInfo)
     {
 
-        $request = Request::instance();
-        $token = $request->header('token');
-        $data = cache($token);
-        $data = json_decode($data,true);
-        $create_time = time()-$data['create_time'];
-        $expire_in = config('setting.token_expire_in');
-        $expire_in = $expire_in-$create_time;
+        $request     = Request::instance();
+        $token       = $request->header('token');
+        $data        = cache($token);
+        $data        = json_decode($data, true);
+        $create_time = time() - $data['create_time'];
+        $expire_in   = config('setting.token_expire_in');
+        $expire_in   = $expire_in - $create_time;
         switch ($UserInfo['is_teacher'])
         {
             case 0:

@@ -34,13 +34,13 @@ class Token
     {
         $validate = new TokenGet();
         $validate->goCheck();
-        $data = $validate->getDataByRule(input('post.'));
-        $wx = new UserToken($data['code']);
-        $token = $wx->get();
-        $mobile_bind = User::addUserInfo($data,$token);
+        $data        = $validate->getDataByRule(input('post.'));
+        $wx          = new UserToken($data['code']);
+        $token       = $wx->get();
+        $mobile_bind = User::addUserInfo($data, $token);
         return json_encode([
-            'token'=>$token,
-            'mobile_bind'=>$mobile_bind
+            'token'       => $token,
+            'mobile_bind' => $mobile_bind
         ]);
     }
 
@@ -49,24 +49,24 @@ class Token
      * @url /app_token?
      * @POST ac=:ac se=:secret
      */
-    public function getAppToken($ac='', $se='')
+    public function getAppToken($ac = '', $se = '')
     {
         header('Access-Control-Allow-Origin: *');
         header("Access-Control-Allow-Headers: Origin, X-Requested-With, Content-Type, Accept");
         header('Access-Control-Allow-Methods: GET');
         (new AppTokenGet())->goCheck();
-        $app = new AppToken();
+        $app   = new AppToken();
         $token = $app->get($ac, $se);
         return json_encode([
             'token' => $token
         ]);
     }
 
-    public function verifyToken($token='')
+    public function verifyToken($token = '')
     {
-        if(!$token){
+        if (!$token) {
             throw new MissException([
-                'msg' => 'token不允许为空',
+                'msg'       => 'token不允许为空',
                 'errorCode' => 60000
             ]);
         }

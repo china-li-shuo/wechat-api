@@ -16,32 +16,32 @@ use think\Model;
 class EnglishWord extends Model
 {
     protected $connection = [
-        'type'            => 'mysql',
+        'type'     => 'mysql',
         // 服务器地址
-        'hostname'        => '202.85.213.24',
+        'hostname' => '202.85.213.24',
         // 数据库名
-        'database'        => 'yx_question',
+        'database' => 'yx_question',
         // 用户名
-        'username'        => 'root',
+        'username' => 'root',
         // 密码
-        'password'        => 'success2017+_)(',
+        'password' => 'success2017+_)(',
         // 端口
-        'hostport'        => '5203',
+        'hostport' => '5203',
         // 连接dsn
-        'dsn'             => '',
+        'dsn'      => '',
         // 数据库连接参数
-        'params'          => [],
+        'params'   => [],
         // 数据库编码默认采用utf8
-        'charset'         => 'utf8',
+        'charset'  => 'utf8',
         // 数据库表前缀
-        'prefix'          => 'yx_',
+        'prefix'   => 'yx_',
         // 数据库调试模式
-        'debug'           => false,
+        'debug'    => false,
     ];
 
     public static function findFirst()
     {
-        return EnglishWord::where('group',1)->select()->toArray();
+        return EnglishWord::where('group', 1)->select()->toArray();
     }
 
     /**
@@ -51,46 +51,53 @@ class EnglishWord extends Model
      */
     public static function findLastWord($LearnedData)
     {
-        $data = EnglishWord::where('group',$LearnedData['group'])->where('stage',$LearnedData['stage'])->where('id','>=',$LearnedData['word_id'])->select()->toArray();
-        $countWord = EnglishWord::where('group',$LearnedData['group'])->select();
-        $count = count($countWord);
-        return ['data'=>$data,'count'=>$count];
+        $data      = EnglishWord::where('group', $LearnedData['group'])
+            ->where('stage', $LearnedData['stage'])
+            ->where('id', '>=', $LearnedData['word_id'])
+            ->select()
+            ->toArray();
+        $countWord = EnglishWord::where('group', $LearnedData['group'])->select();
+        $count     = count($countWord);
+        return ['data' => $data, 'count' => $count];
     }
 
     public static function notWordData($notLearnedData)
     {
-        foreach ($notLearnedData as $key=>$val){
-            $data = Db::table(YX_QUESTION.'english_word')->where('id',$val['wid'])->find();
+        foreach ($notLearnedData as $key => $val) {
+            $data  = Db::table(YX_QUESTION . 'english_word')
+                ->where('id', $val['wid'])
+                ->find();
             $notLearnedData[$key]['is_collection'] = 2;
-            $notLearnedData[$key]['son']=$data;
+            $notLearnedData[$key]['son']           = $data;
         }
 
         return $notLearnedData;
     }
 
-    public static function formatConversion($notWordData,$currentNumber)
+    public static function formatConversion($notWordData, $currentNumber)
     {
-        foreach ($notWordData as $key=>$val){
-            foreach ($val as $k=>$v){
-                $notWordData[$key]['son']['chinese_word'] = explode('@',$v['chinese_word']);
-                $notWordData[$key]['son']['options'] = json_decode($v['options'],true);
-                $notWordData[$key]['son']['sentence'] = json_decode($v['sentence'],true);
-                $notWordData[$key]['son']['currentNumber'] = $currentNumber+$key;
+        foreach ($notWordData as $key => $val) {
+            foreach ($val as $k => $v) {
+                $notWordData[$key]['son']['chinese_word']  = explode('@', $v['chinese_word']);
+                $notWordData[$key]['son']['options']       = json_decode($v['options'], true);
+                $notWordData[$key]['son']['sentence']      = json_decode($v['sentence'], true);
+                $notWordData[$key]['son']['currentNumber'] = $currentNumber + $key;
             }
 
         }
 
-       return $notWordData;
+        return $notWordData;
     }
+
     /**
      * 判断用户答题结果
      */
     public static function answerResult($data)
     {
 
-        $answer = EnglishWord::where('id',$data['word_id'])->field('answer')->find()->toArray();
+        $answer = EnglishWord::where('id', $data['word_id'])->field('answer')->find()->toArray();
 
-        if($data['useropt'] == $answer['answer']){
+        if ($data['useropt'] == $answer['answer']) {
             return 1;
         }
         return 0;
@@ -104,20 +111,20 @@ class EnglishWord extends Model
     public static function getWordDetail($historyData)
     {
 
-        foreach ($historyData as $key=>$val){
-            $data = EnglishWord::where('id',$val['word_id'])->find()->toArray();
+        foreach ($historyData as $key => $val) {
+            $data = EnglishWord::where('id', $val['word_id'])->find()->toArray();
 
-            if($val['word_id'] == $data['id']){
+            if ($val['word_id'] == $data['id']) {
                 $historyData[$key]['son'] = $data;
             }
 
         }
 
-        foreach ($historyData as $key=>$val){
+        foreach ($historyData as $key => $val) {
 
-            $historyData[$key]['create_time'] = date('Y-m-d', $val['create_time']);
-            $historyData[$key]['son']['chinese_word'] = explode('@',$val['son']['chinese_word']);
-            $historyData[$key]['son']['sentence'] = json_decode($val['son']['sentence'],true);
+            $historyData[$key]['create_time']         = date('Y-m-d', $val['create_time']);
+            $historyData[$key]['son']['chinese_word'] = explode('@', $val['son']['chinese_word']);
+            $historyData[$key]['son']['sentence']     = json_decode($val['son']['sentence'], true);
             unset($historyData[$key]['son']['options']);
             unset($historyData[$key]['son']['answer']);
         }
@@ -133,25 +140,30 @@ class EnglishWord extends Model
     public static function getNextWordDetail($groupWord)
     {
 
-        foreach ($groupWord as $key=>$val){
-            $data = Db::table(YX_QUESTION.'english_word')->where('id',$val['wid'])->find();
-            $stage = Db::table(YX_QUESTION.'group')->where('id',$val['group'])->field('stage_id')->find();
+        foreach ($groupWord as $key => $val) {
+            $data  = Db::table(YX_QUESTION . 'english_word')
+                ->where('id', $val['wid'])
+                ->find();
+            $stage = Db::table(YX_QUESTION . 'group')
+                ->where('id', $val['group'])
+                ->field('stage_id')
+                ->find();
             $groupWord[$key]['stage'] = $stage['stage_id'];
-            if($val['wid'] == $data['id']){
+            if ($val['wid'] == $data['id']) {
                 $groupWord[$key]['is_collection'] = 2;
-                $groupWord[$key]['son'] = $data;
+                $groupWord[$key]['son']           = $data;
             }
         }
 
-        foreach ($groupWord as $key=>$val){
+        foreach ($groupWord as $key => $val) {
             //查询是否收藏过该单词
-              if(array_key_exists('son',$val)){
-                  $groupWord[$key]['son']['chinese_word'] = explode('@',$val['son']['chinese_word']);
-                  $groupWord[$key]['son']['options'] = json_decode($val['son']['options'],true);
-                  $groupWord[$key]['son']['answer'] = $val['son']['answer'];
-                  $groupWord[$key]['son']['sentence'] = json_decode($val['son']['sentence'],true);
-                  $groupWord[$key]['son']['currentNumber'] = $key+1;
-              }
+            if (array_key_exists('son', $val)) {
+                $groupWord[$key]['son']['chinese_word']  = explode('@', $val['son']['chinese_word']);
+                $groupWord[$key]['son']['options']       = json_decode($val['son']['options'], true);
+                $groupWord[$key]['son']['answer']        = $val['son']['answer'];
+                $groupWord[$key]['son']['sentence']      = json_decode($val['son']['sentence'], true);
+                $groupWord[$key]['son']['currentNumber'] = $key + 1;
+            }
 
         }
         $groupWord['count'] = count($groupWord);
@@ -164,17 +176,19 @@ class EnglishWord extends Model
      */
     public static function selectWordDetail($result)
     {
-        foreach ($result as $key=>$val){
-            $data = Db::table(YX_QUESTION.'english_word')->where('id',$val['word_id'])->find();
-            if($val['word_id'] == $data['id']){
-            $result[$key]['son'] = $data;
-           }
+        foreach ($result as $key => $val) {
+            $data = Db::table(YX_QUESTION . 'english_word')
+                ->where('id', $val['word_id'])
+                ->find();
+            if ($val['word_id'] == $data['id']) {
+                $result[$key]['son'] = $data;
+            }
         }
 
-        foreach ($result as $key=>$val){
-            if(array_key_exists('son',$val)){
-                $result[$key]['son']['chinese_word'] = explode('@',$val['son']['chinese_word']);
-                $result[$key]['son']['sentence'] = json_decode($val['son']['sentence'],true);
+        foreach ($result as $key => $val) {
+            if (array_key_exists('son', $val)) {
+                $result[$key]['son']['chinese_word'] = explode('@', $val['son']['chinese_word']);
+                $result[$key]['son']['sentence']     = json_decode($val['son']['sentence'], true);
                 unset($result[$key]['son']['options']);
                 unset($result[$key]['son']['answer']);
             }

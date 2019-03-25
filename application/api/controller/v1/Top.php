@@ -19,51 +19,51 @@ class Top
     public function getTodayList()
     {
         //根据id获取用户所属班级，并且获得此班级级所有学员，查看每个用户当天学习了多少单词，多少天进行排名
-        $uid = Token::getCurrentTokenVar('uid');
+        $uid       = Token::getCurrentTokenVar('uid');
         $classData = UserClass::getAllUserByUid($uid);
-        if(empty($classData)){
+        if (empty($classData)) {
             throw new MissException([
-                'msg' => '你暂时不是班级学员,请先加入学习再来哦！',
+                'msg'       => '你暂时不是班级学员,请先加入学习再来哦！',
                 'errorCode' => 50000
             ]);
         }
         //获取班级的名称
-        $className = Db::table('yx_class')->where('id',$classData[0]['class_id'])->field('class_name')->find();
-        if(!$className){
+        $className = Db::table('yx_class')->where('id', $classData[0]['class_id'])->field('class_name')->find();
+        if (!$className) {
             throw new MissException([
-                'msg'=>'查询学员班级信息失败',
-                'errorCode'=>50000
+                'msg'       => '查询学员班级信息失败',
+                'errorCode' => 50000
             ]);
         }
         $userTodayLearnedNumber = LearnedHistory::getUserTodayLearnedNumber($classData);
         $userTodayLearnedNumber = LearnedHistory::LearnedDays($userTodayLearnedNumber);
-        $userList = $this->getUserList($userTodayLearnedNumber);
-        if(!$userList){
+        $userList               = $this->getUserList($userTodayLearnedNumber);
+        if (!$userList) {
             throw new MissException([
-                'msg' => '今日榜单信息查询失败',
+                'msg'       => '今日榜单信息查询失败',
                 'errorCode' => 50000
             ]);
         }
 
         $new_arr['data'] = $userList;
 
-        foreach ($userList as $key=>$val){
-            if($val['user_id'] == $uid){
-                $top = $key+1;
-                $new_arr['mine']=$val;
-                $new_arr['mine']['today_top']=&$top;
-                $new_arr['mine']['class_name']=&$className['class_name'];
+        foreach ($userList as $key => $val) {
+            if ($val['user_id'] == $uid) {
+                $top                           = $key + 1;
+                $new_arr['mine']               = $val;
+                $new_arr['mine']['today_top']  =& $top;
+                $new_arr['mine']['class_name'] =& $className['class_name'];
             }
 
         }
 
         $new_arr['data'] = array_values($new_arr['data']);
 
-        if(!$new_arr){
-          throw new MissException([
-              'msg'=>'请求超时,程序员小哥正在努力修复',
-              'errorCode'=>5000
-          ]);
+        if (!$new_arr) {
+            throw new MissException([
+                'msg'       => '请求超时,程序员小哥正在努力修复',
+                'errorCode' => 5000
+            ]);
         }
 
 
@@ -76,67 +76,70 @@ class Top
      */
     private function getUserList($userTodayLearnedNumber)
     {
-        foreach ($userTodayLearnedNumber as $key=>$val){
-            $user = Db::table('yx_user')->where('id',$val['user_id'])->find();
-            if(empty($user)){
+        foreach ($userTodayLearnedNumber as $key => $val) {
+            $user = Db::table('yx_user')->where('id', $val['user_id'])->find();
+            if (empty($user)) {
                 unset($userTodayLearnedNumber[$key]);
                 continue;
             }
-            $userTodayLearnedNumber[$key]['user_name'] = &$user['user_name'];
-            $userTodayLearnedNumber[$key]['nick_name'] = &$user['nick_name'];
-            $userTodayLearnedNumber[$key]['avatar_url'] = &$user['avatar_url'];
+            $userTodayLearnedNumber[$key]['user_name']          = &$user['user_name'];
+            $userTodayLearnedNumber[$key]['nick_name']          = &$user['nick_name'];
+            $userTodayLearnedNumber[$key]['avatar_url']         = &$user['avatar_url'];
             $userTodayLearnedNumber[$key]['all_learned_number'] = &$user['already_number'];
         }
 
-       return $userTodayLearnedNumber;
+        return $userTodayLearnedNumber;
     }
 
 
     public function getHistoryList()
     {
-        $uid = Token::getCurrentTokenVar('uid');
+        $uid       = Token::getCurrentTokenVar('uid');
         $classData = UserClass::getAllUserByUid($uid);
-        if(empty($classData)){
+        if (empty($classData)) {
             throw new MissException([
-                'msg' => '你暂时不是班级学员,请先加入学习再来哦！',
+                'msg'       => '你暂时不是班级学员,请先加入学习再来哦！',
                 'errorCode' => 50000
             ]);
         }
         //获取班级的名称
-        $className = Db::table('yx_class')->where('id',$classData[0]['class_id'])->field('class_name')->find();
-        if(!$className){
+        $className = Db::table('yx_class')
+            ->where('id', $classData[0]['class_id'])
+            ->field('class_name')
+            ->find();
+        if (!$className) {
             throw new MissException([
-                'msg'=>'查询学员班级信息失败',
-                'errorCode'=>50000
+                'msg'       => '查询学员班级信息失败',
+                'errorCode' => 50000
             ]);
         }
         $allLearnedNumber = LearnedHistory::getUseLearnedNumber($classData);
-        $classData = LearnedHistory::LearnedDays($allLearnedNumber);
-        $userList = $this->getHistoryUserList($classData);
-        if(!$userList){
+        $classData        = LearnedHistory::LearnedDays($allLearnedNumber);
+        $userList         = $this->getHistoryUserList($classData);
+        if (!$userList) {
             throw new MissException([
-                'msg' => '今日榜单信息查询失败',
+                'msg'       => '今日榜单信息查询失败',
                 'errorCode' => 50000
             ]);
         }
 
         $new_arr['data'] = $userList;
 
-        foreach ($userList as $key=>$val){
-            if($val['user_id'] == $uid){
-                $top = $key+1;
-                $new_arr['mine']=$val;
-                $new_arr['mine']['history_top']=&$top;
-                $new_arr['mine']['class_name']=&$className['class_name'];
+        foreach ($userList as $key => $val) {
+            if ($val['user_id'] == $uid) {
+                $top                            = $key + 1;
+                $new_arr['mine']                = $val;
+                $new_arr['mine']['history_top'] =& $top;
+                $new_arr['mine']['class_name']  =& $className['class_name'];
             }
 
         }
         $new_arr['data'] = array_values($new_arr['data']);
 
-        if(!$new_arr){
+        if (!$new_arr) {
             throw new MissException([
-                'msg'=>'请求超时,程序员小哥正在努力修复',
-                'errorCode'=>5000
+                'msg'       => '请求超时,程序员小哥正在努力修复',
+                'errorCode' => 5000
             ]);
         }
         return json($new_arr);
@@ -149,14 +152,16 @@ class Top
     private function getHistoryUserList($userTodayLearnedNumber)
     {
 
-        foreach ($userTodayLearnedNumber as $key=>$val){
-            $user = Db::table('yx_user')->where('id',$val['user_id'])->find();
-            if(empty($user)){
+        foreach ($userTodayLearnedNumber as $key => $val) {
+            $user = Db::table('yx_user')
+                ->where('id', $val['user_id'])
+                ->find();
+            if (empty($user)) {
                 unset($userTodayLearnedNumber[$key]);
                 continue;
             }
-            $userTodayLearnedNumber[$key]['user_name'] = &$user['user_name'];
-            $userTodayLearnedNumber[$key]['nick_name'] = &$user['nick_name'];
+            $userTodayLearnedNumber[$key]['user_name']  = &$user['user_name'];
+            $userTodayLearnedNumber[$key]['nick_name']  = &$user['nick_name'];
             $userTodayLearnedNumber[$key]['avatar_url'] = &$user['avatar_url'];
         }
 
@@ -173,17 +178,17 @@ class Top
     {
         $new_arr = [];
         //当前页
-        $page = empty(input('post.page'))?1:input('post.page');
+        $page = empty(input('post.page')) ? 1 : input('post.page');
         //每页显示条数
         $pageSize = 10;
         //偏移量
-        $limit = ($page-1)*$pageSize;
+        $limit = ($page - 1) * $pageSize;
 
-        $arr = [];
-        $new_arr['data'] = array_slice(array_values($new_arr['data']),$limit,$pageSize,true);
-        foreach ($new_arr['data'] as $key=>$val){
-            $arr[$key+1] = $val;
+        $arr             = [];
+        $new_arr['data'] = array_slice(array_values($new_arr['data']), $limit, $pageSize, true);
+        foreach ($new_arr['data'] as $key => $val) {
+            $arr[$key + 1] = $val;
         }
-        $new_arr['data']=&$arr;
+        $new_arr['data'] =& $arr;
     }
 }
