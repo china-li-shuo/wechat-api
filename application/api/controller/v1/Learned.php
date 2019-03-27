@@ -26,9 +26,9 @@ use think\Db;
 
 class Learned extends BaseController
 {
-    protected $beforeActionList = [
-        'checkPrimaryScope' => ['only' => 'getList,collection']
-    ];
+//    protected $beforeActionList = [
+//        'checkPrimaryScope' => ['only' => 'getList,collection']
+//    ];
 
     public function getList()
     {
@@ -38,7 +38,7 @@ class Learned extends BaseController
         $LearnedData = LearnedHistoryModel::UserLearned($uid);
 
         //如果用户没有学习记录，直接查询第一阶段下，第一组单词
-        if(empty($LearnedData)){
+        if($LearnedData['stage'] == 40 || empty($LearnedData)){
             $stage          = Stage::FirstStageID();
             $group          = Group::firstGroupID($stage);
             $notLearnedData = GroupWord::findFirst($group);
@@ -89,6 +89,70 @@ class Learned extends BaseController
         $notWordData['count'] = count($allData);
         return json($notWordData);
     }
+
+    /**
+     * 公共词汇
+     */
+    public function commonList()
+    {
+        //先根据token获取用户的uid
+        //根据uid去学习记录表中查询用户最后一次学到了第几组的第几个单词
+        $uid         = Token::getCurrentTokenVar('uid');
+        $LearnedData = LearnedHistoryModel::UserLearned($uid);
+
+        //如果用户没有学习记录，直接查询第一阶段下，第一组单词
+        if($LearnedData['stage']!= 40 || empty($LearnedData)){
+            //$stage          = Stage::FirstStageID();
+            $group          = Group::firstGroupID(40);
+            $notLearnedData = GroupWord::findFirst($group);
+            if(empty($notLearnedData)){
+                throw new MissException([
+                    'msg'=>'本组单词为空，请联系管理员进行添加',
+                    'errorCode'=>50000
+                ]);
+            }
+
+            $notLearnedData          = Group::correspondingStage($notLearnedData);
+            $notWordData             = EnglishWord::notWordData($notLearnedData);
+            $notWordData             = CollectionModel::isCollection($uid, $notWordData);
+            $notLearnedData          = EnglishWord::formatConversion($notWordData, 1);
+            $notLearnedData['count'] = count($notLearnedData);
+            return json($notLearnedData);
+        }
+
+        //用户最后一次学习第几组共有多少单词
+        $allData = Group::getAllData($LearnedData);   //25
+        //用户还未学习的组信息
+        $notLearnedData = Group::getGroupData($LearnedData);  //23
+
+        if (empty($notLearnedData)){
+            $wordDetail = $this->commonNextGroupInfo($uid);
+            return json($wordDetail);
+        }
+
+        //查询此组对应的阶段
+        $notLearnedData = Group::correspondingStage($notLearnedData);
+        //用户已学习这组下的第几个数量
+        $currentNumber =  LearnedHistoryModel::userLearnedCurrentNumber($LearnedData);  //2
+
+        //用户还没有学习单词的详情
+        $notWordData = EnglishWord::notWordData($notLearnedData);
+
+        $notWordData = CollectionModel::isCollection($uid,$notWordData);
+
+        if(empty($notWordData)){
+            throw new MissException([
+                'msg' => '没有查到此分组下单词详情',
+                'errorCode' => 50000
+            ]);
+        }
+
+        $notWordData = EnglishWord::formatConversion($notWordData,$currentNumber+1);
+
+        $notWordData['count'] = count($allData);
+        return json($notWordData);
+    }
+
 
     public function clickNext()
     {
@@ -272,5 +336,18 @@ class Learned extends BaseController
         }
 
         return $wordDetail;
+    }
+
+
+    private function commonNextGroupInfo($uid)
+    {
+        $userInfo    = User::getUserInfo($uid);
+        $LastGroupID = Group::userLastGroupID($userInfo);
+        if(empty($LastGroupID)){
+            //如果公共词汇没有了下一组了，判断用户是不是学员或者是不是会员，如果不是此阶段会员也不是学员则提示购买
+            return isTeacher($uid);
+        }
+        $wordDetail = $this->getWordDetail($LastGroupID,$userInfo['now_stage']);
+        return $wordDetail;          //这个是return array  数据
     }
 }

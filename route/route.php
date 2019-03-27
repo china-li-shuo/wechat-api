@@ -18,6 +18,7 @@ Route::post('api/:version/share/punch', 'api/:version.Share/punchCard');
 
 //开始学习
 Route::post('api/:version/learned/list', 'api/:version.Learned/getList');
+Route::post('api/:version/learned/common', 'api/:version.Learned/commonList');
 Route::post('api/:version/learned/click', 'api/:version.Learned/clickNext');
 Route::post('api/:version/learned/collection', 'api/:version.Learned/collection');
 

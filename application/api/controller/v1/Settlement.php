@@ -21,6 +21,7 @@ use app\api\service\Token;
 use app\lib\exception\MissException;
 use app\lib\exception\SuccessMessage;
 use think\Db;
+use think\Exception;
 
 class Settlement
 {
@@ -104,26 +105,27 @@ class Settlement
 
     public function getAgainInfo()
     {
-        //根据token获取用户最后一次学习的哪一阶段，哪一组信息，重新查询一遍详情进行返回
+        //根据token获取用户最后一次学习的哪一阶段，哪一组信息，重新查询一遍详情进行返回,并且清空此用户学的本阶段本组单词
         $uid                = Token::getCurrentTokenVar('uid');
-        $historyLearnedData = LearnedHistory::UserLearned($uid);
-        $lastGroupID        = Group::userLastSortID($historyLearnedData);
-        //根据最后一次阶段id和组id查询group表确定属于某阶段的某一组信息
+        try {
+            $historyLearnedData = LearnedHistory::UserLearned($uid);
+            $lastGroupID        = Group::userLastSortID($historyLearnedData);
+            //根据最后一次阶段id和组id查询group表确定属于某阶段的某一组信息
 
-        //然后最后一次学习组的id进行查询这组下共有多少个单词
-        $groupWord = GroupWord::selectGroupWord($lastGroupID);
-        //然后根据每个组的详情进行查询每个单词的详情
-        $wordDetail = EnglishWord::getNextWordDetail($groupWord);
-        //判断是否收藏过该单词
-        $wordDetail = Collection::isCollection($uid, $wordDetail);
-        if(!$wordDetail){
+            //然后最后一次学习组的id进行查询这组下共有多少个单词
+            $groupWord = GroupWord::selectGroupWord($lastGroupID);
+            //然后根据每个组的详情进行查询每个单词的详情
+            $wordDetail = EnglishWord::getNextWordDetail($groupWord);
+            //判断是否收藏过该单词
+            $wordDetail = Collection::isCollection($uid, $wordDetail);
+            Db::name('learned_history')->where(['user_id'=>$uid,'group'=>$historyLearnedData['group']])->delete();
+            return json($wordDetail);
+        }catch (\Exception $e){
             throw new MissException([
-                'msg' => '重新来过信息查询失败',
+                'msg' => $e->getMessage(),
                 'errorCode' => 50000
             ]);
         }
-
-        return json($wordDetail);
     }
 
 
@@ -131,6 +133,10 @@ class Settlement
     {
         $uid         = Token::getCurrentTokenVar('uid');
         $userInfo    = User::getUserInfo($uid);
+        if($userInfo['now_stage'] == 40){
+            $data = isTeacher($uid);
+            return json($data);
+        }
         $LastGroupID = Group::userLastGroupID($userInfo);
 
         if(empty($LastGroupID)){
