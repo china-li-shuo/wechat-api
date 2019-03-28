@@ -162,6 +162,7 @@ class Stage extends Model
     {
         $stageData = Db::table(YX_QUESTION . 'stage')
             ->where('parent_id', '<>', 0)
+            ->where('id', '<>', 40)
             ->order('sort')
             ->field('id')
             ->select();

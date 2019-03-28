@@ -51,7 +51,7 @@ class LearnedHistory extends Model
             ->select();
 
         foreach ($data as $key => $val) {
-            $stage  = Db::table(YX_QUESTION . 'stage')
+            $stage                    = Db::table(YX_QUESTION . 'stage')
                 ->where('id', $val['stage'])
                 ->field('stage_name')
                 ->find();
@@ -79,7 +79,7 @@ class LearnedHistory extends Model
 
             foreach ($data as $k => $v) {
 
-                $group  = Db::table(YX_QUESTION . 'group')
+                $group = Db::table(YX_QUESTION . 'group')
                     ->where('id', $v['group'])
                     ->field('id,group_name')
                     ->find();
@@ -144,7 +144,7 @@ class LearnedHistory extends Model
     {
         foreach ($historyGroupData as $key => $val) {
 
-            $alreadyGroupNum  = Db::table('yx_learned_history')
+            $alreadyGroupNum = Db::table('yx_learned_history')
                 ->where('user_id', $uid)
                 ->where('group', $val['group'])
                 ->count();
@@ -170,7 +170,8 @@ class LearnedHistory extends Model
     public static function addUserHistory($uid, $data, $answerResult)
     {
         $result = Db::table('yx_learned_history')
-            ->where('user_id', $uid)->where('group', $data['group'])
+            ->where('user_id', $uid)
+            ->where('group', $data['group'])
             ->where('word_id', $data['word_id'])
             ->field('id,group,user_id,stage,word_id,is_true')
             ->find();
@@ -201,11 +202,15 @@ class LearnedHistory extends Model
                     ->update($arr);
             }
         }
-
+        $arr      = [
+            'now_stage'      => $data['stage'],
+            'now_group'      => $data['group'],
+        ];
+        Db::name('user')->where('id',$uid)->update($arr);
         return Db::table('yx_learned_history')
             ->where('user_id', $uid)
             ->where('word_id', $data['word_id'])
-            ->update(['is_true' => $answerResult, 'create_time' => time()]);
+            ->update(['is_true' => $answerResult]);
     }
 
     /**
@@ -259,7 +264,7 @@ class LearnedHistory extends Model
     public static function LearnedDays($userTodayLearnedNumber)
     {
         foreach ($userTodayLearnedNumber as $key => $val) {
-            $LearnedNumber  = self::calendarDays($val['user_id']);
+            $LearnedNumber                                = self::calendarDays($val['user_id']);
             $userTodayLearnedNumber[$key]['learned_days'] = count($LearnedNumber);
         }
 
@@ -278,7 +283,7 @@ class LearnedHistory extends Model
 
         foreach ($stages as $key => $val) {
 
-            $count  = Db::table('yx_learned_history')
+            $count = Db::table('yx_learned_history')
                 ->where('stage', $val['id'])
                 ->where('user_id', $uid)
                 ->count();
@@ -417,7 +422,7 @@ class LearnedHistory extends Model
     {
         foreach ($classData as $key => $val) {
 
-            $count  = Db::table('yx_learned_history')
+            $count                                 = Db::table('yx_learned_history')
                 ->where('user_id', $val['user_id'])
                 ->count();
             $classData[$key]['all_learned_number'] = $count;
@@ -447,7 +452,7 @@ class LearnedHistory extends Model
 
         foreach ($data as $key => $val) {
 
-            $stage  = Db::table(YX_QUESTION . 'stage')
+            $stage = Db::table(YX_QUESTION . 'stage')
                 ->where('id', $val['stage'])
                 ->field('stage_name')
                 ->find();

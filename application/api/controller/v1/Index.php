@@ -28,11 +28,6 @@ class Index
         //根据token获取用户昵称，头像，所属班级,阶段名称，打卡天数，今日已学，已掌握，所剩新词，日历
         $uid       = Token::getCurrentTokenVar('uid');
         $classInfo = UserClass::getClassInfo($uid);
-
-        if(empty($classInfo)){
-            throw new UserClassException();
-        }
-
         $calendar = LearnedHistory::calendarDays($uid);
         $UserInfo = User::getUserInfo($uid);
         //根据互联网用户和班级学员老师赋值不同的权限
@@ -59,7 +54,7 @@ class Index
                 'avatar_url'           => &$UserInfo['avatar_url'],
                 'stage_name'           => &$stageName,
                 'is_teacher'           => &$UserInfo['is_teacher'],
-                'class_name'           => &$className,
+                'class_name'           => !empty($className)?$className:'',
                 'punch_days'           => &$punchDays,
                 'today_learned_number' => &$todayLearnedNumber,
                 'all_learned_number'   => &$allLearnedNumber,

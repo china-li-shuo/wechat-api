@@ -11,7 +11,7 @@ namespace app\lib\exception;
 
 class UserClassException extends BaseException
 {
-    public $code = 404;
+    public $code = 400;
     public $msg = '你暂时不是班级学员,请加入学习之后再来';
     public $errorCode = 30000;
 }
