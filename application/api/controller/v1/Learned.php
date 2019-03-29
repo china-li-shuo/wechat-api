@@ -38,14 +38,14 @@ class Learned extends BaseController
         $LearnedData = LearnedHistoryModel::UserLearned($uid);
 
         //如果用户没有学习记录，直接查询第一阶段下，第一组单词
-        if ($LearnedData['stage'] == 40 || empty($LearnedData)) {
+        if($LearnedData['stage'] == 40 || empty($LearnedData)){
             $stage          = Stage::FirstStageID();
             $group          = Group::firstGroupID($stage);
             $notLearnedData = GroupWord::findFirst($group);
-            if (empty($notLearnedData)) {
+            if(empty($notLearnedData)){
                 throw new MissException([
-                    'msg'       => '本组单词为空，请联系管理员进行添加',
-                    'errorCode' => 50000
+                    'msg'=>'本组单词为空，请联系管理员进行添加',
+                    'errorCode'=>50000
                 ]);
             }
 
@@ -62,7 +62,7 @@ class Learned extends BaseController
         //用户还未学习的组信息
         $notLearnedData = Group::getGroupData($LearnedData);  //23
 
-        if (empty($notLearnedData)) {
+        if (empty($notLearnedData)){
             $wordDetail = $this->nextGroupInfo($uid);
             return json($wordDetail);
         }
@@ -70,21 +70,21 @@ class Learned extends BaseController
         //查询此组对应的阶段
         $notLearnedData = Group::correspondingStage($notLearnedData);
         //用户已学习这组下的第几个数量
-        $currentNumber = LearnedHistoryModel::userLearnedCurrentNumber($LearnedData);  //2
+        $currentNumber =  LearnedHistoryModel::userLearnedCurrentNumber($LearnedData);  //2
 
         //用户还没有学习单词的详情
         $notWordData = EnglishWord::notWordData($notLearnedData);
 
-        $notWordData = CollectionModel::isCollection($uid, $notWordData);
+        $notWordData = CollectionModel::isCollection($uid,$notWordData);
 
-        if (empty($notWordData)) {
+        if(empty($notWordData)){
             throw new MissException([
-                'msg'       => '没有查到此分组下单词详情',
+                'msg' => '没有查到此分组下单词详情',
                 'errorCode' => 50000
             ]);
         }
 
-        $notWordData = EnglishWord::formatConversion($notWordData, $currentNumber + 1);
+        $notWordData = EnglishWord::formatConversion($notWordData,$currentNumber+1);
 
         $notWordData['count'] = count($allData);
         return json($notWordData);
@@ -101,14 +101,14 @@ class Learned extends BaseController
         $LearnedData = LearnedHistoryModel::UserLearned($uid);
 
         //如果用户没有学习记录，直接查询第一阶段下，第一组单词
-        if ($LearnedData['stage'] != 40 || empty($LearnedData)) {
+        if($LearnedData['stage']!= 40 || empty($LearnedData)){
             //$stage          = Stage::FirstStageID();
             $group          = Group::firstGroupID(40);
             $notLearnedData = GroupWord::findFirst($group);
-            if (empty($notLearnedData)) {
+            if(empty($notLearnedData)){
                 throw new MissException([
-                    'msg'       => '本组单词为空，请联系管理员进行添加',
-                    'errorCode' => 50000
+                    'msg'=>'本组单词为空，请联系管理员进行添加',
+                    'errorCode'=>50000
                 ]);
             }
 
@@ -125,7 +125,7 @@ class Learned extends BaseController
         //用户还未学习的组信息
         $notLearnedData = Group::getGroupData($LearnedData);  //23
 
-        if (empty($notLearnedData)) {
+        if (empty($notLearnedData)){
             $wordDetail = $this->commonNextGroupInfo($uid);
             return json($wordDetail);
         }
@@ -133,21 +133,21 @@ class Learned extends BaseController
         //查询此组对应的阶段
         $notLearnedData = Group::correspondingStage($notLearnedData);
         //用户已学习这组下的第几个数量
-        $currentNumber = LearnedHistoryModel::userLearnedCurrentNumber($LearnedData);  //2
+        $currentNumber =  LearnedHistoryModel::userLearnedCurrentNumber($LearnedData);  //2
 
         //用户还没有学习单词的详情
         $notWordData = EnglishWord::notWordData($notLearnedData);
 
-        $notWordData = CollectionModel::isCollection($uid, $notWordData);
+        $notWordData = CollectionModel::isCollection($uid,$notWordData);
 
-        if (empty($notWordData)) {
+        if(empty($notWordData)){
             throw new MissException([
-                'msg'       => '没有查到此分组下单词详情',
+                'msg' => '没有查到此分组下单词详情',
                 'errorCode' => 50000
             ]);
         }
 
-        $notWordData = EnglishWord::formatConversion($notWordData, $currentNumber + 1);
+        $notWordData = EnglishWord::formatConversion($notWordData,$currentNumber+1);
 
         $notWordData['count'] = count($allData);
         return json($notWordData);
@@ -170,23 +170,44 @@ class Learned extends BaseController
         $answerResult = EnglishWord::answerResult($data);
 
         //如果答题正确，判断错题本有没有此条记录，如果有则删除
-        if ($answerResult == 1) {
-            ErrorBook::deleteErrorBook($uid, $data);
+        if($answerResult == 1){
+            ErrorBook::deleteErrorBook($uid,$data);
         }
 
-        if ($answerResult == 0) {
-            ErrorBook::addErrorBook($uid, $data);
+        if($answerResult == 0){
+            ErrorBook::addErrorBook($uid,$data);
         }
 
-        $res = LearnedHistoryModel::addUserHistory($uid, $data, $answerResult);
-        if (!$res) {
+        //$this->addUserLearnedData($uid,$data);
+        $res = LearnedHistoryModel::addUserHistory($uid,$data,$answerResult);
+
+        if(!$res){
             throw new MissException([
-                'msg'       => '用户答题记录失败',
+                'msg' => '用户答题记录失败',
                 'errorCode' => 50000
             ]);
         }
+        //判断是此用户是否学完此阶段，获得此勋章
+        //找本阶段的学习数量
+        $already_number = Db::table('yx_learned_history')
+            ->where('user_id',$uid)
+            ->where('stage',$data['stage'])
+            ->count();
 
-        throw new SuccessMessage();
+        $stageData = Db::table(YX_QUESTION.'stage')
+            ->where('id',$data['stage'])
+            ->field('stage_name,stage_desc,word_num')
+            ->find();
+
+        if($already_number>=$stageData['word_num']){
+            $arr = [
+                'stage_name'=>$stageData['stage_name'],
+                'stage_desc'=>$stageData['stage_desc'],
+                ];
+            return json(['msg'=>'ok','code'=>200,'data'=>$arr]);
+        }
+
+        return json(['msg'=>'ok','code'=>200,'data'=>'']);
 
     }
 
@@ -200,46 +221,47 @@ class Learned extends BaseController
         $validate->goCheck();
         $data = $validate->getDataByRule(input('post.'));
         //is_collection  1  为收藏  0 为取消收藏
-        if ($data['is_collection'] == 2) {
-            $res = CollectionModel::deleteCollection($uid, $data);
-            if (!$res) {
+        if($data['is_collection'] == 2){
+            $res = CollectionModel::deleteCollection($uid,$data);
+            if(!$res){
                 throw new MissException([
-                    'msg'       => '你已经取消收藏该单词了呀',
+                    'msg' => '你已经取消收藏该单词了呀',
                     'errorCode' => 50000
                 ]);
             }
-            return json(['msg' => '取消收藏成功', 'code' => 200]);
+            return json(['msg'=>'取消收藏成功','code'=>200]);
         }
 
-        $res = CollectionModel::addCollection($uid, $data);
+        $res = CollectionModel::addCollection($uid,$data);
 
-        if (!$res) {
+        if(!$res){
             throw new MissException([
-                'msg'       => '你已经收藏过该单词了呀',
+                'msg' => '你已经收藏过该单词了呀',
                 'errorCode' => 50000
             ]);
         }
-        return json(['msg' => '收藏成功', 'code' => 200]);
+        return json(['msg'=>'收藏成功','code'=>200]);
     }
+
 
 
     /**
      * 把用户总共学习的单词数量，最后一次学习的阶段,最后一次学习的组写入数据库
      * @param $data
      */
-    private function addUserLearnedData($uid, $data)
+    private function addUserLearnedData($uid,$data)
     {
         $res = Db::table('yx_learned_history')
-            ->where('user_id', $uid)
-            ->where('word_id', $data['word_id'])
-            ->where('group', $data['group'])
-            ->where('stage', $data['stage'])
+            ->where('user_id',$uid)
+            ->where('word_id',$data['word_id'])
+            ->where('group',$data['group'])
+            ->where('stage',$data['stage'])
             ->find();
 
-        if (empty($res)) {
+        if(empty($res)){
 
             $userinfo = Db::table('yx_user')
-                ->where('id', $uid)
+                ->where('id',$uid)
                 ->field('already_number')
                 ->find();
 
@@ -249,7 +271,7 @@ class Learned extends BaseController
                 'now_group'      => $data['group'],
             ];
 
-            return Db::table('yx_user')->where('id', $uid)->update($arr);
+            return Db::table('yx_user')->where('id',$uid)->update($arr);
         }
 
         return true;
@@ -260,55 +282,55 @@ class Learned extends BaseController
         $userInfo    = User::getUserInfo($uid);
         $LastGroupID = Group::userLastGroupID($userInfo);
 
-        if (empty($LastGroupID)) {
-            $stageDesc = Db::table(YX_QUESTION . 'stage')
-                ->where('id', $userInfo['now_stage'])
+        if(empty($LastGroupID)){
+            $stageDesc = Db::table(YX_QUESTION.'stage')
+                ->where('id',$userInfo['now_stage'])
                 ->field('stage_desc')
                 ->find();
 
             //去找下一阶段,第一组单词
             $nextStageID = Stage::nextStageGroupInfo($userInfo);
-            if (empty($nextStageID)) {
+            if(empty($nextStageID)){
                 throw new SuccessMessage([
-                    'msg'       => '你太厉害了，所有阶段都已经通关了',
-                    'errorCode' => 50000
+                    'msg'=>'你太厉害了，所有阶段都已经通关了',
+                    'errorCode'=>50000
                 ]);
             }
             //如果不为空，去找下一阶段的第一组id
             $nextStageFirstGroupID = Group::nextStageFirstGroupID($nextStageID);
-            if (empty($nextStageFirstGroupID)) {
+            if(empty($nextStageFirstGroupID)){
                 throw new SuccessMessage([
-                    'msg'       => '亲，暂你已经学完所有单词了，因为下一阶段，没有任何分组哦！',
-                    'errorCode' => 50000
+                    'msg'=>'亲，暂你已经学完所有单词了，因为下一阶段，没有任何分组哦！',
+                    'errorCode'=>50000
                 ]);
             }
-            $wordDetail = $this->getWordDetail($nextStageFirstGroupID, $nextStageID);
+            $wordDetail = $this->getWordDetail($nextStageFirstGroupID,$nextStageID);
             return $wordDetail;      //这个是return array  数据
         }
-        $wordDetail = $this->getWordDetail($LastGroupID, $userInfo['now_stage']);
+        $wordDetail = $this->getWordDetail($LastGroupID,$userInfo['now_stage']);
         return $wordDetail;          //这个是return array  数据
     }
 
-    private function getWordDetail($LastGroupID, $nowStageID)
+    private function getWordDetail($LastGroupID,$nowStageID)
     {
         $groupWord = GroupWord::selectGroupWord($LastGroupID);
 
-        if (empty($groupWord)) {
+        if(empty($groupWord)){
             throw new MissException([
-                'msg'       => '亲，此小组下没有任何单词(⊙o⊙)哦',
+                'msg' => '亲，此小组下没有任何单词(⊙o⊙)哦',
                 'errorCode' => 50000
             ]);
         }
 
-        foreach ($groupWord as $key => $val) {
+        foreach ($groupWord as $key=>$val){
             $groupWord[$key]['stage'] = $nowStageID;
         }
 
         $wordDetail = EnglishWord::getNextWordDetail($groupWord);
 
-        if ($wordDetail['count'] == 0) {
+        if($wordDetail['count'] == 0){
             throw new MissException([
-                'msg'       => '亲，此小组下没有任何单词(⊙o⊙)哦',
+                'msg' => '亲，此小组下没有任何单词(⊙o⊙)哦',
                 'errorCode' => 50000
             ]);
         }
@@ -321,11 +343,11 @@ class Learned extends BaseController
     {
         $userInfo    = User::getUserInfo($uid);
         $LastGroupID = Group::userLastGroupID($userInfo);
-        if (empty($LastGroupID)) {
+        if(empty($LastGroupID)){
             //如果公共词汇没有了下一组了，判断用户是不是学员或者是不是会员，如果不是此阶段会员也不是学员则提示购买
             return isTeacher($uid);
         }
-        $wordDetail = $this->getWordDetail($LastGroupID, $userInfo['now_stage']);
+        $wordDetail = $this->getWordDetail($LastGroupID,$userInfo['now_stage']);
         return $wordDetail;          //这个是return array  数据
     }
 }

@@ -12,6 +12,7 @@ Route::post('api/:version/sms/bind', 'api/:version.Sms/bindMobile');
 Route::post('api/:version/stage/info', 'api/:version.Stage/getStages');
 Route::post('api/:version/stage/all', 'api/:version.Stage/getAllStage');
 Route::post('api/:version/stage/detail', 'api/:version.Stage/getDetail');
+Route::post('api/:version/stage/record', 'api/:version.Stage/recordStage');
 
 //分享打卡
 Route::post('api/:version/share/punch', 'api/:version.Share/punchCard');

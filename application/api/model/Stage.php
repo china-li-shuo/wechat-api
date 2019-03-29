@@ -173,19 +173,16 @@ class Stage extends Model
         return false;
     }
 
-
-//    /**
-//     * 根据已学单词数量获取目前阶段名称
-//     * @param $allLearnedNumber
-//     */
-//    public static function getStageNameByLearnedNumber($allLearnedNumber)
-//    {
-//        $data = Db::table(YX_QUESTION.'stage')->where('parent_id','<>',0)->field('stage_name,word_num')->select();
-//        foreach (array_reverse($data) as $key=>$val){
-//            if($allLearnedNumber > $val['word_num']){
-//                return $val['stage_name'];
-//            }
-//        }
-//        return $data[0]['stage_name'];
-//    }
+    public static function commonStageID()
+    {
+        $stageData = Db::table(YX_QUESTION . 'stage')
+            ->where('parent_id', '<>', 0)
+            ->order('sort')
+            ->field('id')
+            ->select();
+        if (!empty($stageData)) {
+            return $stageData[0]['id'];
+        }
+        return false;
+    }
 }

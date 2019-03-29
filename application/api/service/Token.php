@@ -151,7 +151,7 @@ class Token
     {
         $uid = self::getCurrentTokenVar('uid');
         $scope = self::getCurrentTokenVar('scope');
-        if ($scope == ScopeEnum::Student)
+        if ($scope == ScopeEnum::Teacher)
         {
             // 只有Super权限才可以自己传入uid
             // 且必须在get参数中，post不接受任何uid字段
