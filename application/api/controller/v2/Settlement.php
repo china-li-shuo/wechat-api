@@ -159,7 +159,7 @@ class Settlement
     {
         $uid      = Token::getCurrentTokenVar('uid');
         $userInfo = User::getUserInfo($uid);
-        $commonID = Stage::commonStageID();
+        $commonID = Stage::FirstCommonStageID();
         if ($userInfo['now_stage'] == $commonID) {
             $data = isTeacher($uid);
             return json($data);

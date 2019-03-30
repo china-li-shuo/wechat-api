@@ -176,6 +176,19 @@ class Stage extends Model
     public static function commonStageID()
     {
         $stageData = Db::table(YX_QUESTION . 'stage')
+            ->where('parent_id', 0)
+            ->order('sort')
+            ->field('id')
+            ->select();
+        if (!empty($stageData)) {
+            return $stageData[0]['id'];
+        }
+        return false;
+    }
+
+    public static function FirstCommonStageID()
+    {
+        $stageData = Db::table(YX_QUESTION . 'stage')
             ->where('parent_id', '<>', 0)
             ->order('sort')
             ->field('id')

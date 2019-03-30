@@ -175,7 +175,6 @@ class LearnedHistory extends Model
             ->where('word_id', $data['word_id'])
             ->field('id,group,user_id,stage,word_id,is_true')
             ->find();
-
         if (empty($result)) {
             $arr = [
                 'user_id'     => $uid,
@@ -188,6 +187,9 @@ class LearnedHistory extends Model
             $res = Db::table('yx_learned_history')->insert($arr);
             //学习记录表数据能够进行插入才修改用户记录信息
             if ($res) {
+                //进行同步redis有序集合
+                //self::isTodayLearned($uid,$data);
+
                 $userinfo = Db::table('yx_user')
                     ->where('id', $uid)
                     ->field('already_number')
@@ -206,11 +208,14 @@ class LearnedHistory extends Model
             'now_stage'      => $data['stage'],
             'now_group'      => $data['group'],
         ];
+
         Db::name('user')->where('id',$uid)->update($arr);
-        return Db::table('yx_learned_history')
-            ->where('user_id', $uid)
-            ->where('word_id', $data['word_id'])
-            ->update(['is_true' => $answerResult]);
+        Db::table('yx_learned_history')
+        ->where('user_id', $uid)
+        ->where('word_id', $data['word_id'])
+        ->update(['is_true' => $answerResult]);
+
+        return true;
     }
 
     /**
@@ -229,6 +234,44 @@ class LearnedHistory extends Model
             ->count();
     }
 
+    /**
+     * 判断此阶段此分组此单词是否是今天
+     * @param $uid
+     * @param $data
+     */
+    public static function isTodayLearned($uid,$data)
+    {
+        //查询用户所属的班级名称，
+        $classInfo = UserClass::getClassInfo($uid);
+        $date = date("Y-m-d", time());
+        $className = UserClass::getClassName($classInfo);
+        if(empty($className)){
+            $className = '互联网';
+        }
+        $beginToday = mktime(0, 0, 0, date('m'), date('d'), date('Y'));
+        $endToday   = mktime(0, 0, 0, date('m'), date('d') + 1, date('Y')) - 1;
+        $where[]    = ['create_time', 'between time', [$beginToday, $endToday]];
+        //查询用户此阶段次单词是否是今日所学
+        $todayData = Db::name('learned_history')
+            ->where('user_id', $uid)
+            ->where($where)
+            ->where('group',$data['group'])
+            ->where('stage',$data['stage'])
+            ->where('word_id',$data['word_id'])
+            ->find();
+        if(empty($todayData)){
+           //不是今日所学单词
+            return true;
+        }
+        $redis = new \Redis();
+        $redis->connect('127.0.0.1', 6379);
+        // Redis 没设置密码则不需要这行代码
+        // $redis->auth('opG5dGo9feYarUifaLb8AdjKcAAXArgZ');
+        //zadd 海淀一班级 5  李四
+        //$res = $redis->zScore($className.$date,$uid);
+        $redis->zIncrBy($className.$date,1,$uid);
+        return true;
+    }
     public static function getAllLearnedNumber($uid)
     {
         return Db::table('yx_learned_history')

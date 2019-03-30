@@ -72,7 +72,7 @@ class Learned extends BaseController
             //判断公共的用户是否学过
             $LearnedData = LearnedHistoryModel::UserLearned($uid);
             //查找公共阶段ID
-            $commonID = Stage::commonStageID();
+            $commonID = Stage::FirstCommonStageID();
             //如果用户没有学习记录,直接查询公共词组
             if (empty($LearnedData)) {
                 $group                   = Group::firstGroupID($commonID);
@@ -125,7 +125,7 @@ class Learned extends BaseController
         try {
             //用户历史学习记录
             $LearnedData = LearnedHistoryModel::UserLearned($uid);
-            $commonID = Stage::commonStageID();
+            $commonID = Stage::FirstCommonStageID();
             //如果用户没有学习记录，直接查询第一阶段下，第一组单词
             if ($LearnedData['stage']!=$commonID || empty($LearnedData)) {
                 $stage          = Stage::FirstStageID();

@@ -43,6 +43,7 @@ Route::post('api/:version/settlement/next', 'api/:version.Settlement/nextGroupIn
 
 //今日榜单
 Route::post('api/:version/top/today', 'api/:version.Top/getTodayList');
+Route::post('api/:version/top/rank', 'api/:version.Top/getTodayRanking');
 Route::post('api/:version/top/history', 'api/:version.Top/getHistoryList');
 
 

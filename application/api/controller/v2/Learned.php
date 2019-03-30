@@ -9,19 +9,19 @@
 namespace app\api\controller\v2;
 
 use app\api\controller\BaseController;
+use app\api\model\Collection as CollectionModel;
 use app\api\model\EnglishWord;
 use app\api\model\ErrorBook;
 use app\api\model\Group;
 use app\api\model\GroupWord;
-use app\api\model\Collection as CollectionModel;
 use app\api\model\LearnedHistory as LearnedHistoryModel;
+use app\api\model\Stage;
 use app\api\model\User;
 use app\api\service\Token;
 use app\api\validate\Collection;
 use app\api\validate\LearnedHistory;
 use app\lib\exception\MissException;
 use app\lib\exception\SuccessMessage;
-use app\api\model\Stage;
 use think\Db;
 
 class Learned extends BaseController
@@ -36,9 +36,8 @@ class Learned extends BaseController
         //根据uid去学习记录表中查询用户最后一次学到了第几组的第几个单词
         $uid         = Token::getCurrentTokenVar('uid');
         $LearnedData = LearnedHistoryModel::UserLearned($uid);
-
         //公共词汇id
-        $commonID = Stage::commonStageID();
+        $commonID = Stage::FirstCommonStageID();
         //如果用户没有学习记录，直接查询第一阶段下，第一组单词
         if ($LearnedData['stage'] == $commonID || empty($LearnedData)) {
             $stage          = Stage::FirstStageID();
@@ -101,10 +100,11 @@ class Learned extends BaseController
         //根据uid去学习记录表中查询用户最后一次学到了第几组的第几个单词
         $uid         = Token::getCurrentTokenVar('uid');
         $LearnedData = LearnedHistoryModel::UserLearned($uid);
-        //公共词汇id
-        $commonID = Stage::commonStageID();
+        //公共阶段下的子阶段id
+        $commonID = Stage::FirstCommonStageID();
         //如果用户没有学习记录，直接查询第一阶段下，第一组单词
         if ($LearnedData['stage'] != $commonID || empty($LearnedData)) {
+
             $group          = Group::firstGroupID($commonID);
             $notLearnedData = GroupWord::findFirst($group);
             if (empty($notLearnedData)) {
@@ -167,8 +167,7 @@ class Learned extends BaseController
 
         $uid = Token::getCurrentTokenVar('uid');
 
-        $data = $validate->getDataByRule(input('post.'));
-
+        $data         = $validate->getDataByRule(input('post.'));
         $answerResult = EnglishWord::answerResult($data);
 
         //如果答题正确，判断错题本有没有此条记录，如果有则删除
@@ -179,7 +178,6 @@ class Learned extends BaseController
         if ($answerResult == 0) {
             ErrorBook::addErrorBook($uid, $data);
         }
-
         $res = LearnedHistoryModel::addUserHistory($uid, $data, $answerResult);
         if (!$res) {
             throw new MissException([
@@ -187,7 +185,6 @@ class Learned extends BaseController
                 'errorCode' => 50000
             ]);
         }
-
         throw new SuccessMessage();
 
     }

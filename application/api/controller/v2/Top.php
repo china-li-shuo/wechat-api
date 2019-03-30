@@ -40,6 +40,63 @@ class Top
     }
 
     /**
+     * 利用redis的有序集合实现排行榜
+     * @return \think\response\Json
+     * @throws Exception
+     * @throws MissException
+     * @throws \app\lib\exception\TokenException
+     */
+    public function getTodayRanking()
+    {
+        //根据id获取用户所属班级，并且获得此班级级所有学员，查看每个用户当天学习了多少单词，多少天进行排名
+        $uid       = Token::getCurrentTokenVar('uid');
+        $userInfo  = UserClass::getClassInfo($uid);
+        $className = UserClass::getClassName($userInfo);
+        if (empty($className)) {
+            $className = '互联网';
+        }
+        try {
+            $date  = date("Y-m-d", time());
+            $redis = new \Redis();
+            $redis->connect('127.0.0.1', 6379);
+            // Redis 没设置密码则不需要这行代码
+            // $redis->auth('opG5dGo9feYarUifaLb8AdjKcAAXArgZ');
+            //榜单
+            $rankData = $redis->zRevRange($className . $date, 0, -1, true);
+            //zrevrank 查看此用户的今日排名
+            $userRank = $redis->zRevRank($className . $date, $uid);
+            //进行删除redis不是今日排行的榜单
+            //$redis->del($className . $date);
+            $userRank = $userRank + 1;
+            foreach ($rankData as $key => $val) {
+                $userData                         = Db::name('user')
+                    ->field('id,user_name,nick_name,avatar_url')
+                    ->where('id', $key)
+                    ->find();
+                $userData['today_learned_number'] = $val;
+                $LearnedNumber                    = LearnedHistory::calendarDays($key);
+                $userData['learned_days']         = count($LearnedNumber);
+                $rankData[$key]                   = $userData;
+            }
+            $rankData                       = array_values($rankData);
+            $userInfo                       = Db::name('user')
+                ->field('id,user_name,nick_name,avatar_url')
+                ->where('id', $uid)
+                ->find();
+            $rankData['mine']               = $userInfo;
+            $rankData['mine']['min_top']    = $userRank;
+            $rankData['mine']['class_name'] = $className;
+            return json($rankData);
+        } catch (\Exception $e) {
+            throw new MissException([
+                'msg'       => $e->getMessage(),
+                'errorCode' => 50000
+            ]);
+        }
+
+    }
+
+    /**
      * 获取历史排行榜信息
      * @return \think\response\Json
      * @throws Exception
@@ -129,6 +186,7 @@ class Top
     {
         try {
             $userData = User::where('is_teacher', 0)
+                ->where('mobile', '<>', '')
                 ->field('id as user_id')
                 ->select();
             if ($is_today == 0) {

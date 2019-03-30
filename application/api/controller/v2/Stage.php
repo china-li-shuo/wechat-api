@@ -56,6 +56,7 @@ class Stage
                     $stages[$key]['son'][$k]['stageName'] = $stage_name;
                 }
             }
+            $stages[$key]['son'] = array_values($stages[$key]['son']);
         }
         if (empty($stages)) {
             throw new MissException([
@@ -161,8 +162,15 @@ class Stage
             $commonID = StageModel::commonStageID();
             if ($id == $commonID) {
                 $number      = Db::name('learned_history')->where(['user_id' => $uid, 'stage' => $id])->count();
-                $stageNumber = Db::table(YX_QUESTION . 'stage')->field('word_num')->where('id', $id)->find();
-                if ($stageNumber['word_num'] == $number) {
+                $stageData   = Db::table(YX_QUESTION . 'stage')
+                    ->field('word_num')
+                    ->where('parent_id', $id)
+                    ->select();
+                $stageNumber = 0;
+                foreach ($stageData as $key => $val) {
+                    $stageNumber += $val['word_num'];
+                }
+                if ($stageNumber == $number) {
                     cache('record_stage' . $uid, 1);
                     return json(['msg' => 'ok', 'code' => 200]);
                 } else {

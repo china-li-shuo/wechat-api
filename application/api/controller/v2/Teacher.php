@@ -10,10 +10,9 @@ namespace app\api\controller\v2;
 
 use app\api\controller\BaseController;
 use app\api\model\Group;
-use app\api\model\LearnedHistory;
+use app\api\model\Stage;
 use app\api\model\UserClass;
 use app\api\service\Token;
-use app\api\model\Stage;
 use app\lib\exception\MissException;
 use think\Db;
 
@@ -35,9 +34,10 @@ class Teacher extends BaseController
 
 
         if (!empty($stage) && !empty($group)) {
-
             $allStudentInfo = $this->getAdminInfo($uid, $stage, $group, $sort);
 
+            $groupName    = Db::table(YX_QUESTION . 'group')->field('group_name')->where('id', $group)->find();
+            $allStudentInfo['group_name'] =& $groupName['group_name'];
             if (empty($allStudentInfo)) {
                 throw new MissException([
                     'msg'       => '此班级下,此阶段下,此分组下,学员信息查询失败',
@@ -58,6 +58,7 @@ class Teacher extends BaseController
         }
         //根据第一阶段ID,找出此阶段下第一分组,单词信息
         $firstGroupID = Group::firstGroupID($stageID);
+        $groupName    = Db::table(YX_QUESTION . 'group')->field('group_name')->where('id', $firstGroupID)->find();
         if (empty($firstGroupID)) {
             throw new MissException([
                 'msg'       => '没有get到该阶段下，任何分组信息',
@@ -65,8 +66,8 @@ class Teacher extends BaseController
             ]);
         }
 
-        $allStudentInfo = $this->getAdminInfo($uid, $stageID, $firstGroupID, $sort);
-
+        $allStudentInfo               = $this->getAdminInfo($uid, $stageID, $firstGroupID, $sort);
+        $allStudentInfo['group_name'] =& $groupName['group_name'];
         if (empty($allStudentInfo)) {
             throw new MissException([
                 'msg'       => '此班级下,此阶段下,此分组下,学员信息查询失败',
@@ -94,6 +95,7 @@ class Teacher extends BaseController
             $groupData = Db::table(YX_QUESTION . 'group')
                 ->where('stage_id', $val['id'])
                 ->field('id,group_name')
+                ->order('sort desc')
                 ->select();
 
             if (empty($groupData)) {
@@ -203,6 +205,7 @@ class Teacher extends BaseController
             ]);
         }
         //如果有班级信息，进行展示用户的用户名头像，班级的名称等信息
+        $i = 0;
         foreach ($allStudentInfo as $key => $val) {
             $userInfo = Db::table('yx_user')
                 ->where('id', $val['user_id'])
@@ -211,6 +214,9 @@ class Teacher extends BaseController
             if (empty($userInfo)) {
                 unset($allStudentInfo[$key]);
                 continue;
+            }
+            if ($val['already_studied'] != 0) {
+                $i++;
             }
             $allStudentInfo[$key]['user_name']  = &$userInfo['user_name'];
             $allStudentInfo[$key]['nick_name']  = &$userInfo['nick_name'];
@@ -223,16 +229,19 @@ class Teacher extends BaseController
                 'errorCode' => 50000
             ]);
         }
-        $allStudentInfo               = $this->multisort($sort, $allStudentInfo);
-        $allStudentInfo['class_name'] = &$className;
+        $allStudentInfo        = $this->multisort($sort, $allStudentInfo);
+        $data['data']          =& $allStudentInfo;
+        $data['total_people']  = count($allStudentInfo);
+        $data['class_name']    = &$className;
+        $data['total_studies'] = $i;
 
-        if (empty($allStudentInfo)) {
+
+        if (empty($data)) {
             throw new MissException([
                 'msg'       => '此班级下,此阶段下,此分组下,学员信息查询失败',
                 'errorCode' => 50000
             ]);
         }
-
-        return $allStudentInfo;
+        return $data;
     }
 }
