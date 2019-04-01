@@ -32,10 +32,11 @@ class LearnedHistory extends Model
     public static function UserLearnedCommon($uid)
     {
         //公共词汇id
-        $commonID = Stage::FirstCommonStageID();
+        $commonID = Stage::CommonStageID();
+        $stageIDS = Stage::selectStageData($commonID);
         return Db::table('yx_learned_history')
             ->where('user_id', $uid)
-            ->where('stage', $commonID)
+            ->where('stage', 'in', $stageIDS)
             ->field('id,group,user_id,stage,word_id,is_true')
             ->order('create_time desc')
             ->limit(1)
@@ -54,7 +55,7 @@ class LearnedHistory extends Model
         $stageIDS = Stage::selectStageData($commonID);
         return Db::table('yx_learned_history')
             ->where('user_id', $uid)
-            ->where('stage','not in', $stageIDS)
+            ->where('stage', 'not in', $stageIDS)
             ->field('id,group,user_id,stage,word_id,is_true')
             ->order('create_time desc')
             ->limit(1)
