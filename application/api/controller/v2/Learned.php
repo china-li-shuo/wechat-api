@@ -126,7 +126,6 @@ class Learned extends BaseController
         $notLearnedData = Group::getGroupData($LearnedData);  //23
         if (empty($notLearnedData)) {
             $wordDetail = $this->commonNextGroupInfo($uid,$LearnedData);
-            print_r($wordDetail);die;
             if (empty($wordDetail)) {
                 throw new MissException([
                     'msg'       => '本阶段单词已经学完了',

@@ -119,7 +119,6 @@ class Token
     {
         $token = Request::instance()
             ->header('token');
-        print_r($token);die;
         $identities = Cache::get($token);
         //cache 助手函数有bug
 //        $identities = cache($token);
