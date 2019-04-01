@@ -64,7 +64,7 @@ class EnglishWord extends Model
     public static function notWordData($notLearnedData)
     {
         foreach ($notLearnedData as $key => $val) {
-            $data  = Db::table(YX_QUESTION . 'english_word')
+            $data                                  = Db::table(YX_QUESTION . 'english_word')
                 ->where('id', $val['wid'])
                 ->find();
             $notLearnedData[$key]['is_collection'] = 2;
@@ -76,12 +76,14 @@ class EnglishWord extends Model
 
     public static function formatConversion($notWordData, $currentNumber)
     {
+        $us_audio = config('setting.audio_prefix');
         foreach ($notWordData as $key => $val) {
             foreach ($val as $k => $v) {
                 $notWordData[$key]['son']['chinese_word']  = explode('@', $v['chinese_word']);
                 $notWordData[$key]['son']['options']       = json_decode($v['options'], true);
                 $notWordData[$key]['son']['sentence']      = json_decode($v['sentence'], true);
                 $notWordData[$key]['son']['currentNumber'] = $currentNumber + $key;
+                $notWordData[$key]['son']['us_audio']      = $us_audio . $v['us_audio'];
             }
 
         }
@@ -139,12 +141,11 @@ class EnglishWord extends Model
      */
     public static function getNextWordDetail($groupWord)
     {
-
         foreach ($groupWord as $key => $val) {
-            $data  = Db::table(YX_QUESTION . 'english_word')
+            $data                     = Db::table(YX_QUESTION . 'english_word')
                 ->where('id', $val['wid'])
                 ->find();
-            $stage = Db::table(YX_QUESTION . 'group')
+            $stage                    = Db::table(YX_QUESTION . 'group')
                 ->where('id', $val['group'])
                 ->field('stage_id')
                 ->find();
@@ -154,7 +155,7 @@ class EnglishWord extends Model
                 $groupWord[$key]['son']           = $data;
             }
         }
-
+        $us_audio = config('setting.audio_prefix');
         foreach ($groupWord as $key => $val) {
             //查询是否收藏过该单词
             if (array_key_exists('son', $val)) {
@@ -163,6 +164,7 @@ class EnglishWord extends Model
                 $groupWord[$key]['son']['answer']        = $val['son']['answer'];
                 $groupWord[$key]['son']['sentence']      = json_decode($val['son']['sentence'], true);
                 $groupWord[$key]['son']['currentNumber'] = $key + 1;
+                $groupWord[$key]['son']['us_audio']      = $us_audio . $val['son']['us_audio'];
             }
 
         }
@@ -185,10 +187,12 @@ class EnglishWord extends Model
             }
         }
 
+        $us_audio = config('setting.audio_prefix');
         foreach ($result as $key => $val) {
             if (array_key_exists('son', $val)) {
                 $result[$key]['son']['chinese_word'] = explode('@', $val['son']['chinese_word']);
                 $result[$key]['son']['sentence']     = json_decode($val['son']['sentence'], true);
+                $result[$key]['son']['us_audio']     = $us_audio . $val['son']['us_audio'];
                 unset($result[$key]['son']['options']);
                 unset($result[$key]['son']['answer']);
             }

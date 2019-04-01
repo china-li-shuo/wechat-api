@@ -22,6 +22,7 @@ class Stage
     {
         Token::getCurrentTokenVar('uid');
         $stages = StageModel::getStages();
+        $stages = array_values($stages);
         if (empty($stages)) {
             throw new MissException([
                 'msg'       => '还没有任何阶段',
@@ -77,9 +78,9 @@ class Stage
         $validate = new IDMustBePositiveInt();
         $validate->goCheck();
         $stageData             = StageModel::findStage($id);
-        $historyGroupData      = LearnedHistory::getUserGroupData($uid);
+        $historyGroupData      = LearnedHistory::getUserStageGroupData($uid,$id);
         $historyGroupCount     = count($historyGroupData);
-        $historyWordCount      = LearnedHistory::UserCountGroup($uid);
+        $historyWordCount      = LearnedHistory::UserCountStageGroup($uid,$id);
         $eachGroupData         = Group::getEachStageGroupData($id);
         $historyGroupWordCount = LearnedHistory::getAlreadyLearnedGroupWordCount($uid, $historyGroupData);
 

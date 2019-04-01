@@ -19,6 +19,7 @@ class Stage extends Model
         return Db::table(YX_QUESTION . 'stage')
             ->field('id,stage_name')
             ->where('parent_id', 0)
+            ->order('sort')
             ->select();
     }
 
@@ -160,9 +161,10 @@ class Stage extends Model
      */
     public static function FirstStageID()
     {
+        $commonID  = Stage::CommonStageID();
         $stageData = Db::table(YX_QUESTION . 'stage')
             ->where('parent_id', '<>', 0)
-            ->where('id', '<>', 40)
+            ->where('parent_id', '<>', $commonID)
             ->order('sort')
             ->field('id')
             ->select();
@@ -197,5 +199,26 @@ class Stage extends Model
             return $stageData[0]['id'];
         }
         return false;
+    }
+
+    /**
+     * 公共阶段下所有的子阶段
+     * @param $commonID
+     * @return bool|string
+     */
+    public static function selectStageData($commonID)
+    {
+        $stage = Db::table(YX_QUESTION . 'stage')
+            ->where('parent_id', $commonID)
+            ->field('id')
+            ->select();
+
+        $ids = '';
+        foreach ($stage as $key=>$val){
+            $ids .= ','.$val['id'];
+        }
+
+        $ids = substr($ids,1);
+        return $ids;
     }
 }

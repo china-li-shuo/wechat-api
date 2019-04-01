@@ -29,6 +29,38 @@ class LearnedHistory extends Model
             ->find();
     }
 
+    public static function UserLearnedCommon($uid)
+    {
+        //公共词汇id
+        $commonID = Stage::FirstCommonStageID();
+        return Db::table('yx_learned_history')
+            ->where('user_id', $uid)
+            ->where('stage', $commonID)
+            ->field('id,group,user_id,stage,word_id,is_true')
+            ->order('create_time desc')
+            ->limit(1)
+            ->find();
+    }
+
+    /**
+     * 开始学习不是公共区域的
+     * @param $uid
+     * @return array|null|\PDOStatement|string|Model
+     */
+    public static function UserLearnedList($uid)
+    {
+        //公共词汇id
+        $commonID = Stage::CommonStageID();
+        $stageIDS = Stage::selectStageData($commonID);
+        return Db::table('yx_learned_history')
+            ->where('user_id', $uid)
+            ->where('stage','not in', $stageIDS)
+            ->field('id,group,user_id,stage,word_id,is_true')
+            ->order('create_time desc')
+            ->limit(1)
+            ->find();
+    }
+
     public static function LearnedAll($uid)
     {
 
@@ -107,6 +139,15 @@ class LearnedHistory extends Model
             ->count();
     }
 
+    public static function UserCountStageGroup($uid, $id)
+    {
+        return Db::table('yx_learned_history')
+            ->where('user_id', $uid)
+            ->where('stage', $id)
+            ->field('id,group,user_id,stage,word_id,is_true')
+            ->count();
+    }
+
     /**
      * 用户历史共学了多少组,分别每个组的信息
      * @param $uid
@@ -115,6 +156,16 @@ class LearnedHistory extends Model
     {
         return Db::table('yx_learned_history')
             ->where('user_id', $uid)
+            ->group('group')
+            ->field('group')
+            ->select();
+    }
+
+    public static function getUserStageGroupData($uid, $id)
+    {
+        return Db::table('yx_learned_history')
+            ->where('user_id', $uid)
+            ->where('stage', $id)
             ->group('group')
             ->field('group')
             ->select();
@@ -204,16 +255,16 @@ class LearnedHistory extends Model
                     ->update($arr);
             }
         }
-        $arr      = [
-            'now_stage'      => $data['stage'],
-            'now_group'      => $data['group'],
+        $arr = [
+            'now_stage' => $data['stage'],
+            'now_group' => $data['group'],
         ];
 
-        Db::name('user')->where('id',$uid)->update($arr);
+        Db::name('user')->where('id', $uid)->update($arr);
         Db::table('yx_learned_history')
-        ->where('user_id', $uid)
-        ->where('word_id', $data['word_id'])
-        ->update(['is_true' => $answerResult]);
+            ->where('user_id', $uid)
+            ->where('word_id', $data['word_id'])
+            ->update(['is_true' => $answerResult]);
 
         return true;
     }
@@ -239,13 +290,13 @@ class LearnedHistory extends Model
      * @param $uid
      * @param $data
      */
-    public static function isTodayLearned($uid,$data)
+    public static function isTodayLearned($uid, $data)
     {
         //查询用户所属的班级名称，
         $classInfo = UserClass::getClassInfo($uid);
-        $date = date("Y-m-d", time());
+        $date      = date("Y-m-d", time());
         $className = UserClass::getClassName($classInfo);
-        if(empty($className)){
+        if (empty($className)) {
             $className = '互联网';
         }
         $beginToday = mktime(0, 0, 0, date('m'), date('d'), date('Y'));
@@ -255,12 +306,12 @@ class LearnedHistory extends Model
         $todayData = Db::name('learned_history')
             ->where('user_id', $uid)
             ->where($where)
-            ->where('group',$data['group'])
-            ->where('stage',$data['stage'])
-            ->where('word_id',$data['word_id'])
+            ->where('group', $data['group'])
+            ->where('stage', $data['stage'])
+            ->where('word_id', $data['word_id'])
             ->find();
-        if(empty($todayData)){
-           //不是今日所学单词
+        if (empty($todayData)) {
+            //不是今日所学单词
             return true;
         }
         $redis = new \Redis();
@@ -269,9 +320,10 @@ class LearnedHistory extends Model
         // $redis->auth('opG5dGo9feYarUifaLb8AdjKcAAXArgZ');
         //zadd 海淀一班级 5  李四
         //$res = $redis->zScore($className.$date,$uid);
-        $redis->zIncrBy($className.$date,1,$uid);
+        $redis->zIncrBy($className . $date, 1, $uid);
         return true;
     }
+
     public static function getAllLearnedNumber($uid)
     {
         return Db::table('yx_learned_history')

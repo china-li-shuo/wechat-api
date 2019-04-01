@@ -95,7 +95,7 @@ class Teacher extends BaseController
             $groupData = Db::table(YX_QUESTION . 'group')
                 ->where('stage_id', $val['id'])
                 ->field('id,group_name')
-                ->order('sort desc')
+                ->order('sort')
                 ->select();
 
             if (empty($groupData)) {

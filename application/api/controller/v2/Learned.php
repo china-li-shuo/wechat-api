@@ -34,12 +34,11 @@ class Learned extends BaseController
     {
         //先根据token获取用户的uid
         //根据uid去学习记录表中查询用户最后一次学到了第几组的第几个单词
-        $uid         = Token::getCurrentTokenVar('uid');
-        $LearnedData = LearnedHistoryModel::UserLearned($uid);
-        //公共词汇id
-        $commonID = Stage::FirstCommonStageID();
+        $uid = Token::getCurrentTokenVar('uid');
+        cache('record_stage' . $uid, 1);
+        $LearnedData = LearnedHistoryModel::UserLearnedList($uid);
         //如果用户没有学习记录，直接查询第一阶段下，第一组单词
-        if ($LearnedData['stage'] == $commonID || empty($LearnedData)) {
+        if (empty($LearnedData)) {
             $stage          = Stage::FirstStageID();
             $group          = Group::firstGroupID($stage);
             $notLearnedData = GroupWord::findFirst($group);
@@ -99,12 +98,11 @@ class Learned extends BaseController
         //先根据token获取用户的uid
         //根据uid去学习记录表中查询用户最后一次学到了第几组的第几个单词
         $uid         = Token::getCurrentTokenVar('uid');
-        $LearnedData = LearnedHistoryModel::UserLearned($uid);
-        //公共阶段下的子阶段id
-        $commonID = Stage::FirstCommonStageID();
+        $LearnedData = LearnedHistoryModel::UserLearnedCommon($uid);
         //如果用户没有学习记录，直接查询第一阶段下，第一组单词
-        if ($LearnedData['stage'] != $commonID || empty($LearnedData)) {
-
+        if (empty($LearnedData)) {
+            //公共阶段下的子阶段id
+            $commonID       = Stage::FirstCommonStageID();
             $group          = Group::firstGroupID($commonID);
             $notLearnedData = GroupWord::findFirst($group);
             if (empty($notLearnedData)) {
@@ -126,12 +124,17 @@ class Learned extends BaseController
         $allData = Group::getAllData($LearnedData);   //25
         //用户还未学习的组信息
         $notLearnedData = Group::getGroupData($LearnedData);  //23
-
         if (empty($notLearnedData)) {
-            $wordDetail = $this->commonNextGroupInfo($uid);
+            $wordDetail = $this->commonNextGroupInfo($uid,$LearnedData);
+            print_r($wordDetail);die;
+            if (empty($wordDetail)) {
+                throw new MissException([
+                    'msg'       => '本阶段单词已经学完了',
+                    'errorCode' => 0
+                ]);
+            }
             return json($wordDetail);
         }
-
         //查询此组对应的阶段
         $notLearnedData = Group::correspondingStage($notLearnedData);
         //用户已学习这组下的第几个数量
@@ -222,38 +225,6 @@ class Learned extends BaseController
     }
 
 
-    /**
-     * 把用户总共学习的单词数量，最后一次学习的阶段,最后一次学习的组写入数据库
-     * @param $data
-     */
-    private function addUserLearnedData($uid, $data)
-    {
-        $res = Db::table('yx_learned_history')
-            ->where('user_id', $uid)
-            ->where('word_id', $data['word_id'])
-            ->where('group', $data['group'])
-            ->where('stage', $data['stage'])
-            ->find();
-
-        if (empty($res)) {
-
-            $userinfo = Db::table('yx_user')
-                ->where('id', $uid)
-                ->field('already_number')
-                ->find();
-
-            $arr = [
-                'already_number' => $userinfo['already_number'] + 1,
-                'now_stage'      => $data['stage'],
-                'now_group'      => $data['group'],
-            ];
-
-            return Db::table('yx_user')->where('id', $uid)->update($arr);
-        }
-
-        return true;
-    }
-
     private function nextGroupInfo($uid)
     {
         $userInfo    = User::getUserInfo($uid);
@@ -316,15 +287,17 @@ class Learned extends BaseController
     }
 
 
-    private function commonNextGroupInfo($uid)
+    private function commonNextGroupInfo($uid,$LearnedData)
     {
-        $userInfo    = User::getUserInfo($uid);
+        $userInfo['now_stage'] = &$LearnedData['stage'];
+        $userInfo['now_group'] = &$LearnedData['group'];
         $LastGroupID = Group::userLastGroupID($userInfo);
         if (empty($LastGroupID)) {
             //如果公共词汇没有了下一组了，判断用户是不是学员或者是不是会员，如果不是此阶段会员也不是学员则提示购买
-            return isTeacher($uid);
+            $data =  isTeacher($uid);
+            echo json_encode($data);die;
         }
-        $wordDetail = $this->getWordDetail($LastGroupID, $userInfo['now_stage']);
+        $wordDetail = $this->getWordDetail($LastGroupID, $LearnedData['stage']);
         return $wordDetail;          //这个是return array  数据
     }
 }

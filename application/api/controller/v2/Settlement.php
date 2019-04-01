@@ -167,10 +167,6 @@ class Settlement
         $LastGroupID = Group::userLastGroupID($userInfo);
 
         if (empty($LastGroupID)) {
-            $stage = Db::table(YX_QUESTION . 'stage')
-                ->where('id', $userInfo['now_stage'])
-                ->field('stage_desc')
-                ->find();
             //去找下一阶段,第一组单词
             $nextStageID = Stage::nextStageGroupInfo($userInfo);
             if (empty($nextStageID)) {
@@ -212,10 +208,6 @@ class Settlement
             $wordDetail = EnglishWord::getNextWordDetail($groupWord);
             //判断是否收藏过该单词
             $wordDetail = Collection::isCollection($uid, $wordDetail);
-            $userInfo   = Db::name('user')->field('already_number')->where('id', $uid)->find();
-            $count      = Db::name('learned_history')->where(['user_id' => $uid, 'group' => $id])->count();
-            Db::name('user')->where('id', $uid)->update(['already_number' => $userInfo['already_number'] - $count]);
-            Db::name('learned_history')->where(['user_id' => $uid, 'group' => $id])->delete();
             return json($wordDetail);
         } catch (\Exception $e) {
             throw new MissException([
@@ -223,5 +215,32 @@ class Settlement
                 'errorCode' => 50000
             ]);
         }
+    }
+
+    private function getWordDetail($LastGroupID,$nowStageID)
+    {
+        $groupWord = GroupWord::selectGroupWord($LastGroupID);
+
+        if(empty($groupWord)){
+            throw new MissException([
+                'msg' => '亲，此小组下没有任何单词(⊙o⊙)哦',
+                'errorCode' => 50000
+            ]);
+        }
+
+        foreach ($groupWord as $key=>$val){
+            $groupWord[$key]['stage'] = $nowStageID;
+        }
+
+        $wordDetail = EnglishWord::getNextWordDetail($groupWord);
+
+        if($wordDetail['count'] == 0){
+            throw new MissException([
+                'msg' => '亲，此小组下没有任何单词(⊙o⊙)哦',
+                'errorCode' => 50000
+            ]);
+        }
+
+        return $wordDetail;
     }
 }
