@@ -32,8 +32,12 @@ class Teacher extends BaseController
         $group = empty(input('post.group')) ? '' : input('post.group');
         $sort  = empty(input('post.sort')) ? '1' : input('post.sort');
 
-
+        $class_id = Db::name('user_class')->field('class_id')->where('user_id', $uid)->find();
         if (!empty($stage) && !empty($group)) {
+            $allStudentInfo = cache('teacher'.$class_id['class_id'].$stage.$group);
+            if(!empty($allStudentInfo)){
+                return json($allStudentInfo);
+            }
             $allStudentInfo = $this->getAdminInfo($uid, $stage, $group, $sort);
 
             $groupName    = Db::table(YX_QUESTION . 'group')->field('group_name')->where('id', $group)->find();
@@ -44,10 +48,9 @@ class Teacher extends BaseController
                     'errorCode' => 50000
                 ]);
             }
-
+            cache('teacher'.$class_id['class_id'].$stage.$group,$allStudentInfo,600);
             return json($allStudentInfo);
         }
-
         //如果没有阶段和分组则进行默认查询第一阶段第一组，学员排名信息
         $stageID = Stage::FirstStageID();
         if (empty($stageID)) {
@@ -58,6 +61,10 @@ class Teacher extends BaseController
         }
         //根据第一阶段ID,找出此阶段下第一分组,单词信息
         $firstGroupID = Group::firstGroupID($stageID);
+        $allStudentInfo = cache('teacher'.$class_id['class_id'].$stageID.$firstGroupID);
+        if(!empty($allStudentInfo)){
+            return json($allStudentInfo);
+        }
         $groupName    = Db::table(YX_QUESTION . 'group')->field('group_name')->where('id', $firstGroupID)->find();
         if (empty($firstGroupID)) {
             throw new MissException([
@@ -74,7 +81,7 @@ class Teacher extends BaseController
                 'errorCode' => 50000
             ]);
         }
-
+        cache('teacher'.$class_id['class_id'].$stageID.$firstGroupID,$allStudentInfo,600);
         return json($allStudentInfo);
     }
 

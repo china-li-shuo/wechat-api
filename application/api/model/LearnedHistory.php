@@ -518,7 +518,7 @@ class LearnedHistory extends Model
     {
         foreach ($classData as $key => $val) {
 
-            $count                                 = Db::table('yx_learned_history')
+            $count  = Db::table('yx_learned_history')
                 ->where('user_id', $val['user_id'])
                 ->count();
             $classData[$key]['all_learned_number'] = $count;

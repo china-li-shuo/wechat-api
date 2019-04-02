@@ -35,7 +35,6 @@ class Top
         } else {
             $todayList = $this->getClassRanKing($uid);
         }
-
         return json($todayList);
     }
 
@@ -144,30 +143,66 @@ class Top
      */
     private function getClassRanking($uid, $is_today = 1)
     {
+
         try {
-            $classData = UserClass::getAllUserByUid($uid);
-            //获取班级的名称
-            $className = Db::table('yx_class')->where('id', $classData[0]['class_id'])->field('class_name')->find();
-            if ($is_today == 0) {
-                $allLearnedNumber  = LearnedHistory::getUseLearnedNumber($classData);
-                $userLearnedNumber = LearnedHistory::LearnedDays($allLearnedNumber);
-            } else {
-                $userTodayLearnedNumber = LearnedHistory::getUserTodayLearnedNumber($classData);
-                $userLearnedNumber      = LearnedHistory::LearnedDays($userTodayLearnedNumber);
-            }
-            $userList        = $this->getUserList($userLearnedNumber);
-            $new_arr['data'] = $userList;
-            $dailyQuotations = dailyQuotations(rand(0, 15));
-            foreach ($userList as $key => $val) {
-                if ($val['user_id'] == $uid) {
-                    $top                                 = $key + 1;
-                    $new_arr['mine']                     = $val;
-                    $new_arr['mine']['mine_top']         =& $top;
-                    $new_arr['mine']['class_name']       =& $className['class_name'];
-                    $new_arr['mine']['daily_quotations'] =& $dailyQuotations;
+            //每次进来根据用户查询此班级下是否有缓存
+            $class_id          = Db::name('user_class')->field('class_id')->where('user_id', $uid)->find();
+            $userLearnedNumber = cache('class_id_' . $class_id['class_id'] . $uid);
+            if (!empty($userLearnedNumber)) {
+                $userInfo        = UserClass::getClassInfo($uid);
+                $className       = UserClass::getClassName($userInfo);
+                $new_arr['data'] = $userLearnedNumber;
+                $dailyQuotations = dailyQuotations(rand(0, 15));
+                foreach ($userLearnedNumber as $key => $val) {
+                    if ($val['user_id'] == $uid) {
+                        $top                                 = $key + 1;
+                        $new_arr['mine']                     = $val;
+                        $new_arr['mine']['mine_top']         =& $top;
+                        $new_arr['mine']['class_name']       =& $className;
+                        $new_arr['mine']['daily_quotations'] =& $dailyQuotations;
+                    }
                 }
+                return $new_arr;
+            } else {
+                //print_r($new_arr);die;
+                //缓存整个班级的信息，用户头像，昵称，用户名，掌握多少单词，坚持多少天，总共学习了多少个单词
+                $classData         = UserClass::getAllUserByUid($uid);
+                $userData          = $this->getUserList($classData);
+                $userList          = LearnedHistory::getUserTodayLearnedNumber($userData);
+                $className         = Db::table('yx_class')
+                    ->where('id', $classData[0]['class_id'])
+                    ->field('class_name')
+                    ->find();
+                $userLearnedNumber = LearnedHistory::LearnedDays($userList);
+                if ($is_today == 0) {
+                    // 取得列的列表
+                    foreach ($userLearnedNumber as $key => $row) {
+                        $edition[$key] = $row['all_learned_number'];
+                    }
+                    array_multisort($edition, SORT_DESC, $userLearnedNumber);
+                } else {
+                    // 取得列的列表
+                    foreach ($userLearnedNumber as $key => $row) {
+                        $edition[$key] = $row['today_learned_number'];
+                    }
+                    array_multisort($edition, SORT_DESC, $userLearnedNumber);
+                }
+                //进行缓存已经排序好的历史榜单数据
+                cache('class_id_' . $class_id['class_id'] . $uid, $userLearnedNumber, 600);
+
+                $new_arr['data'] = $userLearnedNumber;
+                $dailyQuotations = dailyQuotations(rand(0, 15));
+                foreach ($userLearnedNumber as $key => $val) {
+                    if ($val['user_id'] == $uid) {
+                        $top                                 = $key + 1;
+                        $new_arr['mine']                     = $val;
+                        $new_arr['mine']['mine_top']         =& $top;
+                        $new_arr['mine']['class_name']       =& $className['class_name'];
+                        $new_arr['mine']['daily_quotations'] =& $dailyQuotations;
+                    }
+                }
+                return $new_arr;
             }
-            return $new_arr;
         } catch (\Exception $e) {
             throw new MissException([
                 'msg'       => $e->getMessage(),
@@ -185,6 +220,24 @@ class Top
     private function getInternetRanking($uid, $is_today = 1)
     {
         try {
+
+            $userList = cache('InterRanking' . $uid);
+
+            if (!empty($userList)) {
+                $new_arr['data'] = $userList;
+                $dailyQuotations = dailyQuotations(rand(0, 15));
+                foreach ($userList as $key => $val) {
+                    if ($val['user_id'] == $uid) {
+                        $top                                 = $key + 1;
+                        $new_arr['mine']                     = $val;
+                        $new_arr['mine']['mine_top']         =& $top;
+                        $new_arr['mine']['class_name']       = NULL;
+                        $new_arr['mine']['daily_quotations'] =& $dailyQuotations;
+                    }
+                }
+                return $new_arr;
+            }
+
             $userData = User::where('is_teacher', 0)
                 ->where('mobile', '<>', '')
                 ->field('id as user_id')
@@ -192,11 +245,13 @@ class Top
             if ($is_today == 0) {
                 $allLearnedNumber  = LearnedHistory::getUseLearnedNumber($userData->toArray());
                 $userLearnedNumber = LearnedHistory::LearnedDays($allLearnedNumber);
+                $userList          = $this->getUserList($userLearnedNumber);
             } else {
                 $userTodayLearnedNumber = LearnedHistory::getUserTodayLearnedNumber($userData->toArray());
                 $userLearnedNumber      = LearnedHistory::LearnedDays($userTodayLearnedNumber);
+                $userList               = $this->getUserList($userLearnedNumber);
+
             }
-            $userList        = $this->getUserList($userLearnedNumber);
             $new_arr['data'] = $userList;
             $dailyQuotations = dailyQuotations(rand(0, 15));
             foreach ($userList as $key => $val) {
@@ -208,6 +263,7 @@ class Top
                     $new_arr['mine']['daily_quotations'] =& $dailyQuotations;
                 }
             }
+            cache('InterRanking' . $uid, $userList, 600);
             return $new_arr;
         } catch (\Exception $e) {
             throw new MissException([
