@@ -460,11 +460,6 @@ class LearnedHistory extends Model
 
         array_multisort($edition, SORT_ASC, $new_arr);
 
-
-        //$arr = array_column($new_arr,NULL,'true_num');  当true_num 值一样有bug
-        //sort($arr);
-
-
         foreach ($new_arr as $x => $y) {
             if ($y['user_id'] == $lastLearnedData['user_id']) {
                 $nowNum = $x + 1;

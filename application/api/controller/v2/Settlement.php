@@ -36,51 +36,48 @@ class Settlement
         //根据token获取用户刚才所学阶段名称，组名称
         //用户头像，昵称，学习天数，正确率，超过班级百分比
         $uid = Token::getCurrentTokenVar('uid');
-        $res = Share::userPunchCard($uid);
-        if (!$res) {
+        Share::userPunchCard($uid);
+        $stage = empty(input('post.stage')) ? '' : input('post.stage');
+        $group = empty(input('post.group')) ? '' : input('post.group');
+        if(empty($stage) || empty($group)){
             throw new MissException([
-                'msg'       => '你今天已经打过卡了',
-                'errorCode' => 0
+                'msg'=>'参数不全',
+                'errorCode'=>10001
             ]);
         }
+        $lastLearnedData = [
+            'user_id'=>$uid,
+            'group'=>$group,
+            'stage'=>$stage
+        ];
 
-        $lastLearnedData = LearnedHistory::UserLearned($uid);
+        $userInfo = cache('settlement_'.$uid.$stage.$group);
 
-        if (empty($lastLearnedData)) {
-            throw new MissException([
-                'msg'       => '请先进行学习，在计算(⊙o⊙)哦',
-                'errorCode' => 50000
-            ]);
+        if(empty($userInfo)){
+            $userInfo  = User::field('is_teacher,now_stage,user_name,nick_name,avatar_url')->get($uid)->toArray();
+            $stageData       = Stage::findStage($stage);
+            $stageName       = $stageData['stage_name'];
+            $groupName       = Group::findGroupName($group);
+            $userInfo['stage_name'] = &$stageName;
+            $userInfo['group_name'] = &$groupName;
+            cache('settlement_'.$uid.$stage.$group,$userInfo,3600*24*30);
         }
         try {
             //获取用户最后一次答题组下的正确率
             $trueRate  = LearnedHistory::getTrueRate($lastLearnedData);
-            $userInfo  = User::field('is_teacher,now_stage')->get($uid);
-            $medalData = $this->getMedal($uid, $userInfo->now_stage);
-            if ($userInfo->is_teacher == 0) {
+            $medalData = $this->getMedal($uid, $stage);
+            if ($userInfo['is_teacher'] == 0) {
                 $classTrueRate = $this->percentageOfInter($lastLearnedData);
             } else {
                 $classTrueRate = $this->percentageOfClass($uid, $lastLearnedData);
             }
-            $stageData       = Stage::findStage($lastLearnedData['stage']);
-            $stageName       = $stageData['stage_name'];
-            $groupName       = Group::findGroupName($lastLearnedData['group']);
-            $userInfo        = User::getUserInfo($uid);
-            $punchDays       = Share::getPunchDays($uid);
-            $dailyQuotations = dailyQuotations(rand(0, 15));
-            $data            = [
-                'stage_name'       => &$stageName,
-                'group_name'       => &$groupName,
-                'user_name'        => &$userInfo['user_name'],
-                'nick_name'        => &$userInfo['nick_name'],
-                'avatar_url'       => &$userInfo['avatar_url'],
-                'punch_days'       => &$punchDays,
-                'true_rate'        => &$trueRate,
-                'class_true_rate'  => &$classTrueRate,
-                'medal_data'       => &$medalData,
-                'daily_quotations' => &$dailyQuotations
-            ];
-            return json($data);
+
+            $punchDays = Share::getPunchDays($uid);
+            $userInfo['punch_days'] = &$punchDays;
+            $userInfo['true_rate'] = &$trueRate;
+            $userInfo['class_true_rate'] = &$classTrueRate;
+            $userInfo['medal_data'] = &$medalData;
+            return json($userInfo);
         } catch (\Exception $e) {
             throw new MissException([
                 'msg'       => $e->getMessage(),
@@ -88,7 +85,6 @@ class Settlement
             ]);
         }
     }
-
     /**
      * 超过全班百分比
      * 根据每个班级下，每个用户，每个组下答题正确率来计算百分比

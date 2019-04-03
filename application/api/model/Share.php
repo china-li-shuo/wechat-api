@@ -82,6 +82,7 @@ class Share extends Model
         $where[]    = ['create_time', 'between time', [$beginToday, $endToday]];
 
         $data = Db::table('yx_share')
+            ->field('user_id,create_time')
             ->where('user_id', $uid)
             ->where($where)
             ->find();
@@ -90,16 +91,17 @@ class Share extends Model
 
             $arr = [
                 'user_id'     => $uid,
-                'create_time' => time()
+                'create_time' => $nowTime
             ];
             return Db::table('yx_share')->insert($arr);
 
         }
 
-        return Db::table('yx_share')
-            ->where('user_id', $uid)
-            ->where($where)
-            ->update(['create_time' => $nowTime]);
+        return true;
+//        return Db::table('yx_share')
+//            ->where('user_id', $uid)
+//            ->where($where)
+//            ->update(['create_time' => $nowTime]);
 
     }
 }
