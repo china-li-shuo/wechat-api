@@ -221,4 +221,19 @@ class Stage extends Model
         $ids = substr($ids,1);
         return $ids;
     }
+
+    /**
+     * 公共阶段下所有的子阶段
+     * @param $commonID
+     * @return bool|string
+     */
+    public static function selectCommonStageData($commonID)
+    {
+        $commonData = Db::table(YX_QUESTION . 'stage')
+            ->where('parent_id', $commonID)
+            ->field('id')
+            ->select();
+
+        return $commonData;
+    }
 }

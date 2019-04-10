@@ -8,7 +8,7 @@
 function curl_post($url, array $params = array())
 {
     $data_string = json_encode($params);
-    $ch = curl_init();
+    $ch          = curl_init();
     curl_setopt($ch, CURLOPT_URL, $url);
     curl_setopt($ch, CURLOPT_HEADER, 0);
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
@@ -63,16 +63,16 @@ function curl_get($url, &$httpCode = 0)
     curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
     curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 10);
     $file_contents = curl_exec($ch);
-    $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    $httpCode      = curl_getinfo($ch, CURLINFO_HTTP_CODE);
     curl_close($ch);
     return $file_contents;
 }
 
 function getRandChar($length)
 {
-    $str = null;
+    $str    = null;
     $strPol = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789abcdefghijklmnopqrstuvwxyz";
-    $max = strlen($strPol) - 1;
+    $max    = strlen($strPol) - 1;
 
     for ($i = 0;
          $i < $length;
@@ -84,11 +84,9 @@ function getRandChar($length)
 }
 
 
-
-function fromArrayToModel($m , $array)
+function fromArrayToModel($m, $array)
 {
-    foreach ($array as $key => $value)
-    {
+    foreach ($array as $key => $value) {
         $m[$key] = $value;
     }
     return $m;
@@ -99,23 +97,23 @@ function fromArrayToModel($m , $array)
  * 无限极分类排序
  * @param  [type]  $menuData  [description]
  * @param  integer $parent_id [description]
- * @param  integer $level     [description]
+ * @param  integer $level [description]
  * @return [type]             [description]
  */
-function createTree($data,$parent_id=0,$level=0)
+function createTree($data, $parent_id = 0, $level = 0)
 {
     static $new_arr = []; //定义空数组
     //循环
     foreach ($data as $key => $value) {
         //判断
-        if($value['parent_id'] == $parent_id){
+        if ($value['parent_id'] == $parent_id) {
 
             //把级别放入value
             $value['level'] = $level;
             //找到之后
             $new_arr[] = $value;
             //找儿子
-            createTree($data,$value['stage_id'],$level+1);
+            createTree($data, $value['stage_id'], $level + 1);
         }
     }
 
@@ -124,22 +122,19 @@ function createTree($data,$parent_id=0,$level=0)
 }
 
 
-
 /**
  * 递归排序
  * @param  [type]  $data      [description]
  * @param  integer $parent_id [description]
  * @return [type]             [description]
  */
-function createTreeBySon($data,$parent_id=0)
+function createTreeBySon($data, $parent_id = 0)
 {
-    $new_arr=array();
-    foreach($data as $key=>$val)
-    {
-        if($val['parent_id']==$parent_id)
-        {
-            $new_arr[$key]=$val;
-            $new_arr[$key]['son']=createTreeBySon($data,$val['id']);
+    $new_arr = array();
+    foreach ($data as $key => $val) {
+        if ($val['parent_id'] == $parent_id) {
+            $new_arr[$key]        = $val;
+            $new_arr[$key]['son'] = createTreeBySon($data, $val['id']);
         }
     }
     return $new_arr;
@@ -147,7 +142,7 @@ function createTreeBySon($data,$parent_id=0)
 
 function returnJson($result, $code)
 {
-    echo json_encode($result,$code,JSON_UNESCAPED_UNICODE|JSON_UNESCAPED_SLASHES);
+    echo json_encode($result, $code, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
 }
 
 function errorUrl()
@@ -159,13 +154,13 @@ function errorUrl()
 function isTeacher($uid)
 {
     $data = [
-        0=>[
-            'msg'=>'公共阶段已经学完，请选择学员通道开始学习',
-            'errorCode'=>0
+        0 => [
+            'msg'       => '公共阶段已经学完，请选择学员通道开始学习',
+            'errorCode' => 0
         ],
-        1=>[
-            'msg'=>'公共阶段已经学完，如需继续学习，请进行购买',
-            'errorCode'=>50000
+        1 => [
+            'msg'       => '公共阶段已经学完，如需继续学习，请进行购买',
+            'errorCode' => 50000
         ]
     ];
     //如果公共词汇没有了下一组了，判断用户是不是学员或者是不是会员，如果不是此阶段会员也不是学员则提示购买
@@ -173,11 +168,10 @@ function isTeacher($uid)
         ->field('is_teacher')
         ->where('id', $uid)
         ->find();
-    switch ($isTeacher['is_teacher'])
-    {
+    switch ($isTeacher['is_teacher']) {
         case 0:
-            $userMember = \think\Db::name('user_member')->where('user_id',$uid)->select();
-            if(empty($userMember)){
+            $userMember = \think\Db::name('user_member')->where('user_id', $uid)->select();
+            if (empty($userMember)) {
                 return $data[1];
             }
             return $data[0];
@@ -193,22 +187,31 @@ function isTeacher($uid)
 function dailyQuotations($key)
 {
     $arr = [
-        0=>'在人生的舞台上，从不给落伍者颁发奖牌。',
-        1=>'欲望以提升热枕，毅力以磨平高山。',
-        2=>'时间，就像海绵里的水，只要愿挤，总是有的。',
-        3=>'形成天才的决定因素应该是勤奋。',
-        4=>'爱学出勤奋，勤奋出天才。',
-        5=>'人的大脑和肢体一样，多用则灵，不用则废。',
-        6=>'勿将今日之事拖到明日。',
-        7=>'没有艰辛，便无所获。',
-        8=>'考研的路上，最重要的是不要被其他事情分心。',
-        9=>'你想成为幸福的人吗？但愿你首先学会吃得起苦。',
-        10=>'倘能生存，我当然仍要学习。',
-        11=>'人生能有机会搏，今日不搏何时搏！',
-        12=>'淫奢让人懈怠，安逸让人丧志。',
-        13=>'考研不是无间道，而是开往春天的地铁！',
-        14=>'考研的路上，我们都不是孤单的。',
-        15=>'只要有一丝希望就永不放弃，一切皆有可能！',
+        0  => '在人生的舞台上，从不给落伍者颁发奖牌。',
+        1  => '欲望以提升热枕，毅力以磨平高山。',
+        2  => '时间，就像海绵里的水，只要愿挤，总是有的。',
+        3  => '形成天才的决定因素应该是勤奋。',
+        4  => '爱学出勤奋，勤奋出天才。',
+        5  => '人的大脑和肢体一样，多用则灵，不用则废。',
+        6  => '勿将今日之事拖到明日。',
+        7  => '没有艰辛，便无所获。',
+        8  => '考研的路上，最重要的是不要被其他事情分心。',
+        9  => '你想成为幸福的人吗？但愿你首先学会吃得起苦。',
+        10 => '倘能生存，我当然仍要学习。',
+        11 => '人生能有机会搏，今日不搏何时搏！',
+        12 => '淫奢让人懈怠，安逸让人丧志。',
+        13 => '考研不是无间道，而是开往春天的地铁！',
+        14 => '考研的路上，我们都不是孤单的。',
+        15 => '只要有一丝希望就永不放弃，一切皆有可能！',
     ];
     return $arr[$key];
+}
+
+
+/**
+ * 返回urldecode解码后的昵称
+ */
+function urlDecodeNickName($str)
+{
+    return !empty(urldecode($str)) ? urldecode($str) : $str;
 }

@@ -11,9 +11,6 @@ use think\Model;
 class User extends Model
 {
     protected $autoWriteTimestamp = true;
-//    protected $createTime = ;
-
-
     /**
      * 用户是否存在
      * 存在返回uid，不存在返回0

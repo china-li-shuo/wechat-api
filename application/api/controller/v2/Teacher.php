@@ -226,7 +226,7 @@ class Teacher extends BaseController
                 $i++;
             }
             $allStudentInfo[$key]['user_name']  = &$userInfo['user_name'];
-            $allStudentInfo[$key]['nick_name']  = &$userInfo['nick_name'];
+            $allStudentInfo[$key]['nick_name']  = urlDecodeNickName($userInfo['nick_name']);
             $allStudentInfo[$key]['avatar_url'] = &$userInfo['avatar_url'];
         }
 

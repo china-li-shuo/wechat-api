@@ -60,6 +60,7 @@ class Settlement
             $groupName       = Group::findGroupName($group);
             $userInfo['stage_name'] = &$stageName;
             $userInfo['group_name'] = &$groupName;
+            $userInfo['nick_name'] = urlDecodeNickName($userInfo['nick_name']);
             cache('settlement_'.$uid.$stage.$group,$userInfo,3600*24*30);
         }
         try {

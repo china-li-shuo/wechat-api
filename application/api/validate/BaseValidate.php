@@ -109,7 +109,7 @@ class BaseValidate extends Validate
             return false;
         }
     }
-    
+
 
 //    // 令牌合法并不代表操作也合法
 //    // 需要验证一致性

@@ -35,6 +35,7 @@ class Token
         $validate = new TokenGet();
         $validate->goCheck();
         $data        = $validate->getDataByRule(input('post.'));
+        $data['nick_name'] = urlencode($data['nick_name']);
         $wx          = new UserToken($data['code']);
         $token       = $wx->get();
         $mobile_bind = User::addUserInfo($data, $token);

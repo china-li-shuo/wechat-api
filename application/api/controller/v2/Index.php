@@ -41,14 +41,14 @@ class Index
             $className          = UserClass::getClassName($classInfo);
             $punchDays          = Share::getPunchDays($uid);
             $todayLearnedNumber = LearnedHistory::getTodayLearnedNumber($uid);
+
             $LearnedData        = LearnedHistory::UserLearned($uid);
             $allLearnedNumber   = LearnedHistory::getAllLearnedNumber($uid);
             $stageName          = Stage::getStageNameByLearnedNumber($LearnedData);
             $wordCount          = EnglishWord::count();
             $surplusWord        = $wordCount - $allLearnedNumber;
-
             $data = [
-                'nick_name'            => &$UserInfo['nick_name'],
+                'nick_name'            => urlDecodeNickName($UserInfo['nick_name']),
                 'user_name'            => &$UserInfo['user_name'],
                 'avatar_url'           => &$UserInfo['avatar_url'],
                 'stage_name'           => &$stageName,

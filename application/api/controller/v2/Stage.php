@@ -11,6 +11,7 @@ namespace app\api\controller\v2;
 use app\api\model\Group;
 use app\api\model\LearnedHistory;
 use app\api\model\Stage as StageModel;
+use app\api\model\User;
 use app\api\service\Token;
 use app\api\validate\IDMustBePositiveInt;
 use app\lib\exception\MissException;
@@ -78,9 +79,9 @@ class Stage
         $validate = new IDMustBePositiveInt();
         $validate->goCheck();
         $stageData             = StageModel::findStage($id);
-        $historyGroupData      = LearnedHistory::getUserStageGroupData($uid,$id);
+        $historyGroupData      = LearnedHistory::getUserStageGroupData($uid, $id);
         $historyGroupCount     = count($historyGroupData);
-        $historyWordCount      = LearnedHistory::UserCountStageGroup($uid,$id);
+        $historyWordCount      = LearnedHistory::UserCountStageGroup($uid, $id);
         $eachGroupData         = Group::getEachStageGroupData($id);
         $historyGroupWordCount = LearnedHistory::getAlreadyLearnedGroupWordCount($uid, $historyGroupData);
 
@@ -148,6 +149,34 @@ class Stage
         }
 
         return false;
+    }
+
+    /**
+     * 提示用户当前所学的阶段
+     * @throws \app\lib\exception\ParameterException
+     * @throws \app\lib\exception\TokenException
+     * @throws \think\Exception
+     */
+    public function alertMsg($id)
+    {
+        $validate = new IDMustBePositiveInt();
+        $validate->goCheck();
+        $uid        = Token::getCurrentTokenVar('uid');
+        $commonID   = StageModel::commonStageID();
+        $commonData = StageModel::selectCommonStageData($commonID);
+        $userInfo   = User::field('now_stage')->get($uid)->toArray();
+        foreach ($commonData as $key => $val) {
+            if ($val['id'] != $userInfo['now_stage']) {
+                if ($id != $userInfo['now_stage']) {
+                    $stage = Db::table(YX_QUESTION . 'stage')
+                        ->field('stage_name')
+                        ->where('id', $userInfo['now_stage'])
+                        ->find();
+                    return json(['msg' => '你正在学习的阶段是' . $stage['stage_name'], 'errorCode' => 0]);
+                }
+            }
+        }
+        return NULL;
     }
 
     /**

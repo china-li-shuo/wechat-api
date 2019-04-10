@@ -35,7 +35,14 @@ class Top
         } else {
             $todayList = $this->getClassRanKing($uid);
         }
-        return json($todayList);
+        try {
+            return json($todayList);
+        } catch (\Exception $e) {
+            throw new MissException([
+                'msg'       => $e->getMessage(),
+                'errorCode' => 50000
+            ]);
+        }
     }
 
     /**
@@ -121,18 +128,18 @@ class Top
      */
     private function getUserList($userTodayLearnedNumber)
     {
+
         foreach ($userTodayLearnedNumber as $key => $val) {
             $user = Db::table('yx_user')->where('id', $val['user_id'])->find();
             if (empty($user)) {
                 unset($userTodayLearnedNumber[$key]);
                 continue;
             }
-            $userTodayLearnedNumber[$key]['user_name']          = &$user['user_name'];
-            $userTodayLearnedNumber[$key]['nick_name']          = &$user['nick_name'];
+            $userTodayLearnedNumber[$key]['user_name']          = $user['user_name'];
+            $userTodayLearnedNumber[$key]['nick_name']          = urlDecodeNickName($user['nick_name']);
             $userTodayLearnedNumber[$key]['avatar_url']         = &$user['avatar_url'];
             $userTodayLearnedNumber[$key]['all_learned_number'] = &$user['already_number'];
         }
-
         return array_values($userTodayLearnedNumber);
     }
 
@@ -146,11 +153,11 @@ class Top
 
         try {
             //每次进来根据用户查询此班级下是否有缓存
-            $class_id          = Db::name('user_class')->field('class_id')->where('user_id', $uid)->find();
-            if($is_today == 0){
-                $userLearnedNumber = cache('class_id_ranking_' . $class_id['class_id'].'_history');
-            }else{
-                $userLearnedNumber = cache('class_id_ranking_' . $class_id['class_id'].'_today');
+            $class_id = Db::name('user_class')->field('class_id')->where('user_id', $uid)->find();
+            if ($is_today == 0) {
+                $userLearnedNumber = cache('class_id_ranking_' . $class_id['class_id'] . '_history');
+            } else {
+                $userLearnedNumber = cache('class_id_ranking_' . $class_id['class_id'] . '_today');
             }
             if (!empty($userLearnedNumber)) {
                 $userInfo        = UserClass::getClassInfo($uid);
@@ -184,7 +191,7 @@ class Top
                     }
                     array_multisort($edition, SORT_DESC, $userLearnedNumber);
                     //进行缓存已经排序好的历史榜单数据
-                    cache('class_id_ranking_' . $class_id['class_id'].'_history', $userLearnedNumber, 600);
+                    cache('class_id_ranking_' . $class_id['class_id'] . '_history', $userLearnedNumber, 7200);
                 } else {
                     // 取得列的列表
                     foreach ($userLearnedNumber as $key => $row) {
@@ -192,7 +199,7 @@ class Top
                     }
                     array_multisort($edition, SORT_DESC, $userLearnedNumber);
                     //进行缓存已经排序好的历史榜单数据
-                    cache('class_id_ranking_' . $class_id['class_id'].'_today', $userLearnedNumber, 600);
+                    cache('class_id_ranking_' . $class_id['class_id'] . '_today', $userLearnedNumber, 7200);
                 }
 
                 $new_arr['data'] = $userLearnedNumber;
@@ -226,9 +233,9 @@ class Top
     {
         try {
 
-            if($is_today == 0){
+            if ($is_today == 0) {
                 $userList = cache('InterRanking_history');
-            }else{
+            } else {
                 $userList = cache('InterRanking_today');
             }
 
@@ -255,12 +262,12 @@ class Top
                 $allLearnedNumber  = LearnedHistory::getUseLearnedNumber($userData->toArray());
                 $userLearnedNumber = LearnedHistory::LearnedDays($allLearnedNumber);
                 $userList          = $this->getUserList($userLearnedNumber);
-                cache('InterRanking_history', $userList, 600);
+                cache('InterRanking_history', $userList, 7200);
             } else {
                 $userTodayLearnedNumber = LearnedHistory::getUserTodayLearnedNumber($userData->toArray());
                 $userLearnedNumber      = LearnedHistory::LearnedDays($userTodayLearnedNumber);
                 $userList               = $this->getUserList($userLearnedNumber);
-                cache('InterRanking_today', $userList, 600);
+                cache('InterRanking_today', $userList, 7200);
 
             }
             $new_arr['data'] = $userList;

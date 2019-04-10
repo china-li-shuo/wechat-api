@@ -13,6 +13,7 @@ Route::post('api/:version/stage/info', 'api/:version.Stage/getStages');
 Route::post('api/:version/stage/all', 'api/:version.Stage/getAllStage');
 Route::post('api/:version/stage/detail', 'api/:version.Stage/getDetail');
 Route::post('api/:version/stage/record', 'api/:version.Stage/recordStage');
+Route::post('api/:version/stage/alert', 'api/:version.Stage/alertMsg');
 
 //分享打卡
 Route::post('api/:version/share/punch', 'api/:version.Share/punchCard');
@@ -35,6 +36,8 @@ Route::post('api/:version/activity/info', 'api/:version.Activity/collectionDetai
 
 //首页信息
 Route::post('api/:version/index/info', 'api/:version.Index/getUserInfo');
+Route::post('api/:version/home/school', 'api/:version.Home/getBranchSchool');
+Route::post('api/:version/home/school', 'api/:version.Home/getBranchSchool');
 
 //背单词结算
 Route::post('api/:version/settlement/info', 'api/:version.Settlement/getSettlementInfo');

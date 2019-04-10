@@ -39,6 +39,11 @@ class Learned extends BaseController
         $LearnedData = LearnedHistoryModel::UserLearnedList($uid);
         //如果用户没有学习记录，直接查询第一阶段下，第一组单词
         if (empty($LearnedData)) {
+            //先看是否有缓存数据
+            $notLearnedData = cache('userNotLearnedData');
+            if(!empty($notLearnedData)){
+                return json($notLearnedData);
+            }
             $stage          = Stage::FirstStageID();
             $group          = Group::firstGroupID($stage);
             $notLearnedData = GroupWord::findFirst($group);
@@ -54,6 +59,7 @@ class Learned extends BaseController
             $notWordData             = CollectionModel::isCollection($uid, $notWordData);
             $notLearnedData          = EnglishWord::formatConversion($notWordData, 1);
             $notLearnedData['count'] = count($notLearnedData);
+            cache('userNotLearnedData',$notLearnedData,3600*24*7);
             return json($notLearnedData);
         }
 
@@ -61,9 +67,8 @@ class Learned extends BaseController
         $allData = Group::getAllData($LearnedData);   //25
         //用户还未学习的组信息
         $notLearnedData = Group::getGroupData($LearnedData);  //23
-
         if (empty($notLearnedData)) {
-            $wordDetail = $this->nextGroupInfo($uid);
+            $wordDetail = $this->nextGroupInfo($allData[0]['group']);
             return json($wordDetail);
         }
 
@@ -224,17 +229,13 @@ class Learned extends BaseController
     }
 
 
-    private function nextGroupInfo($uid)
+    private function nextGroupInfo($group)
     {
-        $userInfo    = User::getUserInfo($uid);
+        $data =  Db::name('learned_history')->field('stage')->where('group',$group)->find();
+        $userInfo['now_stage']=$data['stage'];
+        $userInfo['now_group']=$group;
         $LastGroupID = Group::userLastGroupID($userInfo);
-
         if (empty($LastGroupID)) {
-            $stageDesc = Db::table(YX_QUESTION . 'stage')
-                ->where('id', $userInfo['now_stage'])
-                ->field('stage_desc')
-                ->find();
-
             //去找下一阶段,第一组单词
             $nextStageID = Stage::nextStageGroupInfo($userInfo);
             if (empty($nextStageID)) {

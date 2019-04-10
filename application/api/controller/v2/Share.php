@@ -26,15 +26,6 @@ class Share
         //根据uid判断分享时间
         //如果今日已分享过，则打卡天数不加一，否则打卡天数加一
         $uid = Token::getCurrentTokenVar('uid');
-
-//        $data = ShareModel::addShare($uid);
-////        if(!$data){
-////            throw new MissException([
-////                'msg' => '打卡时间发生了错误',
-////                'errorCode' => 50000
-////            ]);
-////        }
-
         $data = $this->sharePage($uid);
         if(!$data){
             throw new MissException([
@@ -66,7 +57,7 @@ class Share
             'stage_name'      => &$stageName,
             'group_name'      => &$groupName,
             'user_name'       => &$userInfo['user_name'],
-            'nick_name'       => &$userInfo['nick_name'],
+            'nick_name'       => urlDecodeNickName($userInfo['nick_name']),
             'avatar_url'      => &$userInfo['avatar_url'],
             'punch_days'      => &$punchDays,
             'true_rate'       => &$trueRate,
