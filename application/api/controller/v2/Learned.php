@@ -238,7 +238,7 @@ class Learned extends BaseController
         if (empty($LastGroupID)) {
             //去找下一阶段,第一组单词
             $nextStageID = Stage::nextStageGroupInfo($userInfo);
-            if (empty($nextStageID)) {
+            if (empty($nextStageID || $nextStageID==7)) {
                 throw new SuccessMessage([
                     'msg'       => '你太厉害了，所有阶段都已经通关了',
                     'errorCode' => 50000

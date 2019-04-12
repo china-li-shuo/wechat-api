@@ -37,12 +37,15 @@ Route::post('api/:version/activity/info', 'api/:version.Activity/collectionDetai
 //首页信息
 Route::post('api/:version/index/info', 'api/:version.Index/getUserInfo');
 Route::post('api/:version/home/school', 'api/:version.Home/getBranchSchool');
-Route::post('api/:version/home/school', 'api/:version.Home/getBranchSchool');
+Route::post('api/:version/home/unitclass', 'api/:version.Home/getUnitClass');
+Route::post('api/:version/home/today', 'api/:version.Home/getPunchCardToday');
+Route::post('api/:version/home/ranking', 'api/:version.Home/getRankingList');
 
 //背单词结算
 Route::post('api/:version/settlement/info', 'api/:version.Settlement/getSettlementInfo');
 Route::post('api/:version/settlement/again', 'api/:version.Settlement/getAgainInfo');
 Route::post('api/:version/settlement/next', 'api/:version.Settlement/nextGroupInfo');
+Route::post('api/:version/settlement/post', 'api/:version.Settlement/sendPost');
 
 //今日榜单
 Route::post('api/:version/top/today', 'api/:version.Top/getTodayList');

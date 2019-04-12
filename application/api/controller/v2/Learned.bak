@@ -341,4 +341,11 @@ class Learned extends BaseController
         $wordDetail = $this->getWordDetail($LastGroupID, $userInfo['now_stage']);
         return $wordDetail;          //这个是return array  数据
     }
+
+    private function test()
+    {
+    $sql = "SELECT FROM_UNIXTIME(create_time,'%Y%m%d') days,COUNT(id) COUNT FROM yx_post WHERE user_id={$val['user_id']} GROUP BY days ";
+                    $count = Db::execute($sql);
+                    $data[$key]['post_count'] = $count;
+    }
 }
