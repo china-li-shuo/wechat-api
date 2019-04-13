@@ -45,6 +45,7 @@ class UserClass
     {
         return Db::table('yx_user_class')
             ->where('user_id', $uid)
+            ->where('status',1)
             ->find();
     }
 
@@ -59,5 +60,14 @@ class UserClass
             ->where('id', $classInfo['class_id'])
             ->find();
         return $data['class_name'];
+    }
+
+    /**
+     * 班级详情
+     * @param $classInfo
+     */
+    public static function getClassDetail($class_id)
+    {
+        return Db::name('class')->where('id',$class_id)->find();
     }
 }

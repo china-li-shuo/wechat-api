@@ -87,4 +87,16 @@ class User extends Model
         }
         return $data;
     }
+
+    /**
+     * 排行榜数据
+     */
+    public static function getRankingData()
+    {
+        return User::limit(20)
+            ->order('already_number','desc')
+            ->field('user_name,nick_name,avatar_url,already_number,punch_days')
+            ->select()
+            ->toArray();
+    }
 }

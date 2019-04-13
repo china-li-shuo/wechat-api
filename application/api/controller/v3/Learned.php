@@ -161,7 +161,7 @@ class Learned extends BaseController
 
     public function clickNext()
     {
-        //传递参数（token,group,stage,word_id,useropt）
+        //传递参数（token,class_id,group,stage,word_id,useropt）
         //根据用户选项判断用户答案是否正确
         //如果用户答错，则把错误信息写入数据库
         //然后把用户答题活动记录写入数据库，如果已存在这条记录进行修改，否则添加
@@ -170,8 +170,10 @@ class Learned extends BaseController
 
         $uid = Token::getCurrentTokenVar('uid');
 
-        $data         = $validate->getDataByRule(input('post.'));
+        $data = $validate->getDataByRule(input('post.'));
+
         $answerResult = EnglishWord::answerResult($data);
+
         //如果答题正确，判断错题本有没有此条记录，如果有则删除
         if ($answerResult == 1) {
             ErrorBook::deleteErrorBook($uid, $data);

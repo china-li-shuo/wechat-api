@@ -94,7 +94,7 @@ class Settlement
 
        if(!$res){
            throw new MissException([
-               'msg'=>'此阶段此分组下你已经发过帖子了',
+               'msg'=>'此班级此阶段此分组下你已经发过帖子了',
                'errorCode'=>50000
            ]);
        }

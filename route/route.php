@@ -38,7 +38,7 @@ Route::post('api/:version/activity/info', 'api/:version.Activity/collectionDetai
 Route::post('api/:version/index/info', 'api/:version.Index/getUserInfo');
 Route::post('api/:version/home/school', 'api/:version.Home/getBranchSchool');
 Route::post('api/:version/home/unitclass', 'api/:version.Home/getUnitClass');
-Route::post('api/:version/home/today', 'api/:version.Home/getPunchCardToday');
+Route::post('api/:version/home/today_punch', 'api/:version.Home/getPunchCardToday');
 Route::post('api/:version/home/ranking', 'api/:version.Home/getRankingList');
 
 //背单词结算
@@ -52,12 +52,14 @@ Route::post('api/:version/top/today', 'api/:version.Top/getTodayList');
 Route::post('api/:version/top/rank', 'api/:version.Top/getTodayRanking');
 Route::post('api/:version/top/history', 'api/:version.Top/getHistoryList');
 
-
 //老师页面
 Route::post('api/:version/teacher/status', 'api/:version.Teacher/getClassStatus');
 Route::post('api/:version/teacher/screen', 'api/:version.Teacher/getScreenInfo');
 
-
+//圈子
+Route::post('api/:version/circle/info', 'api/:version.Circle/getCircleInfo');
+Route::post('api/:version/circle/today_punch', 'api/:version.Circle/getPunchCardToday');
+Route::post('api/:version/circle/today_list', 'api/:version.Circle/getTodayList');
 
 
 
