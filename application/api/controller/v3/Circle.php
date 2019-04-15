@@ -157,6 +157,12 @@ class Circle
         //如果点击的是小试牛刀班级，则直接更改为审核成功状态
         $classData = UserClass::getAscClassInfo();
         if($classData[0]['id'] == $data['class_id']){
+            $arr =[
+                'user_id'=>$uid,
+                'class_id'=>$data['class_id'],
+                'status'=>1
+                ];
+            Db::name('user_class')->insert($arr);
             $data['status'] = 1;
         }else{
             $data['status'] = 2;
