@@ -14,10 +14,12 @@ use app\api\model\Post;
 use app\api\model\Stage;
 use app\api\model\User;
 use app\api\model\UserClass;
+use app\api\model\UserIntention;
 use app\api\service\Token;
 use app\api\validate\ClassID;
 use app\lib\enum\ScopeEnum;
 use app\lib\exception\MissException;
+use think\Db;
 use think\facade\Request;
 
 class Circle
@@ -37,6 +39,17 @@ class Circle
         //根据token获取用户昵称，头像，所属班级,阶段名称，打卡天数，今日已学，已掌握，所剩新词，日历
         $uid       = Token::getCurrentTokenVar('uid');
         $UserInfo  = User::getUserInfo($uid);
+        $userClassData = UserClass::findUserClass($uid,$data['class_id']);
+        if(!empty($userClassData)){
+            $status = 1;
+        }else{
+            $intentionData = Db::name('user_intention')
+                ->where('user_id',$uid)
+                ->where('class_id',$data['class_id'])
+                ->field('status')
+                ->find();
+            $status = !empty($intentionData) ?$intentionData['status'] : 0;
+        }
         //根据互联网用户和班级学员老师赋值不同的权限
         $res = $this->ScopeEnum($UserInfo);
         if (!$res) {
@@ -66,6 +79,7 @@ class Circle
                 'today_learned_number' => &$todayLearnedNumber,
                 'already_number'       => &$UserInfo['already_number'],
                 'surplus_word'         => &$surplusWord,
+                'status'               => $status,
                 'record_stage'         => !empty($recordStage) ? $recordStage : ''
             ];
             return json($data);
@@ -102,11 +116,61 @@ class Circle
     }
 
     /**
-     *圈子内班级的今日打卡
+     *圈子内班级的今日榜单
      */
-    public function getTodayList()
+    public function getRankingList()
     {
-        return 777;
+        //判断此用户是否是这个班级的
+        $uid      = Token::getCurrentTokenVar('uid');
+        $validate = new ClassID();
+        $validate->goCheck();
+        $is_today = empty(input('post.is_today')) ? 1 : input('post.is_today');
+        $data = $validate->getDataByRule(input('post.'));
+        $userClassData = UserClass::findUserClass($uid,$data['class_id']);
+        //判断用户是否是此班级成员
+        if (empty($userClassData)) {
+           throw new MissException([
+               'msg'=>'你暂时不是班级成员，请申请加入！',
+               'errorCode'=>50000
+           ]);
+        }
+        $todayList = $this->getClassRanKing($data['class_id'],$is_today);
+        if(empty($todayList)){
+            throw new MissException([
+                'msg'       => '暂时没有人进行学习，快来抢沙发呀！',
+                'errorCode' => 50000
+            ]);
+        }
+
+        return json($todayList);
+    }
+
+    /**
+     * 添加用户对此班级的意向
+     */
+    public function addUserIntention(){
+        //判断此用户是否是这个班级的
+        $uid      = Token::getCurrentTokenVar('uid');
+        $validate = new ClassID();
+        $validate->goCheck();
+        $data = $validate->getDataByRule(input('post.'));
+        //如果点击的是小试牛刀班级，则直接更改为审核成功状态
+        $classData = UserClass::getAscClassInfo();
+        if($classData[0]['id'] == $data['class_id']){
+            $data['status'] = 1;
+        }else{
+            $data['status'] = 2;
+        }
+        $data['user_id'] = $uid;
+        $data['create_time'] = time();
+        $res = UserIntention::addUserIntention($data);
+        if(empty($res)){
+            throw new MissException([
+                'msg'=>'操作失败',
+                'errorCode'=>50000
+            ]);
+        }
+        return json(['msg'=>'ok','errorCode'=>0,'status'=>$res['status']]);
     }
     /**
      * 赋值对应的权限
@@ -138,4 +202,52 @@ class Circle
                 return false;
         }
     }
+
+    /**
+     * 获取班级排行榜信息
+     * @param $uid
+     * @throws MissException
+     */
+    private function getClassRanking($class_id, $is_today = 1)
+    {
+
+        try {
+            //每次进来根据用户查询此班级下是否有缓存
+            if ($is_today == 1) {
+                $classRankingData = cache('class_id_ranking_' . $class_id . '_today');
+            } else {
+                $classRankingData = cache('class_id_ranking_' . $class_id . '_history');
+            }
+            if (!empty($classRankingData)) {
+                return $classRankingData;
+            } else {
+               if($is_today == 1){
+                   //缓存整个班级的信息，用户头像，昵称，用户名，掌握多少单词，坚持多少天，总共学习了多少个单词
+                   $classData         = UserClass::allTodayClassUserData($class_id);
+                   $classRankingData  = LearnedHistory::getUserTodayLearnedNumber($classData);
+                   foreach ($classRankingData as $key=>$val){
+                       $classRankingData[$key]['nick_name'] = urlDecodeNickName($val['nick_name']);
+                   }
+                   cache('class_id_ranking_' . $class_id . '_today',$classRankingData,7200);
+                   return $classRankingData;
+               }else{
+                   //历史榜单
+                   $classRankingData         = UserClass:: allHistoryClassUserData($class_id,20);
+                   foreach ($classRankingData as $key=>$val){
+                       $classRankingData[$key]['nick_name'] = urlDecodeNickName($val['nick_name']);
+                       $classRankingData[$key]['today_learned_number'] = '';
+                   }
+                   cache('class_id_ranking_' . $class_id . '_history',$classRankingData,7200);
+                   return $classRankingData;
+               }
+            }
+        } catch (\Exception $e) {
+            throw new MissException([
+                'msg'       => $e->getMessage(),
+                'errorCode' => 50000
+            ]);
+        }
+    }
+
+
 }

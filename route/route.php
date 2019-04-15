@@ -59,7 +59,11 @@ Route::post('api/:version/teacher/screen', 'api/:version.Teacher/getScreenInfo')
 //圈子
 Route::post('api/:version/circle/info', 'api/:version.Circle/getCircleInfo');
 Route::post('api/:version/circle/today_punch', 'api/:version.Circle/getPunchCardToday');
-Route::post('api/:version/circle/today_list', 'api/:version.Circle/getTodayList');
+Route::post('api/:version/circle/ranking', 'api/:version.Circle/getRankingList');
+Route::post('api/:version/circle/intention', 'api/:version.Circle/addUserIntention');
+
+//我的
+Route::post('api/:version/personal/punch', 'api/:version.Personal/getMyPunchCard');
 
 
 

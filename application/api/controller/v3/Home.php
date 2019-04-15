@@ -48,6 +48,7 @@ class Home
         $arr = $validate->getDataByRule(input('post.'));
         $data = UnitClass::selectUnidClass($arr['id']);
         $arr = Post::selectPost();
+
         $i= 1;
         foreach ($data as $key=>$val){
             foreach ($arr as $k=>$v){

@@ -23,13 +23,12 @@ class Post
         $beginToday = mktime(0, 0, 0, date('m'), date('d'), date('Y'));
         $endToday   = mktime(0, 0, 0, date('m'), date('d') + 1, date('Y')) - 1;
         $where[]    = ['p.create_time', 'between time', [$beginToday, $endToday]];
-
         return Db::table('yx_post')
             ->alias('p')
             ->join('yx_user_class uc','p.user_id = uc.user_id')
             ->field('p.user_id,uc.class_id,p.create_time')
             ->where($where)
-            ->where('status',1)
+            ->where('uc.status',1)
             ->group('uc.user_id')
             ->select();
     }
@@ -51,7 +50,7 @@ class Post
             ->join('yx_user u','p.user_id = u.id')
             ->field('u.nick_name,u.user_name,u.punch_days,u.avatar_url,uc.class_id,p.content,p.create_time,c.class_name')
             ->where($where)
-            ->where('status',1)
+            ->where('uc.status',1)
             ->group('uc.user_id')
             ->order('create_time desc')
             ->limit($limit)
@@ -75,7 +74,7 @@ class Post
             ->join('yx_user u','p.user_id = u.id')
             ->field('u.nick_name,u.user_name,u.punch_days,u.avatar_url,uc.class_id,p.content,p.create_time,c.class_name')
             ->where($where)
-            ->where('status',1)
+            ->where('uc.status',1)
             ->where('uc.class_id',$class_id)
             ->group('uc.user_id')
             ->order('create_time desc')
@@ -172,5 +171,23 @@ class Post
         }
 
          return false;
+    }
+
+    /**
+     * 我的打卡
+     * @param $uid
+     */
+    public static function getMyPost($uid)
+    {
+        return Db::name('post')
+            ->alias('p')
+            ->join('yx_user_class uc','p.user_id = uc.user_id')
+            ->join('yx_class c','uc.class_id = c.id')
+            ->join('yx_user u','p.user_id = u.id')
+            ->field('u.nick_name,u.user_name,u.punch_days,u.avatar_url,uc.class_id,p.content,p.create_time,c.class_name')
+            ->order('create_time desc')
+            ->where('p.user_id',$uid)
+            ->limit(20)
+            ->select();
     }
 }

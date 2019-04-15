@@ -92,7 +92,6 @@ class Sms
         }
 
         $identities = Cache::get($token);
-
         if (!$identities) {
             throw new TokenException();
         };

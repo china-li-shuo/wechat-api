@@ -3,6 +3,7 @@
 namespace app\api\model;
 
 
+use app\lib\exception\MissException;
 use think\Db;
 use think\Facade\Cache;
 use think\Model;
@@ -29,24 +30,40 @@ class User extends Model
         $userInfo = Db::table('yx_user')
             ->where('mobile', $mobile)
             ->where('mobile_bind', 2)
+            ->field('id,user_name,mobile,is_teacher')
             ->find();
-
         if (!empty($userInfo)) {
-            $data = [
-                'user_name'   => $userInfo['user_name'],
-                'mobile'      => $userInfo['mobile'],
-                'mobile_bind' => 1,
-                'is_teacher'  => $userInfo['is_teacher'],
-            ];
+            Db::startTrans();
+            try{
+                $data = [
+                    'user_name'   => $userInfo['user_name'],
+                    'mobile'      => $userInfo['mobile'],
+                    'mobile_bind' => 1,
+                    'is_teacher'  => $userInfo['is_teacher'],
+                ];
+                Db::table('yx_user_class')
+                    ->where('user_id', $userInfo['id'])
+                    ->update([
+                        'user_id' => $identities['uid'],
+                        'status'=>1,
+                        'create_time'=>time()
+                    ]);
+                Db::table('yx_user')
+                    ->where('id', $userInfo['id'])
+                    ->delete();
+                Db::table('yx_user')
+                    ->where('id', $identities['uid'])
+                    ->update($data);
+                Db::commit();
+                return true;
+            }catch (\Exception $e){
+                Db::rollback();
+                throw new MissException([
+                    'msg'=>$e->getMessage(),
+                    'errorCode'=>5000
+                ]);
+            }
 
-            Db::table('yx_user')
-                ->where('id', $identities['uid'])
-                ->update($data);
-
-            Db::table('yx_user_class')
-                ->where('user_id', $userInfo['id'])
-                ->update(['user_id' => $identities['uid']]);
-            return Db::table('yx_user')->where('id', $userInfo['id'])->delete();
         } else {
             $data = [
                 'mobile'      => $mobile,
@@ -68,11 +85,11 @@ class User extends Model
             ->field('mobile_bind')
             ->find();
 
-        $res = User::where('id', $uid)->update(
-            [
-                'nick_name'  => $data['nick_name'],
-                'avatar_url' => $data['avatar_url']
-            ]);
+        User::where('id', $uid)->update(
+        [
+            'nick_name'  => $data['nick_name'],
+            'avatar_url' => $data['avatar_url']
+        ]);
 
 
         return $userInfo['mobile_bind'];

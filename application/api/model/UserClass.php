@@ -70,4 +70,64 @@ class UserClass
     {
         return Db::name('class')->where('id',$class_id)->find();
     }
+
+    /**
+     * 判断此用户，此班级是否加入过
+     * @param $uid
+     * @param $class_id
+     */
+    public static function findUserClass($uid,$class_id)
+    {
+        return Db::table('yx_user_class')
+            ->where('user_id', $uid)
+            ->where('class_id', $class_id)
+            ->where('status',1)
+            ->find();
+    }
+
+    /**
+     * 根据班级id查询这个班级下历史排行榜所有成员数据
+     * @param $class_id
+     * @return array|\PDOStatement|string|\think\Collection
+     */
+    public static function allHistoryClassUserData($class_id,$limit = 20)
+    {
+        return Db::name('user_class')
+            ->alias('uc')
+            ->join('user u','u.id=uc.user_id')
+            ->where('uc.class_id', $class_id)
+            ->where('uc.status', 1)
+            ->field('uc.class_id,u.user_name,u.nick_name,u.avatar_url,u.already_number')
+            ->order('u.already_number','desc')
+            ->limit($limit)
+            ->select();
+
+    }
+
+    /**
+     * 根据班级id查询这个班级下历史排行榜所有成员数据
+     * @param $class_id
+     * @return array|\PDOStatement|string|\think\Collection
+     */
+    public static function allTodayClassUserData($class_id)
+    {
+        return Db::name('user_class')
+            ->alias('uc')
+            ->join('user u','u.id=uc.user_id')
+            ->where('uc.class_id', $class_id)
+            ->where('uc.status', 1)
+            ->field('uc.user_id,uc.class_id,u.user_name,u.nick_name,u.avatar_url,u.already_number')
+            ->orderRand('uc.user_id')
+            ->limit(30)
+            ->select();
+
+    }
+
+    /**
+     * 找排序后的第一个，也是公共班级
+     */
+    public static function getAscClassInfo()
+    {
+        return Db::name('class')->order('sort')->select();
+    }
 }
