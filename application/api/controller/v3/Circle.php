@@ -48,7 +48,7 @@ class Circle
                 ->where('class_id',$data['class_id'])
                 ->field('status')
                 ->find();
-            $status = !empty($intentionData) ?$intentionData['status'] : 0;
+            $status = !empty($intentionData) ? $intentionData['status'] : 0;
         }
         //根据互联网用户和班级学员老师赋值不同的权限
         $res = $this->ScopeEnum($UserInfo);
@@ -118,8 +118,7 @@ class Circle
     /**
      *圈子内班级的今日榜单
      */
-    public function getRankingList()
-    {
+    public function getRankingList(){
         //判断此用户是否是这个班级的
         $uid      = Token::getCurrentTokenVar('uid');
         $validate = new ClassID();
@@ -214,8 +213,7 @@ class Circle
      * @param $uid
      * @throws MissException
      */
-    private function getClassRanking($class_id, $is_today = 1)
-    {
+    private function getClassRanking($class_id, $is_today = 1){
 
         try {
             //每次进来根据用户查询此班级下是否有缓存

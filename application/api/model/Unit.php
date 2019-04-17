@@ -16,7 +16,7 @@ class Unit
     public static function selectUnitData()
     {
         return Db::name('unit')
-            ->field('unid,unitname')
+            ->field('unid,unitname,status')
             ->select();
     }
 }

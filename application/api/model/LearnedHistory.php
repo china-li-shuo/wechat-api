@@ -413,6 +413,27 @@ class LearnedHistory extends Model
     }
 
     /**
+     * 获取用户此班级下此阶段此组的个人正确率
+     * @param $data
+     */
+    public static function personalCorrectnessRate($data)
+    {
+        $groupNum = Db::table(YX_QUESTION.'group')
+            ->where('id',$data['group'])
+            ->field('word_num')
+            ->find();
+
+        $trueNum = Db::name('learned_child')
+            ->where('user_id',$data['user_id'])
+            ->where('stage',$data['stage'])
+            ->where('group',$data['group'])
+            ->field('mastered_number')
+            ->find();
+        if(!empty($groupNum) && !empty($trueNum)){
+            return round($trueNum['mastered_number'] / $groupNum['word_num'] * 100, 2) . "%";
+        }
+    }
+    /**
      * 获取用户超过所在班级的百分比
      * @param $classData
      * @param $lastLearnedData
@@ -471,6 +492,50 @@ class LearnedHistory extends Model
 
         return $classTrueRate;
 
+    }
+
+    /**
+     * 获取自己在班级成员在这阶段这一组的正确率
+     * @param $classData
+     * @param $data
+     */
+    public static function getClassTrueRate($classData, $data)
+    {
+        $childData= Db::name('learned_child')
+            ->where('class_id', $data['class_id'])
+            ->where('group', $data['group'])
+            ->where('stage', $data['stage'])
+            ->field('user_id,mastered_number')
+            ->select();
+        foreach ($classData as $key=>$val){
+            foreach ($childData as $k=>$v){
+                if($val['user_id'] == $v['user_id']){
+                    $classData[$key]['mastered_number'] = $v['mastered_number'];
+                    continue;
+                }
+            }
+        }
+
+        foreach ($classData as $key=>$val){
+            if (empty($val['mastered_number'])){
+                $classData[$key]['mastered_number'] =0;
+            }
+        }
+
+        // 取得列的列表
+        foreach ($classData as $key => $row) {
+            $edition[$key] = $row['mastered_number'];
+        }
+
+        array_multisort($edition, SORT_ASC, $classData);
+
+        foreach ($classData as $x => $y) {
+            if ($y['user_id'] == $data['user_id']) {
+                $nowNum = $x + 1;
+            }
+        }
+        $count = count($classData);
+        return round($nowNum / $count * 100, 2) . "%";
     }
 
     /**

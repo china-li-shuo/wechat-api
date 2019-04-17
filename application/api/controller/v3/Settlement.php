@@ -22,6 +22,7 @@ use app\api\service\Token;
 use app\api\validate\IDMustBePositiveInt;
 use app\lib\exception\MissException;
 use app\lib\exception\SuccessMessage;
+use app\api\validate\Settlement as SettlementValidate;
 use think\Db;
 
 class Settlement
@@ -37,39 +38,37 @@ class Settlement
         //根据token获取用户刚才所学阶段名称，组名称
         //用户头像，昵称，学习天数，正确率，超过班级百分比
         $uid = Token::getCurrentTokenVar('uid');
-        $stage = empty(input('post.stage')) ? '' : input('post.stage');
-        $group = empty(input('post.group')) ? '' : input('post.group');
-        if(empty($stage) || empty($group)){
-            throw new MissException([
-                'msg'=>'参数不全',
-                'errorCode'=>10001
-            ]);
-        }
-        $lastLearnedData = [
-            'user_id'=>$uid,
-            'group'=>$group,
-            'stage'=>$stage
-        ];
-
+        $validate = new SettlementValidate();
+        $validate->goCheck();
+        $data = $validate->getDataByRule(input('post.'));
+        $data['user_id'] = $uid;
         $userInfo = User::field('is_teacher,now_stage,user_name,nick_name,avatar_url,punch_days')->get($uid)->toArray();
-        $stageData  = Stage::findStage($stage);
+        $stageData  = Stage::findStage($data['stage']);
         $stageName = $stageData['stage_name'];
-        $groupName = Group::findGroupName($group);
+        $groupName = Group::findGroupName($data['group']);
         $userInfo['stage_name'] = &$stageName;
         $userInfo['group_name'] = &$groupName;
         $userInfo['nick_name']  = urlDecodeNickName($userInfo['nick_name']);
 
         try {
-            //获取用户最后一次答题组下的正确率
-            $trueRate  = LearnedHistory::getTrueRate($lastLearnedData);
-            $medalData = $this->getMedal($uid, $stage);
-            if ($userInfo['is_teacher'] == 0) {
-                $classTrueRate = $this->percentageOfInter($lastLearnedData);
+            //获取用户此班级下此阶段此组的正确率
+            $trueRate  = LearnedHistory::personalCorrectnessRate($data);
+            //发帖子的状态
+            $clockStatus = Post::findPost($uid,$data);
+            if(empty($clockStatus) || $clockStatus['clock_status'] == 0){
+                $clockStatus['clock_status'] = 0;
+            }
+            $medalData = $this->getMedal($uid, $data['stage']);
+            //如果点击的是小试牛刀班级，则直接返回班级正确率
+            $classData = UserClass::getAscClassInfo();
+            if ($userInfo['is_teacher'] == 0 || $data['class_id'] == $classData[0]['id']) {
+                $classTrueRate = $this->percentageOfInter();
             } else {
-                $classTrueRate = $this->percentageOfClass($uid, $lastLearnedData);
+                $classTrueRate = $this->percentageOfClass($data);
             }
 
             $userInfo['true_rate'] = &$trueRate;
+            $userInfo['clock_status'] = &$clockStatus['clock_status'];
             $userInfo['class_true_rate'] = &$classTrueRate;
             $userInfo['medal_data'] = &$medalData;
             return json($userInfo);
@@ -107,11 +106,11 @@ class Settlement
      * 根据每个班级下，每个用户，每个组下答题正确率来计算百分比
      * @param $uid
      */
-    private function percentageOfClass($uid, $lastLearnedData)
+    private function percentageOfClass($data)
     {
-        $classData = UserClass::getAllUserByUid($uid);
+        $classData = UserClass::getAllMembersOfClass($data['class_id']);
         //判断此阶段下此组，所有用户答对的单词
-        $classTrueRate = LearnedHistory::classTrueRate($classData, $lastLearnedData);
+        $classTrueRate = LearnedHistory::getClassTrueRate($classData, $data);
         return $classTrueRate;
     }
 

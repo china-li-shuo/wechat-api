@@ -36,6 +36,14 @@ class UserClass
         return false;
     }
 
+    public static function getAllMembersOfClass($class_id)
+    {
+        return Db::table('yx_user_class')
+            ->where('class_id', $class_id)
+            ->where('status', 1)
+            ->field('user_id,class_id')
+            ->select();
+    }
     /**
      * 获取用户id查询是否加入过班级
      * @param $uid
@@ -97,7 +105,7 @@ class UserClass
             ->join('user u','u.id=uc.user_id')
             ->where('uc.class_id', $class_id)
             ->where('uc.status', 1)
-            ->field('uc.class_id,u.user_name,u.nick_name,u.avatar_url,u.already_number')
+            ->field('uc.class_id,u.user_name,u.nick_name,u.avatar_url,u.already_number,u.punch_days')
             ->order('u.already_number','desc')
             ->limit($limit)
             ->select();
@@ -116,7 +124,7 @@ class UserClass
             ->join('user u','u.id=uc.user_id')
             ->where('uc.class_id', $class_id)
             ->where('uc.status', 1)
-            ->field('uc.user_id,uc.class_id,u.user_name,u.nick_name,u.avatar_url,u.already_number')
+            ->field('uc.user_id,uc.class_id,u.user_name,u.nick_name,u.avatar_url,u.already_number,u.punch_days')
             ->orderRand('uc.user_id')
             ->limit(30)
             ->select();
