@@ -48,14 +48,16 @@ class User extends Model
                         'status'=>1,
                         'create_time'=>time()
                     ]);
+
                 Db::table('yx_user')
                     ->where('id', $userInfo['id'])
-                    ->delete();
+                    ->update(['user_name'=>'','mobile'=>'150'.rand(11111111,99999999)]);
+
                 Db::table('yx_user')
                     ->where('id', $identities['uid'])
                     ->update($data);
                 Db::commit();
-                return true;
+                return $userInfo['id'];
             }catch (\Exception $e){
                 Db::rollback();
                 throw new MissException([

@@ -22,7 +22,7 @@ use app\api\service\Token;
 use app\api\validate\IDMustBePositiveInt;
 use app\lib\exception\MissException;
 use app\lib\exception\SuccessMessage;
-use app\api\validate\Settlement as SettlementValidate;
+use app\api\validate\SettlementV3 as SettlementValidateV3;
 use think\Db;
 
 class Settlement
@@ -38,7 +38,7 @@ class Settlement
         //根据token获取用户刚才所学阶段名称，组名称
         //用户头像，昵称，学习天数，正确率，超过班级百分比
         $uid = Token::getCurrentTokenVar('uid');
-        $validate = new SettlementValidate();
+        $validate = new SettlementValidateV3();
         $validate->goCheck();
         $data = $validate->getDataByRule(input('post.'));
         $data['user_id'] = $uid;

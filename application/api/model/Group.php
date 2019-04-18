@@ -106,7 +106,8 @@ class Group extends Model
     public static function getEachStageGroupData($id)
     {
         return Db::table(YX_QUESTION . 'group')
-            ->where('stage_id', $id)->order('sort')
+            ->where('stage_id', $id)
+            ->order('sort')
             ->field('id,group_name,word_num')
             ->select();
     }

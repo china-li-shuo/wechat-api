@@ -156,6 +156,13 @@ class Circle
         //如果点击的是小试牛刀班级，则直接更改为审核成功状态
         $classData = UserClass::getAscClassInfo();
         if($classData[0]['id'] == $data['class_id']){
+            $classInfo = Db::name('user_class')->where('user_id',$uid)->where('class_id',$data['class_id'])->find();
+            if(!empty($classInfo)){
+                throw new MissException([
+                    'msg'=>'你已经加入过此班级了',
+                    'errorCode'=>50000
+                ]);
+            }
             $arr =[
                 'user_id'=>$uid,
                 'class_id'=>$data['class_id'],

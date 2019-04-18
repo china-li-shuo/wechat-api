@@ -46,9 +46,21 @@ class Home
         $validate = new IDMustBePositiveInt();
         $validate->goCheck();
         $arr = $validate->getDataByRule(input('post.'));
-        $data = UnitClass::selectUnidClass($arr['id']);
+        $data = Db::name('unit_class')
+            ->alias('uc')
+            ->join('unit u','uc.unid=u.unid')
+            ->join('class c','uc.class_id=c.id')
+            ->field('u.unid,u.unitname,uc.class_id,c.class_name')
+            ->order('c.sort')
+            ->where('uc.unid',$arr['id'])
+            ->select();
+        if(empty($data)){
+            throw new MissException([
+                'msg'=>'分校信息查询失败',
+                'errorCode'=>50000
+            ]);
+        }
         $arr = Post::selectPost();
-
         $i= 1;
         foreach ($data as $key=>$val){
             foreach ($arr as $k=>$v){
@@ -136,6 +148,9 @@ class Home
 
         //进行查询排行榜
         $rankingData = User::getRankingData();
+        foreach ($rankingData as $key=>$val){
+            $rankingData[$key]['nick_name'] = urlDecodeNickName($val['nick_name']);
+        }
         cache('home_ranking',$rankingData,7200);
         return json($rankingData);
     }

@@ -48,7 +48,12 @@ class LearnedChild
         if($historyData['is_true'] == 0){
             $data['mastered_number'] = $childData['mastered_number']+1;
             $data['user_id'] = $uid;
-            return Db::name('learned_child')->where('user_id',$uid)->update($data);
+            return Db::name('learned_child')
+                ->where('user_id',$uid)
+                ->where('class_id',$data['class_id'])
+                ->where('stage',$data['stage'])
+                ->where('group',$data['group'])
+                ->update($data);
         }
 
     }

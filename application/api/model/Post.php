@@ -45,14 +45,11 @@ class Post
 
         return Db::table('yx_post')
             ->alias('p')
-            ->join('yx_user_class uc','p.user_id = uc.user_id')
-            ->join('yx_class c','uc.class_id = c.id')
+            ->join('yx_class c','p.class_id = c.id')
             ->join('yx_user u','p.user_id = u.id')
-            ->field('u.nick_name,u.user_name,u.punch_days,u.avatar_url,uc.class_id,p.content,p.create_time,c.class_name')
+            ->field('u.nick_name,u.user_name,u.punch_days,u.avatar_url,p.content,p.create_time,p.class_id,c.class_name')
             ->where($where)
-            ->where('uc.status',1)
-            ->group('uc.user_id')
-            ->order('create_time desc')
+            ->order('p.create_time desc')
             ->limit($limit)
             ->select();
     }

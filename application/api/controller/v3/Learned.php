@@ -19,7 +19,7 @@ use app\api\model\LearnedHistory as LearnedHistoryModel;
 use app\api\model\Stage;
 use app\api\service\Token;
 use app\api\validate\Collection;
-use app\api\validate\LearnedHistory;
+use app\api\validate\LearnedHistoryV3;
 use app\lib\exception\MissException;
 use app\lib\exception\SuccessMessage;
 use think\Db;
@@ -165,7 +165,7 @@ class Learned extends BaseController
         //根据用户选项判断用户答案是否正确
         //如果用户答错，则把错误信息写入数据库
         //然后把用户答题活动记录写入数据库，如果已存在这条记录进行修改，否则添加
-        $validate = new LearnedHistory();
+        $validate = new LearnedHistoryV3();
         $validate->goCheck();
 
         $uid = Token::getCurrentTokenVar('uid');

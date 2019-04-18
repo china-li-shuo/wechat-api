@@ -13,15 +13,19 @@ return [
     // 数据库类型
     'type'            => 'mysql',
     // 服务器地址
-    'hostname'        => '202.85.213.24',
+    //'hostname'        => '202.85.213.24',
+    'hostname'        => 'bj-cdb-7pcon69k.sql.tencentcdb.com',//正式
     // 数据库名
     'database'        => 'yx_word',
     // 用户名
-    'username'        => 'root',//
+    //'username'        => 'root',//
+    'username'        => 'remote_db',//
     // 密码
-    'password'        => 'success2017+_)(',
+    //'password'        => 'success2017+_)(',
+    'password'        => 'remote_db1982()+_)(&^%YUnsj',//正式
     // 端口
-    'hostport'        => '5203',
+    //'hostport'        => '5203',
+    'hostport'        => '63729',//正式
     // 连接dsn
     'dsn'             => '',
     // 数据库连接参数
