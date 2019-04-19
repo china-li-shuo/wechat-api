@@ -60,12 +60,12 @@ class Settlement
             }
             $medalData = $this->getMedal($uid, $data['stage']);
             //如果点击的是小试牛刀班级，则直接返回班级正确率
-            $classData = UserClass::getAscClassInfo();
-            if ($userInfo['is_teacher'] == 0 || $data['class_id'] == $classData[0]['id']) {
-                $classTrueRate = $this->percentageOfInter();
-            } else {
+//            $classData = UserClass::getAscClassInfo();
+//            if ($userInfo['is_teacher'] == 0 || $data['class_id'] == $classData[0]['id']) {
+//                $classTrueRate = $this->percentageOfInter();
+//            } else {
                 $classTrueRate = $this->percentageOfClass($data);
-            }
+//            }
 
             $userInfo['true_rate'] = &$trueRate;
             $userInfo['clock_status'] = &$clockStatus['clock_status'];
@@ -88,6 +88,10 @@ class Settlement
         $validate = new PostValidate();
         $validate->goCheck();
         $data = $validate->getDataByRule(input('post.'));
+        $len = mb_strlen($data['content']);
+        if($len>=50){
+            return json(['clock_status'=>0,'errorCode'=>0]);
+        }
         //进行发帖，并记录发帖天数
         $res = Post::addPost($uid,$data);
 

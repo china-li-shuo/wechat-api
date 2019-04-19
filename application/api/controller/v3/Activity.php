@@ -105,14 +105,11 @@ class Activity
         $validate->goCheck();
         $stage   = $validate->getDataByRule(input('post.'));
         $stageID = $stage['stage'];
-        $data    = cache($uid . 'errorDetail' . $stageID);
-
         if (!empty($data)) {
             return json($data);
         }
         //根据用户id和阶段id查出此用户所有的
         $data = $this->errorStageGroup($uid, $stageID);
-        cache($uid . 'errorDetail' . $stageID, $data, 7200);
         return json($data);
     }
 

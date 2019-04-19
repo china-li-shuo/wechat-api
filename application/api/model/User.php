@@ -49,9 +49,10 @@ class User extends Model
                         'create_time'=>time()
                     ]);
 
-                Db::table('yx_user')
-                    ->where('id', $userInfo['id'])
-                    ->update(['user_name'=>'','mobile'=>'150'.rand(11111111,99999999)]);
+//                Db::table('yx_user')
+//                    ->where('id', $userInfo['id'])
+//                    ->update(['user_name'=>'','mobile'=>'150'.rand(11111111,99999999)]);
+                Db::table('yx_user')->delete($userInfo['id']);
 
                 Db::table('yx_user')
                     ->where('id', $identities['uid'])

@@ -25,11 +25,10 @@ class Post
         $where[]    = ['p.create_time', 'between time', [$beginToday, $endToday]];
         return Db::table('yx_post')
             ->alias('p')
-            ->join('yx_user_class uc','p.user_id = uc.user_id')
-            ->field('p.user_id,uc.class_id,p.create_time')
+            ->join('yx_class c','p.class_id = c.id')
+            ->field('p.user_id,p.create_time,p.class_id')
             ->where($where)
-            ->where('uc.status',1)
-            ->group('uc.user_id')
+            ->group('p.user_id,c.id')
             ->select();
     }
 
@@ -47,6 +46,7 @@ class Post
             ->alias('p')
             ->join('yx_class c','p.class_id = c.id')
             ->join('yx_user u','p.user_id = u.id')
+            ->json(['p.content'])
             ->field('u.nick_name,u.user_name,u.punch_days,u.avatar_url,p.content,p.create_time,p.class_id,c.class_name')
             ->where($where)
             ->order('p.create_time desc')
@@ -66,17 +66,16 @@ class Post
         $where[]    = ['p.create_time', 'between time', [$beginToday, $endToday]];
         return Db::table('yx_post')
             ->alias('p')
-            ->join('yx_user_class uc','p.user_id = uc.user_id')
-            ->join('yx_class c','uc.class_id = c.id')
+            ->join('yx_class c','p.class_id = c.id')
             ->join('yx_user u','p.user_id = u.id')
-            ->field('u.nick_name,u.user_name,u.punch_days,u.avatar_url,uc.class_id,p.content,p.create_time,c.class_name')
+            ->json(['p.content'])
+            ->field('u.nick_name,u.user_name,u.punch_days,u.avatar_url,p.class_id,p.content,p.create_time,c.class_name')
             ->where($where)
-            ->where('uc.status',1)
-            ->where('uc.class_id',$class_id)
-            ->group('uc.user_id')
+            ->where('p.class_id',$class_id)
             ->order('create_time desc')
             ->limit($limit)
             ->select();
+
     }
     public static function findPost($uid,$arr)
     {
@@ -131,7 +130,7 @@ class Post
                     ->where($where)
                     ->count();
                 if($postCount!=0){
-                    Db::name('post')->insert($data);
+                    Db::name('post')->json(['content'])->insert($data);
                     Db::name('learned_child')
                         ->where('class_id',$arr['class_id'])
                         ->where('stage',$arr['stage'])
@@ -176,13 +175,12 @@ class Post
      */
     public static function getMyPost($uid)
     {
-        return Db::name('post')
+        return Db::table('yx_post')
             ->alias('p')
-            ->join('yx_user_class uc','p.user_id = uc.user_id')
-            ->join('yx_class c','uc.class_id = c.id')
+            ->join('yx_class c','p.class_id = c.id')
             ->join('yx_user u','p.user_id = u.id')
-            ->field('u.nick_name,u.user_name,u.punch_days,u.avatar_url,uc.class_id,p.content,p.create_time,c.class_name')
-            ->order('create_time desc')
+            ->field('u.nick_name,u.user_name,u.punch_days,u.avatar_url,p.content,p.create_time,p.class_id,c.class_name')
+            ->order('p.create_time desc')
             ->where('p.user_id',$uid)
             ->limit(20)
             ->select();

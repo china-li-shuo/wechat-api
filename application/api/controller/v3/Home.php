@@ -61,18 +61,21 @@ class Home
             ]);
         }
         $arr = Post::selectPost();
+
         $i= 1;
         foreach ($data as $key=>$val){
             foreach ($arr as $k=>$v){
                 if($val['class_id']==$v['class_id']){
-                     $data[$key]['post_count'] = $i++;
-                     break;
+                    $data[$key]['post_count'] = $i++;
                 }
+                continue;
             }
+            $i = 1;
             if(empty($data[$key]['post_count'])){
                 $data[$key]['post_count'] = 0;
             }
         }
+
         if(empty($data)){
             throw new MissException([
                 'msg'=>'此分校暂无任何班级信息',

@@ -166,7 +166,8 @@ class Circle
             $arr =[
                 'user_id'=>$uid,
                 'class_id'=>$data['class_id'],
-                'status'=>1
+                'status'=>1,
+                'create_time'=>time()
                 ];
             Db::name('user_class')->insert($arr);
             $data['status'] = 1;
