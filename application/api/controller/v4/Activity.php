@@ -6,16 +6,19 @@
  * Time: 16:45
  */
 
-namespace app\api\controller\v1;
+namespace app\api\controller\v4;
+
 use app\api\model\Collection;
 use app\api\model\EnglishWord;
 use app\api\model\ErrorBook;
 use app\api\model\LearnedHistory;
 use app\api\service\Token;
-use app\api\validate\ErrorBook as ErrorBookValidate;
 use app\api\validate\StageID;
 use app\lib\exception\MissException;
+use app\api\validate\ErrorBook AS ErrorBookValidate;
 use think\Db;
+use think\Exception;
+use think\facade\Request;
 
 class Activity
 {
@@ -30,9 +33,9 @@ class Activity
         $uid         = Token::getCurrentTokenVar('uid');
         $historyData = LearnedHistory::learnedInfo($uid);
 
-        if (empty($historyData)){
+        if (empty($historyData)) {
             throw new MissException([
-                'msg' => '你还有任何学习记录呢,请开始你的表演',
+                'msg'       => '你还有任何学习记录呢,请开始你的表演',
                 'errorCode' => 50000
             ]);
         }
@@ -48,7 +51,7 @@ class Activity
     {
         $uid  = Token::getCurrentTokenVar('uid');
         $data = ErrorBook::errorInfo($uid);
-        if(empty($data)){
+        if (empty($data)) {
             throw new MissException([
                 'msg'       => '学霸，还没有答错任何题呢',
                 'errorCode' => 50000
@@ -71,15 +74,21 @@ class Activity
         $validate->goCheck();
         $stage   = $validate->getDataByRule(input('post.'));
         $stageID = $stage['stage'];
+        $data    = cache($uid . 'alreadyDetail' . $stageID);
 
+        if (!empty($data)) {
+            return json($data);
+        }
         //根据用户id和阶段id查出此用户所有的
-        $data = $this->getStageGroup($uid,$stageID);
-        if (empty($data)){
+        $data = $this->getStageGroup($uid, $stageID);
+        if (empty($data)) {
             throw new MissException([
-                'msg' => '你还未学习过任何单词',
+                'msg'       => '你还未学习过任何单词',
                 'errorCode' => 50000
             ]);
         }
+        $data['time'] = time();
+        cache($uid . 'alreadyDetail' . $stageID, $data, 7200);
         return json($data);
     }
 
@@ -96,10 +105,11 @@ class Activity
         $validate->goCheck();
         $stage   = $validate->getDataByRule(input('post.'));
         $stageID = $stage['stage'];
-
+        if (!empty($data)) {
+            return json($data);
+        }
         //根据用户id和阶段id查出此用户所有的
-        $data = $this->errorStageGroup($uid,$stageID);
-
+        $data = $this->errorStageGroup($uid, $stageID);
         return json($data);
     }
 
@@ -117,14 +127,14 @@ class Activity
         $data = $validate->getDataByRule(input('post.'));
         $res  = ErrorBook::deleteErrorBook($uid, $data);
 
-        if(!$res){
+        if (!$res) {
             throw new MissException([
-                'msg' => '错题已经移除,请刷新重试',
+                'msg'       => '错题已经移除,请刷新重试',
                 'errorCode' => 50000
             ]);
         }
 
-        return json(['msg'=>'移除成功','code'=>200]);
+        return json(['msg' => '移除成功', 'code' => 200]);
     }
 
     /**
@@ -134,9 +144,9 @@ class Activity
     {
         $uid  = Token::getCurrentTokenVar('uid');
         $data = Collection::collectionInfo($uid);
-        if(empty($data)){
+        if (empty($data)) {
             throw new MissException([
-                'msg' => '空空如也，请先收藏单词(⊙o⊙)哦',
+                'msg'       => '空空如也，请先收藏单词(⊙o⊙)哦',
                 'errorCode' => 50000
             ]);
         }
@@ -157,15 +167,19 @@ class Activity
         $validate->goCheck();
         $stage   = $validate->getDataByRule(input('post.'));
         $stageID = $stage['stage'];
+        $data    = cache($uid . 'collectionDetail' . $stageID);
 
+        if (!empty($data)) {
+            return json($data);
+        }
         //根据用户id和阶段id查出此用户所有的
         $data = $this->collectStageGroup($uid, $stageID);
-
+        cache($uid . 'collectionDetail' . $stageID, $data, 7200);
         return json($data);
     }
 
 
-    private function getStageGroup($uid,$stageID)
+    private function getStageGroup($uid, $stageID)
     {
         try {
             //获取阶段名称
@@ -214,9 +228,9 @@ class Activity
                 $data[$key]['word'] = $new_arr;
             }
             return $data;
-        }catch (\Exception $e){
+        } catch (\Exception $e) {
             throw new MissException([
-                'msg' => $e->getMessage(),
+                'msg'       => $e->getMessage(),
                 'errorCode' => 50000
             ]);
         }
@@ -224,59 +238,59 @@ class Activity
     }
 
 
-    private function collectStageGroup($uid,$stageID)
+    private function collectStageGroup($uid, $stageID)
     {
         //获取阶段名称
-        $stage = Db::table(YX_QUESTION.'stage')
-            ->where('id',$stageID)
+        $stage = Db::table(YX_QUESTION . 'stage')
+            ->where('id', $stageID)
             ->field('stage_name')
             ->find();
 
         $data = Db::table('yx_collection')
-            ->where('user_id',$uid)
-            ->where('stage',$stageID)
+            ->where('user_id', $uid)
+            ->where('stage', $stageID)
             ->group('group')
             ->field('id,stage,group')
             ->select();
 
-        foreach ($data as $key=>$val){
+        foreach ($data as $key => $val) {
             $data[$key]['stage_name'] = &$stage['stage_name'];
         }
         //获取每组的名称
-        foreach ($data as $k=>$v){
+        foreach ($data as $k => $v) {
 
-            $group = Db::table(YX_QUESTION.'group')
-                ->where('id',$v['group'])
+            $group = Db::table(YX_QUESTION . 'group')
+                ->where('id', $v['group'])
                 ->field('group_name')
                 ->find();
 
             $lastLearnedTime = Db::table('yx_collection')
-                ->where('user_id',$uid)
-                ->where('stage',$stageID)
-                ->where('group',$v['group'])
+                ->where('user_id', $uid)
+                ->where('stage', $stageID)
+                ->where('group', $v['group'])
                 ->order('create_time DESC')
                 ->field('group,create_time')->find();
 
-            $data[$k]['group_name'] = &$group['group_name'];
-            $data[$k]['last_learned_time'] = date('Y-m-d',$lastLearnedTime['create_time']);
+            $data[$k]['group_name']        = &$group['group_name'];
+            $data[$k]['last_learned_time'] = date('Y-m-d', $lastLearnedTime['create_time']);
         }
 
         //获取每组下所有的单词,进行查询每个单词的详情
-        foreach ($data as $key=>$val){
+        foreach ($data as $key => $val) {
             $result = Db::table('yx_collection')
-                ->where('user_id',$uid)
-                ->where('stage',$stageID)
-                ->where('group',$val['group'])
+                ->where('user_id', $uid)
+                ->where('stage', $stageID)
+                ->where('group', $val['group'])
                 ->field('stage,group,word_id')
                 ->select();
 
-            $new_arr = EnglishWord::selectWordDetail($result);
+            $new_arr            = EnglishWord::selectWordDetail($result);
             $data[$key]['word'] = $new_arr;
         }
 
-        if (!$data){
+        if (!$data) {
             throw new MissException([
-                'msg' => '空空如也，请先开始进行你的表演',
+                'msg'       => '空空如也，请先开始进行你的表演',
                 'errorCode' => 50000
             ]);
         }
@@ -284,58 +298,58 @@ class Activity
     }
 
 
-    private function errorStageGroup($uid,$stageID)
+    private function errorStageGroup($uid, $stageID)
     {
         //获取阶段名称
-        $stage = Db::table(YX_QUESTION.'stage')
-            ->where('id',$stageID)->field('stage_name')
+        $stage = Db::table(YX_QUESTION . 'stage')
+            ->where('id', $stageID)->field('stage_name')
             ->find();
 
         $data = Db::table('yx_error_book')
-            ->where('user_id',$uid)
-            ->where('stage',$stageID)
+            ->where('user_id', $uid)
+            ->where('stage', $stageID)
             ->group('group')
             ->field('id,stage,group')
             ->select();
 
-        foreach ($data as $key=>$val){
+        foreach ($data as $key => $val) {
             $data[$key]['stage_name'] = &$stage['stage_name'];
         }
         //获取每组的名称
-        foreach ($data as $k=>$v){
-            $group = Db::table(YX_QUESTION.'group')
-                ->where('id',$v['group'])
+        foreach ($data as $k => $v) {
+            $group = Db::table(YX_QUESTION . 'group')
+                ->where('id', $v['group'])
                 ->field('group_name')
                 ->find();
 
             $lastLearnedTime = Db::table('yx_error_book')
-                ->where('user_id',$uid)
-                ->where('stage',$stageID)
-                ->where('group',$v['group'])
+                ->where('user_id', $uid)
+                ->where('stage', $stageID)
+                ->where('group', $v['group'])
                 ->order('create_time DESC')
                 ->field('group,create_time')
                 ->find();
 
-            $data[$k]['group_name'] = &$group['group_name'];
+            $data[$k]['group_name']        = &$group['group_name'];
             $data[$k]['last_learned_time'] = date('Y-m-d', $lastLearnedTime['create_time']);
         }
 
         //获取每组下所有的单词,进行查询每个单词的详情
-        foreach ($data as $key=>$val){
-            $result = Db::table('yx_error_book')
-                ->where('user_id',$uid)
-                ->where('stage',$stageID)
-                ->where('group',$val['group'])
+        foreach ($data as $key => $val) {
+            $result             = Db::table('yx_error_book')
+                ->where('user_id', $uid)
+                ->where('stage', $stageID)
+                ->where('group', $val['group'])
                 ->field('stage,group,word_id')
                 ->select();
-            $new_arr = EnglishWord::selectWordDetail($result);
+            $new_arr            = EnglishWord::selectWordDetail($result);
             $data[$key]['word'] = $new_arr;
 
         }
 
-        if (!$data){
+        if (!$data) {
             throw new MissException([
-                'msg' => '空空如也，请先开始进行你的表演',
+                'msg'       => '空空如也，请先开始进行你的表演',
                 'errorCode' => 50000
             ]);
         }

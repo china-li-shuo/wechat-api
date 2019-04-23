@@ -110,6 +110,7 @@ class Stage extends Model
         //进行阶段排序
         $stageData = Db::table(YX_QUESTION . 'stage')
             ->order('sort')
+            ->where('parent_id','<>',0)
             ->select();
         //找出当前阶段
         $nowStage = Db::table(YX_QUESTION . 'stage')
@@ -212,7 +213,6 @@ class Stage extends Model
             ->where('parent_id', $commonID)
             ->field('id')
             ->select();
-
         $ids = '';
         foreach ($stage as $key=>$val){
             $ids .= ','.$val['id'];

@@ -6,7 +6,7 @@
  * Time: 13:54
  */
 
-namespace app\api\controller\v3;
+namespace app\api\controller\v4;
 
 use app\api\model\Collection;
 use app\api\model\EnglishWord;
@@ -19,10 +19,9 @@ use app\api\model\Stage;
 use app\api\model\User;
 use app\api\model\UserClass;
 use app\api\service\Token;
-use app\api\validate\IDMustBePositiveInt;
 use app\lib\exception\MissException;
 use app\lib\exception\SuccessMessage;
-use app\api\validate\SettlementV3 as SettlementValidateV3;
+use app\api\validate\Settlement as SettlementValidate;
 use think\Db;
 
 class Settlement
@@ -38,7 +37,7 @@ class Settlement
         //根据token获取用户刚才所学阶段名称，组名称
         //用户头像，昵称，学习天数，正确率，超过班级百分比
         $uid = Token::getCurrentTokenVar('uid');
-        $validate = new SettlementValidateV3();
+        $validate = new SettlementValidate();
         $validate->goCheck();
         $data = $validate->getDataByRule(input('post.'));
         $data['user_id'] = $uid;
@@ -150,7 +149,7 @@ class Settlement
     public function nextGroupInfo()
     {
         $uid   = Token::getCurrentTokenVar('uid');
-        $validate = new SettlementValidateV3();
+        $validate = new SettlementValidate();
         $validate->goCheck();
         $data= $validate->getDataByRule(input('post.'));
         $userInfo['id'] = $uid;
@@ -218,7 +217,7 @@ class Settlement
     {
         //根据token获取用户最后一次学习的哪一阶段，哪一组信息，重新查询一遍详情进行返回
         $uid      = Token::getCurrentTokenVar('uid');
-        $validate = new SettlementValidateV3();
+        $validate = new SettlementValidate();
         $validate->goCheck();
         $data = $validate->getDataByRule(input('post.'));
         $groupWord = GroupWord::selectGroupWord($data['group']);

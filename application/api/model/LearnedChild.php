@@ -32,17 +32,16 @@ class LearnedChild
         unset($data['word_id']);
 
         $childData = Db::name('learned_child')
+            ->where('class_id',$data['class_id'])
             ->where('stage',$data['stage'])
             ->where('group',$data['group'])
             ->where('user_id',$uid)
             ->find();
 
-        if(empty($historyData)){
-            if(empty($childData)){
-                $data['mastered_number'] = 1;
-                $data['user_id'] = $uid;
-                return Db::name('learned_child')->insert($data);
-            }
+        if(empty($childData)){
+            $data['mastered_number'] = 1;
+            $data['user_id'] = $uid;
+            return Db::name('learned_child')->insert($data);
         }
 
         if($historyData['is_true'] == 0){
@@ -84,6 +83,7 @@ class LearnedChild
             return true;
         }
         $childData = Db::name('learned_child')
+            ->where('class_id',$data['class_id'])
             ->where('stage',$data['stage'])
             ->where('group',$data['group'])
             ->where('user_id',$uid)
@@ -95,7 +95,12 @@ class LearnedChild
                 $data['mastered_number'] = 0;
             }
             $data['user_id'] = $uid;
-            return Db::name('learned_child')->where('user_id',$uid)->update($data);
+            return Db::name('learned_child')
+                ->where('user_id',$uid)
+                ->where('class_id',$data['class_id'])
+                ->where('stage',$data['stage'])
+                ->where('group',$data['group'])
+                ->update($data);
         }
         return true;
     }

@@ -171,7 +171,6 @@ class Learned extends BaseController
         $uid = Token::getCurrentTokenVar('uid');
 
         $data = $validate->getDataByRule(input('post.'));
-
         $answerResult = EnglishWord::answerResult($data);
 
         //如果答题正确，判断错题本有没有此条记录，如果有则删除

@@ -6,7 +6,7 @@
  * Time: 10:11
  */
 
-namespace app\api\controller\v3;
+namespace app\api\controller\v4;
 
 use app\api\model\EnglishWord;
 use app\api\model\LearnedHistory;

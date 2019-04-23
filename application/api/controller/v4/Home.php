@@ -6,7 +6,7 @@
  * Time: 18:44
  */
 
-namespace app\api\controller\v3;
+namespace app\api\controller\v4;
 
 
 use app\api\model\Post;

@@ -265,7 +265,7 @@ class LearnedHistory extends Model
         Db::table('yx_learned_history')
             ->where('user_id', $uid)
             ->where('word_id', $data['word_id'])
-            ->update(['is_true' => $answerResult]);
+            ->update(['is_true' => $answerResult,'create_time'=>time()]);
 
         return true;
     }
