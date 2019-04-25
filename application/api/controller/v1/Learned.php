@@ -26,9 +26,9 @@ use think\Db;
 
 class Learned extends BaseController
 {
-    protected $beforeActionList = [
-        'checkPrimaryScope' => ['only' => 'getList,collection']
-    ];
+//    protected $beforeActionList = [
+//        'checkPrimaryScope' => ['only' => 'getList,collection']
+//    ];
 
     public function getList()
     {

@@ -109,7 +109,6 @@ class Home
                     ->field('u.avatar_url')
                     ->limit(5)
                     ->where('uc.class_id',$val['class_id'])
-                    ->where('uc.status',1)
                     ->select();
                 foreach ($classImgData as $k=>$v){
                     if (empty($v['avatar_url'])){

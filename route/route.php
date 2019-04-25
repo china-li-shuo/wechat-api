@@ -64,7 +64,9 @@ Route::post('api/:version/circle/intention', 'api/:version.Circle/addUserIntenti
 
 //我的
 Route::post('api/:version/personal/punch', 'api/:version.Personal/getMyPunchCard');
+Route::post('api/:version/personal/info', 'api/:version.Personal/getPersonalInfo');
 Route::get('api/:version/personal/app', 'api/:version.Personal/getResearchClassroom');
+
 
 
 

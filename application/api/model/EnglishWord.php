@@ -18,15 +18,15 @@ class EnglishWord extends Model
     protected $connection = [
         'type'     => 'mysql',
         // 服务器地址
-        'hostname'        => '202.85.213.24',
+        'hostname' => '202.85.213.24',
         // 数据库名
         'database' => 'yx_question',
         // 用户名
-        'username'        => 'root',//
+        'username' => 'root',//
         // 密码
-        'password'        => 'success2017+_)(',
+        'password' => 'success2017+_)(',
         // 端口
-        'hostport'        => '5203',
+        'hostport' => '5203',
         // 连接dsn
         'dsn'      => '',
         // 数据库连接参数
@@ -186,7 +186,6 @@ class EnglishWord extends Model
                 $result[$key]['son'] = $data;
             }
         }
-
         $us_audio = config('setting.audio_prefix');
         foreach ($result as $key => $val) {
             if (array_key_exists('son', $val)) {

@@ -12,10 +12,12 @@ use app\api\model\EnglishWord;
 use app\api\model\ErrorBook;
 use app\api\model\LearnedHistory;
 use app\api\service\Token;
-use app\api\validate\ErrorBook as ErrorBookValidate;
 use app\api\validate\StageID;
 use app\lib\exception\MissException;
+use app\api\validate\ErrorBook AS ErrorBookValidate;
 use think\Db;
+use think\Exception;
+use think\facade\Request;
 
 class Activity
 {

@@ -39,6 +39,7 @@ class Personal
     public function getResearchClassroom()
     {
         $content = file_get_contents('http://m.ke.yanxian.org');
-        echo $content;
+        file_put_contents('m.ke.yanxian.html',$content);
+        include ('m.ke.yanxian.html.html');
     }
 }

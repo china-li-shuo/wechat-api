@@ -44,7 +44,6 @@ class ErrorBook
 
     public static function deleteErrorBook($uid, $data)
     {
-
         $errorData = Db::table('yx_error_book')
             ->where('user_id', $uid)
             ->where('word_id', $data['word_id'])
