@@ -145,7 +145,6 @@ class LearnedHistory extends Model
         return Db::table('yx_learned_history')
             ->where('user_id', $uid)
             ->where('stage', $id)
-            ->field('id,group,user_id,stage,word_id,is_true')
             ->count();
     }
 
@@ -640,4 +639,22 @@ class LearnedHistory extends Model
         return $data;
     }
 
+    /**
+     * 判断用户某一阶段已学了多少个单词
+     * @param $uid
+     * @param $stages
+     * @return mixed
+     */
+    public static function getAlreadyNumberByStage($uid, $stages)
+    {
+
+        foreach ($stages as $key => $val) {
+            $count = Db::table('yx_learned_history')
+                ->where('stage', $val['son'][0]['id'])
+                ->where('user_id', $uid)
+                ->count();
+            $stages[$key]['alreadyNum'] = $count;
+        }
+        return $stages;
+    }
 }

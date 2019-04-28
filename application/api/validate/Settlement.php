@@ -12,6 +12,7 @@ namespace app\api\validate;
 class Settlement extends BaseValidate
 {
         protected $rule = [
+            'class_id' => 'require|isPositiveInteger',
             'group' => 'require|isPositiveInteger',
             'stage' => 'require|isPositiveInteger',
         ];

@@ -171,6 +171,7 @@ class Learned extends BaseController
         $uid = Token::getCurrentTokenVar('uid');
 
         $data = $validate->getDataByRule(input('post.'));
+
         $answerResult = EnglishWord::answerResult($data);
 
         //如果答题正确，判断错题本有没有此条记录，如果有则删除
@@ -241,6 +242,12 @@ class Learned extends BaseController
             if (empty($nextStageID)) {
                 throw new SuccessMessage([
                     'msg'       => '你太厉害了，所有阶段都已经通关了',
+                    'errorCode' => 50000
+                ]);
+            }
+            if($nextStageID == 8){
+                throw new SuccessMessage([
+                    'msg'       => '牛人阶段暂未开放，请耐心等待',
                     'errorCode' => 50000
                 ]);
             }

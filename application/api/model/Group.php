@@ -217,4 +217,32 @@ class Group extends Model
 
         return $data[0]['id'];
     }
+
+    /**
+     * 判断这个班级下这个阶段下所有组的权限
+     * @param $data
+     */
+    public static function getEachGroupInformation($data)
+    {
+        $groupData = Db::table('yx_class_permission')
+            ->where('class_id',$data['class_id'])
+            ->where('stage',$data['stage'])
+            ->field('groups')
+            ->find();
+        if(!empty($groupData)){
+            $groups = explode(',',$groupData['groups']);
+            $data = [];
+            foreach ($groups as $key=>$val){
+                $arr = Db::table(YX_QUESTION.'group')
+                    ->where('id',$val)
+                    ->field('id,group_name,word_num,sort')
+                    ->find();
+                array_push($data,$arr);
+            }
+            //根据字段last_name对数组$data进行降序排列
+            $sort= array_column($data,'sort');
+            array_multisort($sort,SORT_ASC,$data);
+            return $data;
+        }
+    }
 }

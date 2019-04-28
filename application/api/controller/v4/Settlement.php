@@ -14,14 +14,14 @@ use app\api\model\Group;
 use app\api\model\GroupWord;
 use app\api\model\LearnedHistory;
 use app\api\model\Post;
-use app\api\validate\Post as PostValidate;
 use app\api\model\Stage;
 use app\api\model\User;
 use app\api\model\UserClass;
 use app\api\service\Token;
+use app\api\validate\Post as PostValidate;
+use app\api\validate\Settlement as SettlementValidate;
 use app\lib\exception\MissException;
 use app\lib\exception\SuccessMessage;
-use app\api\validate\Settlement as SettlementValidate;
 use think\Db;
 
 class Settlement

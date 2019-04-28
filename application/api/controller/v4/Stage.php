@@ -13,17 +13,29 @@ use app\api\model\LearnedHistory;
 use app\api\model\Stage as StageModel;
 use app\api\model\User;
 use app\api\service\Token;
+use app\api\validate\ClassID;
 use app\api\validate\IDMustBePositiveInt;
+use app\api\validate\StageID;
 use app\lib\exception\MissException;
 use think\Db;
 
 class Stage
 {
+    /**
+     * 根据班级查询对应的阶段导航胶囊按钮
+     * @return \think\response\Json
+     * @throws MissException
+     * @throws \app\lib\exception\TokenException
+     * @throws \think\Exception
+     */
     public function getStages()
     {
         Token::getCurrentTokenVar('uid');
-        $stages = StageModel::getStages();
-        $stages = array_values($stages);
+        $validate = new ClassID();
+        $validate->goCheck();
+        $data = $validate->getDataByRule(input('post.'));
+        //查询对应的班级阶段导航胶囊按钮
+        $stages = StageModel::getStageNavigationButton($data['class_id']);
         if (empty($stages)) {
             throw new MissException([
                 'msg'       => '还没有任何阶段',
@@ -34,14 +46,23 @@ class Stage
     }
 
 
+    /**
+     * 根据班级查询对应的阶段
+     * @return \think\response\Json
+     * @throws MissException
+     * @throws \app\lib\exception\TokenException
+     * @throws \think\Exception
+     */
     public function getAllStage()
     {
         $uid = Token::getCurrentTokenVar('uid');
-
-        $stages = StageModel::getAllStage();
+        $validate = new ClassID();
+        $validate->goCheck();
+        $data = $validate->getDataByRule(input('post.'));
+        //根据班级获取此班级下所有的阶段
+        $stages = StageModel::getClassStageInformation($data['class_id']);
         //判断用户某一阶段已学了多少个单词
-        $stages = LearnedHistory::getWordNumberByStage($uid, $stages);
-        $stages = createTreeBySon($stages);
+        $stages = LearnedHistory::getAlreadyNumberByStage($uid, $stages);
         $stages = array_values($stages);
         if (empty($stages)) {
             throw new MissException([
@@ -53,12 +74,10 @@ class Stage
         foreach ($stages as $key => $val) {
             if (array_key_exists('son', $val)) {
                 foreach ($val['son'] as $k => $v) {
-                    //$end = mb_strpos($v['stage_name'],'词');
-                    $stage_name                           = mb_substr($v['stage_name'], 0, 2);
+                    $stage_name = mb_substr($v['stage_name'], 0, 2);
                     $stages[$key]['son'][$k]['stageName'] = $stage_name;
                 }
             }
-            $stages[$key]['son'] = array_values($stages[$key]['son']);
         }
         if (empty($stages)) {
             throw new MissException([
@@ -69,20 +88,30 @@ class Stage
         return json(['code' => 200, 'msg' => '查询成功', 'data' => $stages]);
     }
 
-    public function getDetail($id)
+
+    public function getDetail()
     {
         //获取阶段下共多少组，多少单词
         //获取用户已练习多少组，已练习多少单词
         //展示此阶段下共有哪几组单词(组名称)，每个组下有多少单词，用户每组学了多少单词
         //用户是否获取此勋章称号
         $uid      = Token::getCurrentTokenVar('uid');
-        $validate = new IDMustBePositiveInt();
-        $validate->goCheck();
-        $stageData             = StageModel::findStage($id);
-        $historyGroupData      = LearnedHistory::getUserStageGroupData($uid, $id);
+        $data = input('post.');
+        isset($data['stage']) ? intval($data['stage']) : 0;
+        isset($data['class_id']) ? intval($data['class_id']) : 0;
+        if(empty($data['stage'])|| empty($data['class_id'])){
+            throw new MissException([
+                'msg'=>'参数错误',
+                'errorCode'=>50000
+            ]);
+        }
+        $stageData             = StageModel::findStage($data['stage']);
+
+        $historyGroupData      = LearnedHistory::getUserStageGroupData($uid, $data['stage']);
         $historyGroupCount     = count($historyGroupData);
-        $historyWordCount      = LearnedHistory::UserCountStageGroup($uid, $id);
-        $eachGroupData         = Group::getEachStageGroupData($id);
+        $historyWordCount      = LearnedHistory::UserCountStageGroup($uid, $data['stage']);
+
+        $eachGroupData         = Group::getEachGroupInformation($data);
         $historyGroupWordCount = LearnedHistory::getAlreadyLearnedGroupWordCount($uid, $historyGroupData);
 
         //查看此阶段下，每组学习下多少个单词

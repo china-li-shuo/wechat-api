@@ -9,6 +9,7 @@
 namespace app\api\model;
 
 
+use app\lib\exception\MissException;
 use think\Db;
 use think\Model;
 
@@ -235,5 +236,64 @@ class Stage extends Model
             ->select();
 
         return $commonData;
+    }
+
+    /**
+     * 查询对应的班级阶段导航胶囊按钮
+     * @param $class_id
+     */
+    public static function getStageNavigationButton($class_id)
+    {
+        return Db::table('yx_class_permission')
+            ->alias('cp')
+            ->join(YX_QUESTION.'stage s','cp.stage=s.id')
+            ->where('cp.class_id',$class_id)
+            ->where('cp.groups','<>','')
+            ->order('s.sort')
+            ->field('s.id as stage_id,s.stage_name')
+            ->select();
+    }
+
+    /**
+     * 班级对应的阶段权限
+     * @param $class_id
+     */
+    public static function getClassStageInformation($class_id)
+    {
+        //此班级拥有的权限数据
+        $data = Db::table('yx_class_permission')
+            ->alias('cp')
+            ->join(YX_QUESTION.'stage s','cp.stage=s.id')
+            ->where('cp.class_id',$class_id)
+            ->where('cp.groups','<>','')
+            ->order('s.sort')
+            ->field('s.id,s.stage_desc,s.parent_id,s.stage_name,s.group_num,s.word_num')
+            ->select();
+        //所有父阶段数据
+        $parentData = Db::table(YX_QUESTION.'stage')
+            ->where('parent_id',0)
+            ->field('id,stage_name,group_num,word_num,parent_id')
+            ->select();
+        if(empty($data) || empty($data)){
+            throw new MissException([
+                'msg'=>'此班级还没有分配任何权限',
+                'errorCode'=>50000
+            ]);
+        }
+        foreach ($parentData as $key=>$val){
+            $parentData[$key]['son'] = [];
+            foreach ($data as $k=>$v){
+                if($val['id'] == $v['parent_id']){
+                  array_push($parentData[$key]['son'],$v);
+                  continue;
+                }
+            }
+            if(empty($parentData[$key]['son'])){
+                unset($parentData[$key]);
+                continue;
+            }
+        }
+
+        return $parentData;
     }
 }

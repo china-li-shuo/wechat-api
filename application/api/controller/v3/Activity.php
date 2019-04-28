@@ -12,7 +12,6 @@ use app\api\model\Collection;
 use app\api\model\EnglishWord;
 use app\api\model\ErrorBook;
 use app\api\model\LearnedHistory;
-use app\api\model\User;
 use app\api\service\Token;
 use app\api\validate\ErrorBook as ErrorBookValidate;
 use app\lib\exception\MissException;
@@ -128,14 +127,8 @@ class Activity
               ->field('stage,group')
               ->find();
         }
-        $data = cache($uid . 'errorDetail' . $arr['stage'] . $arr['group']);
-
-        if (!empty($data)) {
-            return json($data);
-        }
         //根据用户id和阶段id查出此用户所有的
         $data = $this->errorStageGroup($uid, $arr);
-        cache($uid . 'errorDetail' . $arr['stage'] . $arr['group'], $data, 7200);
         return json($data);
     }
 
@@ -258,6 +251,7 @@ class Activity
                 ->where('g.id', $arr['group'])
                 ->find();
             $new_arr['data'] = [
+                'stage_name'  => $groupData['stage_name'],
                 'group_name'  => $groupData['group_name'],
                 'create_time' => date('Y-m-d', $data[0]['create_time'])
             ];
@@ -297,6 +291,7 @@ class Activity
                 ->where('g.id', $arr['group'])
                 ->find();
             $new_arr['data'] = [
+                'stage_name'  => $groupData['stage_name'],
                 'group_name'  => $groupData['group_name'],
                 'create_time' => date('Y-m-d', $data[0]['create_time'])
             ];

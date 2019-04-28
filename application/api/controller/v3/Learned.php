@@ -245,6 +245,12 @@ class Learned extends BaseController
                     'errorCode' => 50000
                 ]);
             }
+            if($nextStageID == 8){
+                throw new SuccessMessage([
+                    'msg'       => '牛人阶段暂未开放，请耐心等待',
+                    'errorCode' => 50000
+                ]);
+            }
             //如果不为空，去找下一阶段的第一组id
             $nextStageFirstGroupID = Group::nextStageFirstGroupID($nextStageID);
             if (empty($nextStageFirstGroupID)) {
