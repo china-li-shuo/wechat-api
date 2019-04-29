@@ -18,6 +18,7 @@ use app\api\model\LearnedChild;
 use app\api\model\LearnedHistory as LearnedHistoryModel;
 use app\api\model\Stage;
 use app\api\service\Token;
+use app\api\validate\ClassID;
 use app\api\validate\Collection;
 use app\api\validate\LearnedHistory;
 use app\lib\exception\MissException;
@@ -31,12 +32,17 @@ class Learned extends BaseController
         //先根据token获取用户的uid
         //根据uid去学习记录表中查询用户最后一次学到了第几组的第几个单词
         $uid = Token::getCurrentTokenVar('uid');
-        cache('record_stage' . $uid, 1);
-        $LearnedData = LearnedHistoryModel::UserLearnedList($uid);
+        $validate = new ClassID();
+        $validate->goCheck();
+        $data = $validate->getDataByRule(input('post.'));
+        //cache('record_stage' . $uid, 1);
+        //查询用户最后一次学习的单词记录
+        $LearnedData = LearnedHistoryModel::UserLastLearnedData($uid,$data['class_id']);
+
         //如果用户没有学习记录，直接查询第一阶段下，第一组单词
         if (empty($LearnedData)) {
             //先看是否有缓存数据
-            $notLearnedData = cache('userNotLearnedData');
+            //$notLearnedData = cache('userNotLearnedData');
             if(!empty($notLearnedData)){
                 return json($notLearnedData);
             }
@@ -55,16 +61,19 @@ class Learned extends BaseController
             $notWordData             = CollectionModel::isCollection($uid, $notWordData);
             $notLearnedData          = EnglishWord::formatConversion($notWordData, 1);
             $notLearnedData['count'] = count($notLearnedData);
-            cache('userNotLearnedData',$notLearnedData,3600*24*7);
+            //cache('userNotLearnedData',$notLearnedData,3600*24*7);
             return json($notLearnedData);
         }
 
         //用户最后一次学习第几组共有多少单词
         $allData = Group::getAllData($LearnedData);   //25
+
         //用户还未学习的组信息
         $notLearnedData = Group::getGroupData($LearnedData);  //23
+        //如果当前组已经学完，则进行下一组单词
         if (empty($notLearnedData)) {
-            $wordDetail = $this->nextGroupInfo($allData[0]['group']);
+            //进行查找下一组单词，传递当前组参数信息
+            $wordDetail = $this->nextGroupInfo($LearnedData);
             return json($wordDetail);
         }
 
@@ -92,73 +101,17 @@ class Learned extends BaseController
     }
 
     /**
-     * 公共词汇
+     * 点击下一个，记录用户学习记录
+     * @throws MissException   错误信息
+     * @throws SuccessMessage   成功信息
+     * @throws \app\lib\exception\ParameterException
+     * @throws \app\lib\exception\TokenException    token过期异常
+     * @throws \think\Exception
+     * @throws \think\db\exception\DataNotFoundException
+     * @throws \think\db\exception\ModelNotFoundException
+     * @throws \think\exception\DbException
+     * @throws \think\exception\PDOException
      */
-    public function commonList()
-    {
-        //先根据token获取用户的uid
-        //根据uid去学习记录表中查询用户最后一次学到了第几组的第几个单词
-        $uid         = Token::getCurrentTokenVar('uid');
-        $LearnedData = LearnedHistoryModel::UserLearnedCommon($uid);
-        //如果用户没有学习记录，直接查询第一阶段下，第一组单词
-        if (empty($LearnedData)) {
-            //公共阶段下的子阶段id
-            $commonID       = Stage::FirstCommonStageID();
-            $group          = Group::firstGroupID($commonID);
-            $notLearnedData = GroupWord::findFirst($group);
-            if (empty($notLearnedData)) {
-                throw new MissException([
-                    'msg'       => '本组单词为空，请联系管理员进行添加',
-                    'errorCode' => 50000
-                ]);
-            }
-
-            $notLearnedData          = Group::correspondingStage($notLearnedData);
-            $notWordData             = EnglishWord::notWordData($notLearnedData);
-            $notWordData             = CollectionModel::isCollection($uid, $notWordData);
-            $notLearnedData          = EnglishWord::formatConversion($notWordData, 1);
-            $notLearnedData['count'] = count($notLearnedData);
-            return json($notLearnedData);
-        }
-
-        //用户最后一次学习第几组共有多少单词
-        $allData = Group::getAllData($LearnedData);   //25
-        //用户还未学习的组信息
-        $notLearnedData = Group::getGroupData($LearnedData);  //23
-        if (empty($notLearnedData)) {
-            $wordDetail = $this->commonNextGroupInfo($uid,$LearnedData);
-            if (empty($wordDetail)) {
-                throw new MissException([
-                    'msg'       => '本阶段单词已经学完了',
-                    'errorCode' => 0
-                ]);
-            }
-            return json($wordDetail);
-        }
-        //查询此组对应的阶段
-        $notLearnedData = Group::correspondingStage($notLearnedData);
-        //用户已学习这组下的第几个数量
-        $currentNumber = LearnedHistoryModel::userLearnedCurrentNumber($LearnedData);  //2
-
-        //用户还没有学习单词的详情
-        $notWordData = EnglishWord::notWordData($notLearnedData);
-
-        $notWordData = CollectionModel::isCollection($uid, $notWordData);
-
-        if (empty($notWordData)) {
-            throw new MissException([
-                'msg'       => '没有查到此分组下单词详情',
-                'errorCode' => 50000
-            ]);
-        }
-
-        $notWordData = EnglishWord::formatConversion($notWordData, $currentNumber + 1);
-
-        $notWordData['count'] = count($allData);
-        return json($notWordData);
-    }
-
-
     public function clickNext()
     {
         //传递参数（token,class_id,group,stage,word_id,useropt）
@@ -230,15 +183,22 @@ class Learned extends BaseController
     }
 
 
-    private function nextGroupInfo($group)
+    /**
+     * 下一组单词
+     * @param $LearnedData 当前阶段组信息
+     * @return mixed
+     * @throws MissException
+     * @throws SuccessMessage
+     */
+    private function nextGroupInfo($LearnedData)
     {
-        $data =  Db::name('learned_history')->field('stage')->where('group',$group)->find();
-        $userInfo['now_stage']=$data['stage'];
-        $userInfo['now_group']=$group;
-        $LastGroupID = Group::userLastGroupID($userInfo);
-        if (empty($LastGroupID)) {
-            //去找下一阶段,第一组单词
-            $nextStageID = Stage::nextStageGroupInfo($userInfo);
+        //获取下一组的组id,并且是符合此班级权限的下一组ID
+        $nextGroupID = Group::nextGroupIDByClassPermissions($LearnedData);
+
+        if (empty($nextGroupID)) {
+            //如果当前阶段没有下一组了，去找下一阶段,第一组单词
+            $nextStageID = Stage::nextStageIDByClassPermissions($LearnedData);
+
             if (empty($nextStageID)) {
                 throw new SuccessMessage([
                     'msg'       => '你太厉害了，所有阶段都已经通关了',
@@ -251,8 +211,11 @@ class Learned extends BaseController
                     'errorCode' => 50000
                 ]);
             }
-            //如果不为空，去找下一阶段的第一组id
-            $nextStageFirstGroupID = Group::nextStageFirstGroupID($nextStageID);
+            //如果不为空，去找下一阶段的符合权限第一组id
+            $LearnedData['stage'] = $nextStageID;
+            $LearnedData['group'] = '';
+            $nextStageFirstGroupID = Group::nextGroupIDByClassPermissions($LearnedData);
+
             if (empty($nextStageFirstGroupID)) {
                 throw new SuccessMessage([
                     'msg'       => '亲，暂你已经学完所有单词了，因为下一阶段，没有任何分组哦！',
@@ -262,7 +225,7 @@ class Learned extends BaseController
             $wordDetail = $this->getWordDetail($nextStageFirstGroupID, $nextStageID);
             return $wordDetail;      //这个是return array  数据
         }
-        $wordDetail = $this->getWordDetail($LastGroupID, $userInfo['now_stage']);
+        $wordDetail = $this->getWordDetail($nextGroupID, $LearnedData['stage']);
         return $wordDetail;          //这个是return array  数据
     }
 

@@ -58,13 +58,11 @@ class Group extends Model
         $allData = Db::table(YX_QUESTION . 'group_word')
             ->where('group', $lastWord['group'])
             ->select();
-
         $learnedData = Db::table('yx_learned_history')
             ->where('user_id', $lastWord['user_id'])
             ->where('group', $lastWord['group'])
             ->field('group,word_id')
             ->select();
-
         foreach ($allData as $key => $val) {
             foreach ($learnedData as $k => $v) {
                 if ($val['wid'] == $v['word_id']) {
@@ -244,5 +242,61 @@ class Group extends Model
             array_multisort($sort,SORT_ASC,$data);
             return $data;
         }
+    }
+
+    /****************************************V4start****************************************************/
+
+    /**
+     * 获取符合班级权限的下一组ID
+     * @param $LearnedData 当前组信息
+     * @return mixed
+     */
+    public static function nextGroupIDByClassPermissions($LearnedData)
+    {
+        //找出此阶段下所有的组，进行排序
+        $data = Db::table(YX_QUESTION . 'group')
+            ->where('stage_id', $LearnedData['stage'])
+            ->field('id,group_name,sort')
+            ->order('sort')
+            ->select();
+        //找出此班级下有权限的组
+        //判断是否在对应的班级权限里
+        $permissionData =  Db::table('yx_class_permission')
+            ->where('class_id',$LearnedData['class_id'])
+            ->where('stage',$LearnedData['stage'])
+            ->field('groups')
+            ->find();
+        $groups = explode(',',$permissionData['groups']);
+        //找出符合此班级权限下的所有分组
+        if(!empty($data) && !empty($groups)){
+            $arr = [];
+            foreach ($data as $key=>$val){
+                foreach ($groups as $k=>$v){
+                    if ($val['id'] == $v){
+                        array_push($arr,$data[$key]);
+                    }
+                }
+            }
+        }
+
+//        //sort
+//        $sort = array_column($arr,'sort');
+//        array_multisort($sort,SORT_ASC,$arr);
+
+        if(empty($LearnedData['group'])){
+            return $arr[0]['id'];
+        }
+        //确定下一组单词的ID
+        foreach ($arr as $key => $val) {
+            if ($LearnedData['group'] == $val['id']) {
+                $k = $key + 1;
+            }
+        }
+
+        //如果下一组单词信息非空，返回组id
+        if (!empty($arr[$k])) {
+            return $arr[$k]['id'];
+        }
+        return false;
     }
 }

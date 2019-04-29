@@ -15,7 +15,6 @@ use app\api\model\User;
 use app\api\service\Token;
 use app\api\validate\ClassID;
 use app\api\validate\IDMustBePositiveInt;
-use app\api\validate\StageID;
 use app\lib\exception\MissException;
 use think\Db;
 
@@ -42,6 +41,14 @@ class Stage
                 'errorCode' => 50000
             ]);
         }
+        foreach ($stages as $key=>$val){
+            $arr = Db::table(YX_QUESTION.'stage')
+                ->where('id',$val['parent_id'])
+                ->field('id,stage_name')
+                ->find();
+            $stages[$key]['id'] = $arr['id'];
+            $stages[$key]['stage_name'] = $arr['stage_name'];
+        }
         return json(['code' => 200, 'msg' => '查询成功', 'data' => $stages]);
     }
 
@@ -63,6 +70,7 @@ class Stage
         $stages = StageModel::getClassStageInformation($data['class_id']);
         //判断用户某一阶段已学了多少个单词
         $stages = LearnedHistory::getAlreadyNumberByStage($uid, $stages);
+
         $stages = array_values($stages);
         if (empty($stages)) {
             throw new MissException([

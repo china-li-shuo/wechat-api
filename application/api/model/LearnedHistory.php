@@ -9,6 +9,7 @@
 namespace app\api\model;
 
 
+use app\lib\exception\MissException;
 use think\Db;
 use think\Model;
 
@@ -178,13 +179,11 @@ class LearnedHistory extends Model
      */
     public static function userLearnedCurrentNumber($LearnedData)
     {
-        $currentNumber = Db::table('yx_learned_history')
+        return Db::table('yx_learned_history')
             ->where('user_id', $LearnedData['user_id'])
             ->where('group', $LearnedData['group'])
             ->field('id')
-            ->select();
-
-        return count($currentNumber);
+            ->count();
     }
 
     /**
@@ -647,14 +646,60 @@ class LearnedHistory extends Model
      */
     public static function getAlreadyNumberByStage($uid, $stages)
     {
-
         foreach ($stages as $key => $val) {
-            $count = Db::table('yx_learned_history')
-                ->where('stage', $val['son'][0]['id'])
-                ->where('user_id', $uid)
-                ->count();
-            $stages[$key]['alreadyNum'] = $count;
+           if(!empty($val['son'])){
+               foreach ($val['son'] as $k=>$v){
+                   $count = Db::table('yx_learned_history')
+                       ->where('stage', $v['id'])
+                       ->where('user_id', $uid)
+                       ->count();
+                   $stages[$key]['son'][$k]['alreadyNum'] = $count;
+               }
+           }
         }
         return $stages;
+    }
+
+    /**************************************V4接口Start*************************************************/
+
+
+    /**
+     * 根据用户id 和班级id
+     * @param $uid
+     * @param $class_id
+     * @return array|null|\PDOStatement|string|Model
+     * @throws MissException
+     */
+    public static function UserLastLearnedData($uid,$class_id)
+    {
+        //先进行查询子表中，这个班级最后一次学习的阶段和组然后进行
+        $arr = Db::table('yx_learned_child')
+            ->where('class_id',$class_id)
+            ->where('user_id',$uid)
+            ->field('user_id,class_id,stage,group')
+            ->order('create_time desc ,id desc')
+            ->find();
+        //判断是否在对应的班级权限里
+       $data =  Db::table('yx_class_permission')
+            ->where('class_id',$class_id)
+            ->where('stage',$arr['stage'])
+           ->field('groups')
+            ->find();
+       if(empty($data)){
+           throw new MissException([
+               'msg'=>'此班级没有此阶段的权限',
+               'errorCode'=>50000
+           ]);
+       }
+       $groups = explode(',',$data['groups']);
+       $res = in_array($arr['group'],$groups);
+        if(empty($res)){
+            throw new MissException([
+                'msg'=>'此班级没有此组的权限',
+                'errorCode'=>50000
+            ]);
+        }
+
+        return $arr;
     }
 }

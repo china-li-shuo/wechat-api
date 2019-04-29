@@ -250,7 +250,8 @@ class Stage extends Model
             ->where('cp.class_id',$class_id)
             ->where('cp.groups','<>','')
             ->order('s.sort')
-            ->field('s.id as stage_id,s.stage_name')
+            ->field('s.id as stage_id,s.stage_name,s.parent_id')
+            ->group('s.parent_id')
             ->select();
     }
 
@@ -272,6 +273,7 @@ class Stage extends Model
         //所有父阶段数据
         $parentData = Db::table(YX_QUESTION.'stage')
             ->where('parent_id',0)
+            ->order('sort')
             ->field('id,stage_name,group_num,word_num,parent_id')
             ->select();
         if(empty($data) || empty($data)){
@@ -295,5 +297,54 @@ class Stage extends Model
         }
 
         return $parentData;
+    }
+
+
+    /***************************V4start******************************************************/
+    /**
+     * 获取符合班级权限的下一组阶段ID
+     * @param $stageID
+     */
+    public static function nextStageIDByClassPermissions($LearnedData)
+    {
+        //找出此所有阶段，进行排序
+        $data = Db::table(YX_QUESTION . 'stage')
+            ->where('parent_id','<>',0)
+            ->field('id,stage_name,sort')
+            ->order('sort')
+            ->select();
+
+        //找出此班级下有权限的阶段
+        //判断是否在对应的班级权限里
+        $permissionData =  Db::table('yx_class_permission')
+            ->where('class_id',$LearnedData['class_id'])
+            ->field('stage')
+            ->select();
+
+        //找出符合此班级权限下的所有分组
+        if(!empty($data) && !empty($permissionData)){
+            $arr = [];
+            foreach ($data as $key=>$val){
+                foreach ($permissionData as $k=>$v){
+                    if ($val['id'] == $v['stage']){
+                        array_push($arr,$data[$key]);
+                    }
+                }
+            }
+        }
+
+        //确定下一组单词的ID
+        foreach ($arr as $key => $val) {
+            if ($LearnedData['stage'] == $val['id']) {
+                $k = $key + 1;
+            }
+        }
+
+        //如果下一组单词信息非空，返回组id
+        if (!empty($arr[$k])) {
+            return $arr[$k]['id'];
+        }
+
+        return false;
     }
 }

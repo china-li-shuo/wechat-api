@@ -41,6 +41,7 @@ class LearnedChild
             if(empty($childData)){
                 $data['mastered_number'] = 1;
                 $data['user_id'] = $uid;
+                $data['create_time'] = time();
                 return Db::name('learned_child')->insert($data);
             }
         }
@@ -48,6 +49,7 @@ class LearnedChild
         if($historyData['is_true'] == 0){
             $data['mastered_number'] = $childData['mastered_number']+1;
             $data['user_id'] = $uid;
+            $data['create_time'] = time();
             return Db::name('learned_child')
                 ->where('user_id',$uid)
                 ->where('class_id',$data['class_id'])
@@ -95,6 +97,7 @@ class LearnedChild
                 $data['mastered_number'] = 0;
             }
             $data['user_id'] = $uid;
+            $data['create_time'] = time();
             return Db::name('learned_child')
                 ->where('user_id',$uid)
                 ->where('class_id',$data['class_id'])
