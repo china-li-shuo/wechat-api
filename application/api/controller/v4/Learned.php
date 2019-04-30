@@ -35,20 +35,30 @@ class Learned extends BaseController
         $validate = new ClassID();
         $validate->goCheck();
         $data = $validate->getDataByRule(input('post.'));
-        //cache('record_stage' . $uid, 1);
+        cache('record_stage' . $uid, 1);
         //查询用户最后一次学习的单词记录
         $LearnedData = LearnedHistoryModel::UserLastLearnedData($uid,$data['class_id']);
-
         //如果用户没有学习记录，直接查询第一阶段下，第一组单词
         if (empty($LearnedData)) {
             //先看是否有缓存数据
-            //$notLearnedData = cache('userNotLearnedData');
+            $notLearnedData = cache('userNotLearnedData');
             if(!empty($notLearnedData)){
                 return json($notLearnedData);
             }
-            $stage          = Stage::FirstStageID();
-            $group          = Group::firstGroupID($stage);
-            $notLearnedData = GroupWord::findFirst($group);
+            //查询符合班级权限的第一个阶段ID
+            $stageID = Stage::firstStageIDByClassPermissions($data['class_id']);
+            if(empty($stageID)){
+                throw new MissException([
+                    'msg'=>'此班级下没有查到任何阶段有权限',
+                    'errorCode'=>50000
+                ]);
+            }
+            //查询符合班级权限的组ID
+            $arr['group'] = '';
+            $arr['class_id'] = $data['class_id'];
+            $arr['stage'] =$stageID;
+            $groupID = Group::nextGroupIDByClassPermissions($arr);
+            $notLearnedData = GroupWord::findFirst($groupID);
             if (empty($notLearnedData)) {
                 throw new MissException([
                     'msg'       => '本组单词为空，请联系管理员进行添加',
@@ -61,7 +71,7 @@ class Learned extends BaseController
             $notWordData             = CollectionModel::isCollection($uid, $notWordData);
             $notLearnedData          = EnglishWord::formatConversion($notWordData, 1);
             $notLearnedData['count'] = count($notLearnedData);
-            //cache('userNotLearnedData',$notLearnedData,3600*24*7);
+            cache('userNotLearnedData',$notLearnedData,3600*24*7);
             return json($notLearnedData);
         }
 

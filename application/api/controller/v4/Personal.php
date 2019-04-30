@@ -15,6 +15,8 @@ use app\lib\exception\MissException;
 
 class Personal
 {
+
+
     /**
      *用户个人信息
      */

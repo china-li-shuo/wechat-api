@@ -679,6 +679,9 @@ class LearnedHistory extends Model
             ->field('user_id,class_id,stage,group')
             ->order('create_time desc ,id desc')
             ->find();
+        if(empty($arr)){
+            return $arr;
+        }
         //判断是否在对应的班级权限里
        $data =  Db::table('yx_class_permission')
             ->where('class_id',$class_id)

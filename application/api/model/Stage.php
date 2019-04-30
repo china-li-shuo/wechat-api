@@ -347,4 +347,41 @@ class Stage extends Model
 
         return false;
     }
+
+    /**
+     * 查询符合班级权限的第一个阶段ID
+     */
+    public static function firstStageIDByClassPermissions($class_id)
+    {
+        //找出此所有阶段，进行排序
+        $data = Db::table(YX_QUESTION . 'stage')
+            ->where('parent_id','<>',0)
+            ->field('id,stage_name,sort')
+            ->order('sort')
+            ->select();
+
+        //找出此班级下有权限的阶段
+        //判断是否在对应的班级权限里
+        $permissionData =  Db::table('yx_class_permission')
+            ->where('class_id',$class_id)
+            ->field('stage')
+            ->select();
+
+        //找出符合此班级权限下的所有分组
+        if(!empty($data) && !empty($permissionData)){
+            $arr = [];
+            foreach ($data as $key=>$val){
+                foreach ($permissionData as $k=>$v){
+                    if ($val['id'] == $v['stage']){
+                        array_push($arr,$data[$key]);
+                    }
+                }
+            }
+        }
+
+        if(!empty($arr)){
+            return $arr[0]['id'];
+        }
+        return false;
+    }
 }

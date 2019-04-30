@@ -27,7 +27,6 @@ class LearnedChild
             ->where('word_id',$data['word_id'])
             ->where('user_id',$uid)
             ->find();
-
         unset($data['useropt']);
         unset($data['word_id']);
 
@@ -37,13 +36,11 @@ class LearnedChild
             ->where('user_id',$uid)
             ->find();
 
-        if(empty($historyData)){
-            if(empty($childData)){
-                $data['mastered_number'] = 1;
-                $data['user_id'] = $uid;
-                $data['create_time'] = time();
-                return Db::name('learned_child')->insert($data);
-            }
+        if(empty($historyData) || empty($childData)){
+            $data['mastered_number'] = 1;
+            $data['user_id'] = $uid;
+            $data['create_time'] = time();
+            return Db::name('learned_child')->insert($data);
         }
 
         if($historyData['is_true'] == 0){
