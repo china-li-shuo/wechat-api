@@ -82,15 +82,20 @@ class Group extends Model
 
     }
 
+    /**
+     * 给对应的组加上对应的阶段和组对应的类型，用于判断是什么类型
+     * @param $notLearnedData
+     * @return mixed
+     */
     public static function correspondingStage($notLearnedData)
     {
+        $data = Db::table(YX_QUESTION . 'group')
+            ->where('id', $notLearnedData[0]['group'])
+            ->field('stage_id,type')
+            ->find();
         foreach ($notLearnedData as $key => $val) {
-
-            $data = Db::table(YX_QUESTION . 'group')
-                ->where('id', $val['group'])
-                ->find();
-
             $notLearnedData[$key]['stage'] = $data['stage_id'];
+            $notLearnedData[$key]['type'] = $data['type'];
 
         }
 

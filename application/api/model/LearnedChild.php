@@ -36,11 +36,12 @@ class LearnedChild
             ->where('user_id',$uid)
             ->find();
 
-        if(empty($historyData) || empty($childData)){
+        if(empty($childData)){
             $data['mastered_number'] = 1;
             $data['user_id'] = $uid;
             $data['create_time'] = time();
             return Db::name('learned_child')->insert($data);
+
         }
 
         if($historyData['is_true'] == 0){

@@ -141,6 +141,7 @@ class EnglishWord extends Model
      */
     public static function getNextWordDetail($groupWord)
     {
+        print_r($groupWord);
         foreach ($groupWord as $key => $val) {
             $data                     = Db::table(YX_QUESTION . 'english_word')
                 ->where('id', $val['wid'])
@@ -198,5 +199,93 @@ class EnglishWord extends Model
 
         }
         return $result;
+    }
+
+
+    /*********************************************V4start*****************************************************/
+    /**
+     * 进行查找为还未学习的单词详情
+     * @param $notLearnedData
+     * @return mixed
+     */
+    public static function selectNotWordData($notLearnedData)
+    {
+        //根据类型查找对应的单词库，1、普通类型；2、同义词；3、一次多义；4、熟词僻义
+        switch ($notLearnedData[0]['type']){
+            case 1;
+                foreach ($notLearnedData as $key => $val) {
+                    $data = Db::table(YX_QUESTION . 'english_word')
+                        ->where('id', $val['wid'])
+                        ->find();
+                    $notLearnedData[$key]['is_collection'] = 2;
+                    $notLearnedData[$key]['son'] = $data;
+                }
+
+                return $notLearnedData;
+            default:
+                foreach ($notLearnedData as $key => $val) {
+                    $data = Db::table(YX_QUESTION . 'english_word_s')
+                        ->where('id', $val['wid'])
+                        ->find();
+                    $notLearnedData[$key]['is_collection'] = 2;
+                    $notLearnedData[$key]['son'] = $data;
+                }
+
+                return $notLearnedData;
+        }
+    }
+
+    /**
+     * 根据类型格式转换
+     * @param $notWordData
+     * @param $currentNumber
+     * @return mixed
+     */
+    public static function conversionByTypeFormat($notWordData, $currentNumber)
+    {
+        //单词表已的音频路径
+        $us_audio = config('setting.audio_prefix');
+        //根据类型进行不同的格式转换，1、普通类型；2、同义词；3、一次多义；4、熟词僻义
+        switch ($notWordData[0]['type']){
+            case 2://同义词，则需查找关联表
+                foreach ($notWordData as $key => $val) {
+                    foreach ($val as $k => $v) {
+                        $arr  = Db::table(YX_QUESTION . 'synonym')
+                            ->alias('s')
+                            ->join(YX_QUESTION . 'english_word e','e.id=s.wid')
+                            ->where('s.sid',$v['id'])
+                            ->select();
+                        $notWordData[$key]['son']['detail'] = $arr;
+                    }
+
+                }
+                return $notWordData;
+            case 4://熟词僻义，返回熟义还是僻义
+                foreach ($notWordData as $key => $val) {
+                    foreach ($val as $k => $v) {
+                        $notWordData[$key]['son']['ripe']          = $v['ripe'] == 1 ? '熟义' : '僻义';
+                        $notWordData[$key]['son']['chinese_word']  = explode('@', $v['chinese_word']);
+                        $notWordData[$key]['son']['options']       = json_decode($v['options'], true);
+                        $notWordData[$key]['son']['sentence']      = json_decode($v['sentence'], true);
+                        $notWordData[$key]['son']['currentNumber'] = $currentNumber + $key;
+                        $notWordData[$key]['son']['us_audio']      = $us_audio . $v['us_audio'];
+                    }
+
+                }
+                return $notWordData;
+            default://普通类型还是一次多义
+                foreach ($notWordData as $key => $val) {
+                    foreach ($val as $k => $v) {
+                        $notWordData[$key]['son']['chinese_word']  = explode('@', $v['chinese_word']);
+                        $notWordData[$key]['son']['options']       = json_decode($v['options'], true);
+                        $notWordData[$key]['son']['sentence']      = json_decode($v['sentence'], true);
+                        $notWordData[$key]['son']['currentNumber'] = $currentNumber + $key;
+                        $notWordData[$key]['son']['us_audio']      = $us_audio . $v['us_audio'];
+                    }
+
+                }
+                return $notWordData;
+        }
+
     }
 }
