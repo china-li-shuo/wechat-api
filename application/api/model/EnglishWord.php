@@ -141,12 +141,11 @@ class EnglishWord extends Model
      */
     public static function getNextWordDetail($groupWord)
     {
-        print_r($groupWord);
         foreach ($groupWord as $key => $val) {
-            $data                     = Db::table(YX_QUESTION . 'english_word')
+            $data  = Db::table(YX_QUESTION . 'english_word')
                 ->where('id', $val['wid'])
                 ->find();
-            $stage                    = Db::table(YX_QUESTION . 'group')
+            $stage = Db::table(YX_QUESTION . 'group')
                 ->where('id', $val['group'])
                 ->field('stage_id')
                 ->find();
@@ -247,24 +246,11 @@ class EnglishWord extends Model
         $us_audio = config('setting.audio_prefix');
         //根据类型进行不同的格式转换，1、普通类型；2、同义词；3、一次多义；4、熟词僻义
         switch ($notWordData[0]['type']){
-            case 2://同义词，则需查找关联表
+            case 1://普通类型
                 foreach ($notWordData as $key => $val) {
                     foreach ($val as $k => $v) {
-                        $arr  = Db::table(YX_QUESTION . 'synonym')
-                            ->alias('s')
-                            ->join(YX_QUESTION . 'english_word e','e.id=s.wid')
-                            ->where('s.sid',$v['id'])
-                            ->select();
-                        $notWordData[$key]['son']['detail'] = $arr;
-                    }
-
-                }
-                return $notWordData;
-            case 4://熟词僻义，返回熟义还是僻义
-                foreach ($notWordData as $key => $val) {
-                    foreach ($val as $k => $v) {
-                        $notWordData[$key]['son']['ripe']          = $v['ripe'] == 1 ? '熟义' : '僻义';
                         $notWordData[$key]['son']['chinese_word']  = explode('@', $v['chinese_word']);
+                        $notWordData[$key]['son']['answer']        = explode(',', $v['answer']);
                         $notWordData[$key]['son']['options']       = json_decode($v['options'], true);
                         $notWordData[$key]['son']['sentence']      = json_decode($v['sentence'], true);
                         $notWordData[$key]['son']['currentNumber'] = $currentNumber + $key;
@@ -273,10 +259,22 @@ class EnglishWord extends Model
 
                 }
                 return $notWordData;
-            default://普通类型还是一次多义
+            case 2://同义词，则需查找关联表
                 foreach ($notWordData as $key => $val) {
                     foreach ($val as $k => $v) {
-                        $notWordData[$key]['son']['chinese_word']  = explode('@', $v['chinese_word']);
+                        $notWordData[$key]['son']['detail'] = Db::table(YX_QUESTION . 'synonym')
+                            ->alias('s')
+                            ->join(YX_QUESTION . 'english_word e','e.id=s.wid')
+                            ->where('s.sid',$v['id'])
+                            ->select();;
+                    }
+
+                }
+                return $notWordData;
+            default://type3一词多义，type4熟词僻义
+                foreach ($notWordData as $key => $val) {
+                    foreach ($val as $k => $v) {
+                        $notWordData[$key]['son']['answer']        = explode(',', $v['answer']);
                         $notWordData[$key]['son']['options']       = json_decode($v['options'], true);
                         $notWordData[$key]['son']['sentence']      = json_decode($v['sentence'], true);
                         $notWordData[$key]['son']['currentNumber'] = $currentNumber + $key;

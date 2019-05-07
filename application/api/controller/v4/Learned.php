@@ -48,11 +48,6 @@ class Learned extends BaseController
         $LearnedData = LearnedHistoryModel::UserLastLearnedData($uid,$data['class_id']);
         //如果用户没有学习记录，直接查询第一阶段下，第一组单词
         if (empty($LearnedData)) {
-            //先看是否有缓存数据
-//            $notLearnedData = cache('userNotLearnedData');
-//            if(!empty($notLearnedData)){
-//                return json($notLearnedData);
-//            }
             //查询符合班级权限的第一个阶段ID
             $stageID = Stage::firstStageIDByClassPermissions($data['class_id']);
             if(empty($stageID)){
@@ -66,7 +61,8 @@ class Learned extends BaseController
             $arr['class_id'] = $data['class_id'];
             $arr['stage'] =$stageID;
             $groupID = Group::nextGroupIDByClassPermissions($arr);
-            $notLearnedData = GroupWord::findFirst($groupID);
+            //进行查看着以分组下所有单词的详情
+            $notLearnedData = GroupWord::selectGroupWord($groupID);
             if (empty($notLearnedData)) {
                 throw new MissException([
                     'msg'       => '本组单词为空，请联系管理员进行添加',
@@ -82,7 +78,6 @@ class Learned extends BaseController
             //根据不同的类型把单词格式进行转换
             $notLearnedData = EnglishWord::conversionByTypeFormat($notWordData, 1);
             $notLearnedData['count'] = count($notLearnedData);
-            //cache('userNotLearnedData',$notLearnedData,3600*24*7);
             return json($notLearnedData);
         }
 
@@ -137,13 +132,10 @@ class Learned extends BaseController
         //根据用户选项判断用户答案是否正确
         //如果用户答错，则把错误信息写入数据库
         //然后把用户答题活动记录写入数据库，如果已存在这条记录进行修改，否则添加
+        $uid = Token::getCurrentTokenVar('uid');
         $validate = new LearnedHistory();
         $validate->goCheck();
-
-        $uid = Token::getCurrentTokenVar('uid');
-
         $data = $validate->getDataByRule(input('post.'));
-
         $answerResult = EnglishWord::answerResult($data);
         //如果答题正确，判断错题本有没有此条记录，如果有则删除
         if ($answerResult == 1) {
@@ -157,7 +149,10 @@ class Learned extends BaseController
             //进行查询用户记录表这个单词是否有过，没有则不删，有则已掌握记录减一
             LearnedChild::deleteLearnedChild($uid, $data);
         }
+
+        //进行记录用户学习记录
         $res = LearnedHistoryModel::addUserHistory($uid, $data, $answerResult);
+
         if (!$res) {
             throw new MissException([
                 'msg'       => '用户答题记录失败',
@@ -212,7 +207,6 @@ class Learned extends BaseController
     {
         //获取下一组的组id,并且是符合此班级权限的下一组ID
         $nextGroupID = Group::nextGroupIDByClassPermissions($LearnedData);
-
         if (empty($nextGroupID)) {
             //如果当前阶段没有下一组了，去找下一阶段,第一组单词
             $nextStageID = Stage::nextStageIDByClassPermissions($LearnedData);
@@ -257,7 +251,6 @@ class Learned extends BaseController
     private function getWordDetail($LastGroupID, $uid)
     {
         $groupWord = GroupWord::selectGroupWord($LastGroupID);
-
         if (empty($groupWord)) {
             throw new MissException([
                 'msg'       => '亲，此小组下没有任何单词(⊙o⊙)哦',

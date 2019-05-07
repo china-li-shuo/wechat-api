@@ -11,6 +11,7 @@ namespace app\api\controller\v4;
 use app\api\model\Collection;
 use app\api\model\EnglishWord;
 use app\api\model\ErrorBook;
+use app\api\model\Group;
 use app\api\model\LearnedHistory;
 use app\api\service\Token;
 use app\api\validate\ErrorBook as ErrorBookValidate;
@@ -75,7 +76,7 @@ class Activity
         return json($data);
     }
     /**
-     * 已学习详情
+     * 已学习详情,根据条件进行筛选指定阶段和组的单词详情
      * @return \think\response\Json
      * @throws MissException
      * @throws \app\lib\exception\ParameterException
@@ -91,12 +92,6 @@ class Activity
                 ->field('stage,group')
                 ->find();
         }
-
-        $data = cache($uid . 'alreadyDetail' . $arr['stage'] . $arr['group']);
-
-        if (!empty($data)) {
-            return json($data);
-        }
         //根据用户id和阶段id查出此用户所有的
         $data = $this->getStageGroup($uid, $arr);
         if (empty($data)) {
@@ -105,8 +100,6 @@ class Activity
                 'errorCode' => 50000
             ]);
         }
-        $data['time'] = time();
-        cache($uid . 'alreadyDetail' . $arr['stage'] . $arr['group'], $data, 7200);
         return json($data);
     }
 
@@ -173,15 +166,8 @@ class Activity
                 ->field('stage,group')
                 ->find();
         }
-
-        $data    = cache($uid . 'collectionDetail' . $arr['stage'] . $arr['group']);
-
-        if (!empty($data)) {
-            return json($data);
-        }
         //根据用户id和阶段id查出此用户所有的
         $data = $this->collectStageGroup($uid, $arr);
-        cache($uid . 'collectionDetail' . $arr['stage'] . $arr['group'], $data, 7200);
         return json($data);
     }
 
@@ -200,7 +186,7 @@ class Activity
                 ->where('user_id', $uid)
                 ->where('stage', $arr['stage'])
                 ->where('group', $arr['group'])
-                ->field('id,stage,group,word_id,create_time')
+                ->field('id,stage,group,word_id as wid,create_time')
                 ->order('create_time desc')
                 ->select();
             $groupData = Db::table(YX_QUESTION . 'group')
@@ -214,8 +200,11 @@ class Activity
                 'group_name'  => $groupData['group_name'],
                 'create_time' => date('Y-m-d', $data[0]['create_time'])
             ];
-            $new_arr['word'] = EnglishWord::selectWordDetail($data);
-            //获取每组下所有的单词,进行查询每个单词的详情
+            //进行确定组的阶段和组的类型
+            $data = Group::correspondingStage($data);
+            $notWordData = EnglishWord::selectNotWordData($data);
+            //根据不同的类型把单词格式进行转换
+            $new_arr['word'] = EnglishWord::conversionByTypeFormat($notWordData, 1);
             return $new_arr;
         } catch (\Exception $e) {
             throw new MissException([
@@ -241,7 +230,7 @@ class Activity
                 ->where('user_id', $uid)
                 ->where('stage', $arr['stage'])
                 ->where('group', $arr['group'])
-                ->field('id,stage,group,word_id,create_time')
+                ->field('id,stage,group,word_id as wid,create_time')
                 ->order('create_time desc')
                 ->select();
             $groupData = Db::table(YX_QUESTION . 'group')
@@ -255,8 +244,11 @@ class Activity
                 'group_name'  => $groupData['group_name'],
                 'create_time' => date('Y-m-d', $data[0]['create_time'])
             ];
-            $new_arr['word'] = EnglishWord::selectWordDetail($data);
-            //获取每组下所有的单词,进行查询每个单词的详情
+            //进行确定组的阶段和组的类型
+            $data = Group::correspondingStage($data);
+            $notWordData = EnglishWord::selectNotWordData($data);
+            //根据不同的类型把单词格式进行转换
+            $new_arr['word'] = EnglishWord::conversionByTypeFormat($notWordData, 1);
             return $new_arr;
         } catch (\Exception $e) {
             throw new MissException([
@@ -281,7 +273,7 @@ class Activity
                 ->where('user_id', $uid)
                 ->where('stage', $arr['stage'])
                 ->where('group', $arr['group'])
-                ->field('id,stage,group,word_id,create_time')
+                ->field('id,stage,group,word_id as wid,create_time')
                 ->order('create_time desc')
                 ->select();
             $groupData = Db::table(YX_QUESTION . 'group')
@@ -295,8 +287,11 @@ class Activity
                 'group_name'  => $groupData['group_name'],
                 'create_time' => date('Y-m-d', $data[0]['create_time'])
             ];
-            $new_arr['word'] = EnglishWord::selectWordDetail($data);
-            //获取每组下所有的单词,进行查询每个单词的详情
+            //进行确定组的阶段和组的类型
+            $data = Group::correspondingStage($data);
+            $notWordData = EnglishWord::selectNotWordData($data);
+            //根据不同的类型把单词格式进行转换
+            $new_arr['word'] = EnglishWord::conversionByTypeFormat($notWordData, 1);
             return $new_arr;
         } catch (\Exception $e) {
             throw new MissException([

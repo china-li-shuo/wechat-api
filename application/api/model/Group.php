@@ -63,6 +63,7 @@ class Group extends Model
             ->where('group', $lastWord['group'])
             ->field('group,word_id')
             ->select();
+
         foreach ($allData as $key => $val) {
             foreach ($learnedData as $k => $v) {
                 if ($val['wid'] == $v['word_id']) {
@@ -271,6 +272,7 @@ class Group extends Model
             ->where('stage',$LearnedData['stage'])
             ->field('groups')
             ->find();
+
         $groups = explode(',',$permissionData['groups']);
         //找出符合此班级权限下的所有分组
         if(!empty($data) && !empty($groups)){
@@ -283,11 +285,9 @@ class Group extends Model
                 }
             }
         }
-
 //        //sort
 //        $sort = array_column($arr,'sort');
 //        array_multisort($sort,SORT_ASC,$arr);
-
         if(empty($LearnedData['group'])){
             return $arr[0]['id'];
         }

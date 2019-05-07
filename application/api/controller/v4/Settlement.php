@@ -111,7 +111,7 @@ class Settlement
     }
 
     /**
-     * 判断用户是否可以好的勋章
+     * 判断用户是否可以获得勋章
      * @return \think\response\Json
      */
     private function getMedal($uid, $now_stage)
@@ -146,73 +146,14 @@ class Settlement
         return NULL;
     }
 
-    public function nextGroupInfo()
-    {
-        $uid   = Token::getCurrentTokenVar('uid');
-        $validate = new SettlementValidate();
-        $validate->goCheck();
-        $data= $validate->getDataByRule(input('post.'));
-        $userInfo['id'] = $uid;
-        $userInfo['now_stage'] = $data['stage'];
-        $userInfo['now_group'] = $data['group'];
-        //查看班级是否是免费的
-        $classData = UserClass::getClassDetail($data['class_id']);
-        $LastGroupID = Group::userLastGroupID($userInfo);
-        if($classData['is_pay'] == 0){
-            if(empty($LastGroupID)){
-                $commonID = Stage::commonStageID();
-                $ids = Stage::selectCommonStageData($commonID);
-                $nextStageID = Stage::nextStageGroupInfo($userInfo);
-                if(!empty($nextStageID)){
-                    $i = 0;
-                    foreach ($ids as $key=>$val){
-                        if($val['id'] == $nextStageID){
-                            //如果不为空，去找下一阶段的第一组id
-                            $nextStageFirstGroupID = Group::nextStageFirstGroupID($nextStageID);
-                            if (empty($nextStageFirstGroupID)) {
-                                throw new SuccessMessage([
-                                    'msg'       => '亲，暂你已经学完所有单词了，因为下一阶段，没有任何分组哦！',
-                                    'errorCode' => 50000
-                                ]);
-                            }
-                            $wordDetail = $this->getWordDetail($nextStageFirstGroupID, $nextStageID);
-                            $i++;
-                            return json($wordDetail);           //这个是return json  数据
-                        }
-                    }
-                    if($i == 0){
-                        throw new MissException([
-                            'msg'=>'公共阶段已学完',
-                            'errorCode'=>50000
-                        ]);
-                    }
-                }
-            }
-        }
-        if (empty($LastGroupID)) {
-            //去找下一阶段,第一组单词
-            $nextStageID = Stage::nextStageGroupInfo($userInfo);
-            if (empty($nextStageID)) {
-                throw new SuccessMessage([
-                    'msg'       => '你太厉害了，所有阶段都已经通关了',
-                    'errorCode' => 50000
-                ]);
-            }
-            //如果不为空，去找下一阶段的第一组id
-            $nextStageFirstGroupID = Group::nextStageFirstGroupID($nextStageID);
-            if (empty($nextStageFirstGroupID)) {
-                throw new SuccessMessage([
-                    'msg'       => '亲，暂你已经学完所有单词了，因为下一阶段，没有任何分组哦！',
-                    'errorCode' => 50000
-                ]);
-            }
-            $wordDetail = $this->getWordDetail($nextStageFirstGroupID, $nextStageID);
-            return json($wordDetail);           //这个是return json  数据
-        }
-        $wordDetail = $this->getWordDetail($LastGroupID, $userInfo['now_stage']);
-        return json($wordDetail);               //这个是return json  数据
-    }
-
+    /**
+     * 重新来过接口
+     * @return \think\response\Json
+     * @throws MissException
+     * @throws \app\lib\exception\ParameterException
+     * @throws \app\lib\exception\TokenException
+     * @throws \think\Exception
+     */
     public function getAgainInfo()
     {
         //根据token获取用户最后一次学习的哪一阶段，哪一组信息，重新查询一遍详情进行返回
@@ -220,6 +161,7 @@ class Settlement
         $validate = new SettlementValidate();
         $validate->goCheck();
         $data = $validate->getDataByRule(input('post.'));
+        //进行查看着以分组下所有单词的详情
         $groupWord = GroupWord::selectGroupWord($data['group']);
         if (empty($groupWord)) {
             throw new MissException([
@@ -229,10 +171,15 @@ class Settlement
         }
         try {
             //然后根据每个组的详情进行查询每个单词的详情
-            $wordDetail = EnglishWord::getNextWordDetail($groupWord);
-            //判断是否收藏过该单词
-            $wordDetail = Collection::isCollection($uid, $wordDetail);
-            return json($wordDetail);
+            $notLearnedData = Group::correspondingStage($groupWord);
+            //根据类型查找不同的单词表
+            $notWordData = EnglishWord::selectNotWordData($notLearnedData);
+            //判断该用户单词是否收藏过
+            $notWordData = Collection::isCollection($uid, $notWordData);
+            //根据不同的类型把单词格式进行转换
+            $notLearnedData = EnglishWord::conversionByTypeFormat($notWordData, 1);
+            $notLearnedData['count'] = count($notLearnedData);
+            return json($notLearnedData);
         } catch (\Exception $e) {
             throw new MissException([
                 'msg'       => $e->getMessage(),
@@ -242,36 +189,88 @@ class Settlement
     }
 
     /**
-     *每个单词下的详情
+     * 下一组单词
+     * @param $LearnedData 当前阶段组信息
+     * @return mixed
+     * @throws MissException
+     * @throws SuccessMessage
+     */
+    public function nextGroupInfo()
+    {
+        $uid   = Token::getCurrentTokenVar('uid');
+        $validate = new SettlementValidate();
+        $validate->goCheck();
+        $LearnedData= $validate->getDataByRule(input('post.'));
+        //获取下一组的组id,并且是符合此班级权限的下一组ID
+        $nextGroupID = Group::nextGroupIDByClassPermissions($LearnedData);
+        if (empty($nextGroupID)) {
+            //如果当前阶段没有下一组了，去找下一阶段,第一组单词
+            $nextStageID = Stage::nextStageIDByClassPermissions($LearnedData);
+
+            if (empty($nextStageID)) {
+                throw new SuccessMessage([
+                    'msg'       => '你太厉害了，所有阶段都已经通关了',
+                    'errorCode' => 50000
+                ]);
+            }
+            if($nextStageID == 8){
+                throw new SuccessMessage([
+                    'msg'       => '牛人阶段暂未开放，请耐心等待',
+                    'errorCode' => 50000
+                ]);
+            }
+            //如果不为空，去找下一阶段的符合权限第一组id
+            $LearnedData['stage'] = $nextStageID;
+            $LearnedData['group'] = '';
+            $nextStageFirstGroupID = Group::nextGroupIDByClassPermissions($LearnedData);
+
+            if (empty($nextStageFirstGroupID)) {
+                throw new SuccessMessage([
+                    'msg'       => '亲，暂你已经学完所有单词了，因为下一阶段，没有任何分组哦！',
+                    'errorCode' => 50000
+                ]);
+            }
+            $wordDetail = $this->getWordDetail($nextStageFirstGroupID,$uid);
+            return json($wordDetail);
+        }
+        $wordDetail = $this->getWordDetail($nextGroupID,$uid);
+        return json($wordDetail);
+    }
+
+    /**
+     * 获取单词详情
      * @param $LastGroupID
-     * @param $nowStageID
+     * @param $uid
      * @return mixed
      * @throws MissException
      */
-    private function getWordDetail($LastGroupID,$nowStageID)
+    private function getWordDetail($LastGroupID, $uid)
     {
+
         $groupWord = GroupWord::selectGroupWord($LastGroupID);
-
-        if(empty($groupWord)){
+        if (empty($groupWord)) {
             throw new MissException([
-                'msg' => '亲，此小组下没有任何单词(⊙o⊙)哦',
+                'msg'       => '亲，此小组下没有任何单词(⊙o⊙)哦',
                 'errorCode' => 50000
             ]);
         }
 
-        foreach ($groupWord as $key=>$val){
-            $groupWord[$key]['stage'] = $nowStageID;
-        }
-
-        $wordDetail = EnglishWord::getNextWordDetail($groupWord);
-
-        if($wordDetail['count'] == 0){
+        //进行确定组的阶段和组的类型
+        $groupWord = Group::correspondingStage($groupWord);
+        //根据类型查找不同的单词表
+        $notWordData = EnglishWord::selectNotWordData($groupWord);
+        //判断该用户单词是否收藏过
+        $notWordData = Collection::isCollection($uid, $notWordData);
+        //根据不同的类型把单词格式进行转换
+        $notLearnedData = EnglishWord::conversionByTypeFormat($notWordData, 1);
+        $notLearnedData['count'] = count($notLearnedData);
+        if ($notLearnedData['count'] == 0) {
             throw new MissException([
-                'msg' => '亲，此小组下没有任何单词(⊙o⊙)哦',
+                'msg'       => '此小组下没有任何单词',
                 'errorCode' => 50000
             ]);
         }
 
-        return $wordDetail;
+        return $notLearnedData;
     }
 }
