@@ -33,6 +33,12 @@ class Learned extends BaseController
         $uid = Token::getCurrentTokenVar('uid');
         cache('record_stage' . $uid, 1);
         $LearnedData = LearnedHistoryModel::UserLearnedList($uid);
+        if($LearnedData['stage'] == 8){
+            throw new MissException([
+                'msg'       => '牛人词汇暂时还没开放，请耐心等待',
+                'errorCode' => 50000
+            ]);
+        }
         //如果用户没有学习记录，直接查询第一阶段下，第一组单词
         if (empty($LearnedData)) {
             //先看是否有缓存数据

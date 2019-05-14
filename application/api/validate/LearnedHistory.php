@@ -21,6 +21,6 @@ class LearnedHistory extends BaseValidate
         'group' => 'require|isPositiveInteger',
         'stage' => 'require|isPositiveInteger',
         'word_id' => 'require|isPositiveInteger',
-        'useropt' => 'require|isOptNumber',
+        'useropt' => 'require|isNotEmpty',
     ];
 }

@@ -80,9 +80,10 @@ class Settlement
         $validate = new PostValidate();
         $validate->goCheck();
         $data = $validate->getDataByRule(input('post.'));
-        $len = mb_strlen($data['content']);
-        if($len>=50){
-            return json(['clock_status'=>0,'errorCode'=>0]);
+        //去除左边空格，计算发帖内容长度
+        $len = mb_strlen(ltrim($data['content']));
+        if($len<=0 || $len>=50){
+            return json(['clock_status'=>0,'errorCode'=>0,'msg'=>'输入内容为空或者已超出长度限制']);
         }
         //进行发帖，并记录发帖天数
         $res = Post::addPost($uid,$data);
@@ -226,7 +227,7 @@ class Settlement
 
             if (empty($nextStageFirstGroupID)) {
                 throw new SuccessMessage([
-                    'msg'       => '亲，暂你已经学完所有单词了，因为下一阶段，没有任何分组哦！',
+                    'msg'       => '你已经学完所有单词了，因为下一阶段，没有任何分组！',
                     'errorCode' => 50000
                 ]);
             }
@@ -250,7 +251,7 @@ class Settlement
         $groupWord = GroupWord::selectGroupWord($LastGroupID);
         if (empty($groupWord)) {
             throw new MissException([
-                'msg'       => '亲，此小组下没有任何单词(⊙o⊙)哦',
+                'msg'       => '此小组下没有任何单词',
                 'errorCode' => 50000
             ]);
         }

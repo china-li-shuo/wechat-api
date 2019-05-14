@@ -96,15 +96,45 @@ class EnglishWord extends Model
      */
     public static function answerResult($data)
     {
+        //先进性查询分组的类型1、普通类型；2、同义词；3、一次多义；4、熟词僻义
+        $groupData = Db::table(YX_QUESTION.'group')
+            ->where('id',$data['group'])
+            ->field('type')
+            ->find();
+        switch ($groupData['type']){
+            case 1:
+                $answer = EnglishWord::where('id', $data['word_id'])->field('answer')->find()->toArray();
+                return self::checkAnswer($data['useropt'],$answer);
+            default:
+                $answer = Db::table(YX_QUESTION.'english_word_s')
+                    ->where('id',$data['word_id'])
+                    ->field('answer')
+                    ->find();
+                $answer = explode(',',$answer['answer']);
+                return self::checkAnswer($data['useropt'],$answer);
+        }
 
-        $answer = EnglishWord::where('id', $data['word_id'])->field('answer')->find()->toArray();
+    }
 
-        if ($data['useropt'] == $answer['answer']) {
+    /**
+     * 校验答案正确性
+     * @param $arr1     选项数组
+     * @param $arr2     答案数组
+     */
+    private static function checkAnswer($arr1,$arr2){
+        $sum1 = 0;
+        $sum2 = 0;
+        foreach ($arr1 as $key=>$val){
+            $sum1 = $sum1+$val;
+        }
+        foreach ($arr2 as $key=>$val){
+            $sum2 = $sum2+$val;
+        }
+        if($sum1 == $sum2){
             return 1;
         }
         return 0;
     }
-
     /**
      * 获取最后单词详情
      * @param $historyData
@@ -262,13 +292,27 @@ class EnglishWord extends Model
             case 2://同义词，则需查找关联表
                 foreach ($notWordData as $key => $val) {
                     foreach ($val as $k => $v) {
+                        unset( $notWordData[$key]['son']['sentence']);
+                        unset( $notWordData[$key]['son']['uk_audio']);
+                        unset( $notWordData[$key]['son']['us_audio']);
+                        unset( $notWordData[$key]['son']['uk_phonetic']);
+                        unset( $notWordData[$key]['son']['us_phonetic']);
+                        $notWordData[$key]['son']['answer']        = explode(',', $v['answer']);
+                        $notWordData[$key]['son']['options']       = json_decode($v['options'], true);
+                        $notWordData[$key]['son']['currentNumber'] = $currentNumber + $key;
                         $notWordData[$key]['son']['detail'] = Db::table(YX_QUESTION . 'synonym')
                             ->alias('s')
                             ->join(YX_QUESTION . 'english_word e','e.id=s.wid')
+                            ->field('e.id,s.wid,e.english_word,e.chinese_word,e.sentence,e.us_audio,e.uk_phonetic')
                             ->where('s.sid',$v['id'])
-                            ->select();;
+                            ->select();
+                        foreach ($notWordData[$key]['son']['detail'] as $kk => $vv) {
+                            $notWordData[$key]['son']['detail'][$kk]['chinese_word']  = explode('@', $vv['chinese_word']);
+                            $notWordData[$key]['son']['detail'][$kk]['sentence']      = json_decode($vv['sentence'], true);
+                            $notWordData[$key]['son']['detail'][$kk]['us_audio']      = $us_audio . $vv['us_audio'];
+                        }
+                        continue;
                     }
-
                 }
                 return $notWordData;
             default://type3一词多义，type4熟词僻义

@@ -29,13 +29,13 @@ class ErrorBook
                 'group'       => $data['group'],
                 'stage'       => $data['stage'],
                 'word_id'     => $data['word_id'],
-                'user_opt'    => $data['useropt'],
+                'user_opt'    => implode(',',$data['useropt']),
                 'create_time' => time()
             ];
 
             return Db::table('yx_error_book')->insert($arr);
         }
-        $arr = ['user_opt' => $data['useropt'], 'create_time' => time()];
+        $arr = ['user_opt' =>  implode(',',$data['useropt']), 'create_time' => time()];
         return Db::table('yx_error_book')
             ->where('user_id', $uid)
             ->where('word_id', $data['word_id'])
