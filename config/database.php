@@ -60,4 +60,5 @@ return [
     'break_reconnect' => false,
     // 断线标识字符串
     'break_match_str' => [],
+    'db_config_2' => 'mysql://root:success2017+_)(@202.85.213.24:5203/yx_question#utf8',
 ];

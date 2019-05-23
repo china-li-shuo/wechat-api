@@ -10,9 +10,43 @@ namespace app\api\model;
 
 
 use think\Db;
+use think\Model;
 
-class ErrorBook
+class ErrorBook extends Model
 {
+
+    public static function getSummaryByUser($uid, $page=1, $size=15,$type=1)
+    {
+        if($type == 1){
+            //取出词汇类型为普通类型的id
+            $arr = Group::where('type',1)->field('id')->select()->toArray();
+            $tableName = 'english';
+        }else{
+            $arr = Group::where('type','<>',1)->field('id')->select()->toArray();
+            $tableName = 'englishS';
+        }
+
+
+        //取出所有的普通词汇id集合数组
+        $IDS = array_map(function ($item){
+            return $item['id'];
+        },$arr);
+
+        $pagingData = self::with($tableName)
+            ->where('user_id', '=', $uid)
+            ->order('create_time')
+            ->whereIn('group',$IDS)
+            ->paginate($size, true, ['page' => $page]);
+
+        return $pagingData ;
+    }
+
+    /**
+     * 添加用户错题本
+     * @param $uid
+     * @param $data
+     * @return int|string
+     */
     public static function addErrorBook($uid, $data)
     {
         $errorData = Db::table('yx_error_book')
@@ -42,6 +76,12 @@ class ErrorBook
             ->update($arr);
     }
 
+    /**
+     * 删除用户错题本
+     * @param $uid
+     * @param $data
+     * @return int|string
+     */
     public static function deleteErrorBook($uid, $data)
     {
         $errorData = Db::table('yx_error_book')
@@ -102,5 +142,15 @@ class ErrorBook
         }
 
         return $data;
+    }
+
+    public function english()
+    {
+        return $this->belongsTo('EnglishWord', 'word_id', 'id');
+    }
+
+    public function englishS()
+    {
+        return $this->belongsTo('EnglishWordS', 'word_id', 'id');
     }
 }

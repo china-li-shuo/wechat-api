@@ -256,6 +256,7 @@ class Learned extends BaseController
                     'msg'       => '牛人阶段暂未开放，请耐心等待',
                     'errorCode' => 50000
                 ]);
+                die;
             }
             //如果不为空，去找下一阶段的第一组id
             $nextStageFirstGroupID = Group::nextStageFirstGroupID($nextStageID);

@@ -8,6 +8,7 @@
 
 namespace app\api\controller\v4;
 
+use app\api\model\EnglishWord;
 use app\api\model\User;
 use app\api\service\AppToken;
 use app\api\service\Token as TokenService;

@@ -14,6 +14,11 @@ use think\Model;
 
 class Group extends Model
 {
+    //设置当前模型对应的完整数据表名称
+    protected $table = 'yx_group';
+
+    //设置当前模型的数据库链接
+    protected $connection = 'db_config_2';
 
     /**
      * 获取用户所有分组的名称

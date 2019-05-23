@@ -46,13 +46,6 @@ class Learned extends BaseController
         cache('record_stage' . $uid, 1);
         //查询用户最后一次学习的单词记录
         $LearnedData = LearnedHistoryModel::UserLastLearnedData($uid,$data['class_id']);
-        //因为牛人阶段数据填充并未完整，限制牛人阶段学习
-        if($LearnedData['stage'] == 8){
-            throw new SuccessMessage([
-                'msg'       => '牛人阶段暂未开放，请耐心等待',
-                'errorCode' => 50000
-            ]);
-        }
         //如果用户没有学习记录，直接查询第一阶段下，第一组单词
         if (empty($LearnedData)) {
             //查询符合班级权限的第一个阶段ID

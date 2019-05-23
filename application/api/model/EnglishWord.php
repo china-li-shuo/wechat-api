@@ -15,29 +15,11 @@ use think\Model;
 
 class EnglishWord extends Model
 {
-    protected $connection = [
-        'type'     => 'mysql',
-        // 服务器地址
-        'hostname' => '202.85.213.24',
-        // 数据库名
-        'database' => 'yx_question',
-        // 用户名
-        'username' => 'root',//
-        // 密码
-        'password' => 'success2017+_)(',
-        // 端口
-        'hostport' => '5203',
-        // 连接dsn
-        'dsn'      => '',
-        // 数据库连接参数
-        'params'   => [],
-        // 数据库编码默认采用utf8
-        'charset'  => 'utf8',
-        // 数据库表前缀
-        'prefix'   => 'yx_',
-        // 数据库调试模式
-        'debug'    => false,
-    ];
+    //设置当前模型对应的完整数据表名称
+    protected $table = 'yx_english_word';
+
+    //设置当前模型的数据库链接
+    protected $connection = 'db_config_2';
 
     public static function findFirst()
     {
@@ -51,7 +33,7 @@ class EnglishWord extends Model
      */
     public static function findLastWord($LearnedData)
     {
-        $data      = EnglishWord::where('group', $LearnedData['group'])
+        $data = EnglishWord::where('group', $LearnedData['group'])
             ->where('stage', $LearnedData['stage'])
             ->where('id', '>=', $LearnedData['word_id'])
             ->select()
@@ -64,7 +46,7 @@ class EnglishWord extends Model
     public static function notWordData($notLearnedData)
     {
         foreach ($notLearnedData as $key => $val) {
-            $data                                  = Db::table(YX_QUESTION . 'english_word')
+            $data = Db::table(YX_QUESTION . 'english_word')
                 ->where('id', $val['wid'])
                 ->find();
             $notLearnedData[$key]['is_collection'] = 2;
@@ -97,21 +79,21 @@ class EnglishWord extends Model
     public static function answerResult($data)
     {
         //先进性查询分组的类型1、普通类型；2、同义词；3、一次多义；4、熟词僻义
-        $groupData = Db::table(YX_QUESTION.'group')
-            ->where('id',$data['group'])
+        $groupData = Db::table(YX_QUESTION . 'group')
+            ->where('id', $data['group'])
             ->field('type')
             ->find();
-        switch ($groupData['type']){
+        switch ($groupData['type']) {
             case 1:
                 $answer = EnglishWord::where('id', $data['word_id'])->field('answer')->find()->toArray();
-                return self::checkAnswer($data['useropt'],$answer);
+                return self::checkAnswer($data['useropt'], $answer);
             default:
-                $answer = Db::table(YX_QUESTION.'english_word_s')
-                    ->where('id',$data['word_id'])
+                $answer = Db::table(YX_QUESTION . 'english_word_s')
+                    ->where('id', $data['word_id'])
                     ->field('answer')
                     ->find();
-                $answer = explode(',',$answer['answer']);
-                return self::checkAnswer($data['useropt'],$answer);
+                $answer = explode(',', $answer['answer']);
+                return self::checkAnswer($data['useropt'], $answer);
         }
 
     }
@@ -121,20 +103,22 @@ class EnglishWord extends Model
      * @param $arr1     选项数组
      * @param $arr2     答案数组
      */
-    private static function checkAnswer($arr1,$arr2){
+    private static function checkAnswer($arr1, $arr2)
+    {
         $sum1 = 0;
         $sum2 = 0;
-        foreach ($arr1 as $key=>$val){
-            $sum1 = $sum1+$val;
+        foreach ($arr1 as $key => $val) {
+            $sum1 = $sum1 + $val;
         }
-        foreach ($arr2 as $key=>$val){
-            $sum2 = $sum2+$val;
+        foreach ($arr2 as $key => $val) {
+            $sum2 = $sum2 + $val;
         }
-        if($sum1 == $sum2){
+        if ($sum1 == $sum2) {
             return 1;
         }
         return 0;
     }
+
     /**
      * 获取最后单词详情
      * @param $historyData
@@ -154,9 +138,9 @@ class EnglishWord extends Model
 
         foreach ($historyData as $key => $val) {
 
-            $historyData[$key]['create_time']         = date('Y-m-d', $val['create_time']);
+            $historyData[$key]['create_time'] = date('Y-m-d', $val['create_time']);
             $historyData[$key]['son']['chinese_word'] = explode('@', $val['son']['chinese_word']);
-            $historyData[$key]['son']['sentence']     = json_decode($val['son']['sentence'], true);
+            $historyData[$key]['son']['sentence']  = json_decode($val['son']['sentence'], true);
             unset($historyData[$key]['son']['options']);
             unset($historyData[$key]['son']['answer']);
         }
@@ -172,7 +156,7 @@ class EnglishWord extends Model
     public static function getNextWordDetail($groupWord)
     {
         foreach ($groupWord as $key => $val) {
-            $data  = Db::table(YX_QUESTION . 'english_word')
+            $data = Db::table(YX_QUESTION . 'english_word')
                 ->where('id', $val['wid'])
                 ->find();
             $stage = Db::table(YX_QUESTION . 'group')
@@ -240,24 +224,26 @@ class EnglishWord extends Model
     public static function selectNotWordData($notLearnedData)
     {
         //根据类型查找对应的单词库，1、普通类型；2、同义词；3、一次多义；4、熟词僻义
-        switch ($notLearnedData[0]['type']){
+        switch ($notLearnedData[0]['type']) {
             case 1;
                 foreach ($notLearnedData as $key => $val) {
-                    $data = Db::table(YX_QUESTION . 'english_word')
+                    $data                                  = Db::table(YX_QUESTION . 'english_word')
                         ->where('id', $val['wid'])
+                        ->field('id,english_word,chinese_word,options,answer,sentence,us_audio,us_phonetic')
                         ->find();
                     $notLearnedData[$key]['is_collection'] = 2;
-                    $notLearnedData[$key]['son'] = $data;
+                    $notLearnedData[$key]['son']           = $data;
                 }
 
                 return $notLearnedData;
             default:
                 foreach ($notLearnedData as $key => $val) {
-                    $data = Db::table(YX_QUESTION . 'english_word_s')
+                    $data                                  = Db::table(YX_QUESTION . 'english_word_s')
                         ->where('id', $val['wid'])
+                        ->field('id,english_word,select_title,type,options,answer,sentence,us_audio,us_phonetic')
                         ->find();
                     $notLearnedData[$key]['is_collection'] = 2;
-                    $notLearnedData[$key]['son'] = $data;
+                    $notLearnedData[$key]['son']           = $data;
                 }
 
                 return $notLearnedData;
@@ -275,56 +261,46 @@ class EnglishWord extends Model
         //单词表已的音频路径
         $us_audio = config('setting.audio_prefix');
         //根据类型进行不同的格式转换，1、普通类型；2、同义词；3、一次多义；4、熟词僻义
-        switch ($notWordData[0]['type']){
+        switch ($notWordData[0]['type']) {
             case 1://普通类型
                 foreach ($notWordData as $key => $val) {
-                    foreach ($val as $k => $v) {
-                        $notWordData[$key]['son']['chinese_word']  = explode('@', $v['chinese_word']);
-                        $notWordData[$key]['son']['answer']        = explode(',', $v['answer']);
-                        $notWordData[$key]['son']['options']       = json_decode($v['options'], true);
-                        $notWordData[$key]['son']['sentence']      = json_decode($v['sentence'], true);
-                        $notWordData[$key]['son']['currentNumber'] = $currentNumber + $key;
-                        $notWordData[$key]['son']['us_audio']      = $us_audio . $v['us_audio'];
-                    }
-
+                    $notWordData[$key]['son']['chinese_word']  = explode('@', $notWordData[$key]['son']['chinese_word']);
+                    $notWordData[$key]['son']['answer']        = explode(',', $notWordData[$key]['son']['answer']);
+                    $notWordData[$key]['son']['options']       = json_decode($notWordData[$key]['son']['options'], true);
+                    $notWordData[$key]['son']['sentence']      = json_decode($notWordData[$key]['son']['sentence'], true);
+                    $notWordData[$key]['son']['currentNumber'] = $currentNumber + $key;
+                    $notWordData[$key]['son']['us_audio']      = $us_audio . $notWordData[$key]['son']['us_audio'];
                 }
                 return $notWordData;
             case 2://同义词，则需查找关联表
                 foreach ($notWordData as $key => $val) {
-                    foreach ($val as $k => $v) {
-                        unset( $notWordData[$key]['son']['sentence']);
-                        unset( $notWordData[$key]['son']['uk_audio']);
-                        unset( $notWordData[$key]['son']['us_audio']);
-                        unset( $notWordData[$key]['son']['uk_phonetic']);
-                        unset( $notWordData[$key]['son']['us_phonetic']);
-                        $notWordData[$key]['son']['answer']        = explode(',', $v['answer']);
-                        $notWordData[$key]['son']['options']       = json_decode($v['options'], true);
-                        $notWordData[$key]['son']['currentNumber'] = $currentNumber + $key;
-                        $notWordData[$key]['son']['detail'] = Db::table(YX_QUESTION . 'synonym')
-                            ->alias('s')
-                            ->join(YX_QUESTION . 'english_word e','e.id=s.wid')
-                            ->field('e.id,s.wid,e.english_word,e.chinese_word,e.sentence,e.us_audio,e.uk_phonetic')
-                            ->where('s.sid',$v['id'])
-                            ->select();
-                        foreach ($notWordData[$key]['son']['detail'] as $kk => $vv) {
-                            $notWordData[$key]['son']['detail'][$kk]['chinese_word']  = explode('@', $vv['chinese_word']);
-                            $notWordData[$key]['son']['detail'][$kk]['sentence']      = json_decode($vv['sentence'], true);
-                            $notWordData[$key]['son']['detail'][$kk]['us_audio']      = $us_audio . $vv['us_audio'];
-                        }
-                        continue;
+                    unset($notWordData[$key]['son']['sentence']);
+                    unset($notWordData[$key]['son']['us_audio']);
+                    unset($notWordData[$key]['son']['us_phonetic']);
+                    $notWordData[$key]['son']['answer']  = explode('@', $notWordData[$key]['son']['answer']);
+                    $notWordData[$key]['son']['options'] = json_decode($notWordData[$key]['son']['options'], true);
+                    $notWordData[$key]['son']['currentNumber'] = $currentNumber + $key;
+                    $notWordData[$key]['son']['detail']  = Db::table(YX_QUESTION . 'synonym')
+                        ->alias('s')
+                        ->join(YX_QUESTION . 'english_word e', 'e.id=s.wid')
+                        ->field('e.id,s.wid,e.english_word,e.chinese_word,e.sentence,e.us_audio,e.us_phonetic')
+                        ->where('s.sid', $val['son']['id'])
+                        ->select();
+                    foreach ($notWordData[$key]['son']['detail'] as $kk => $vv) {
+                        $notWordData[$key]['son']['detail'][$kk]['chinese_word'] = explode('@', $vv['chinese_word']);
+                        $notWordData[$key]['son']['detail'][$kk]['sentence']     = json_decode($vv['sentence'], true);
+                        $notWordData[$key]['son']['detail'][$kk]['us_audio']     = $us_audio . $vv['us_audio'];
                     }
+                    continue;
                 }
                 return $notWordData;
             default://type3一词多义，type4熟词僻义
                 foreach ($notWordData as $key => $val) {
-                    foreach ($val as $k => $v) {
-                        $notWordData[$key]['son']['answer']        = explode(',', $v['answer']);
-                        $notWordData[$key]['son']['options']       = json_decode($v['options'], true);
-                        $notWordData[$key]['son']['sentence']      = json_decode($v['sentence'], true);
-                        $notWordData[$key]['son']['currentNumber'] = $currentNumber + $key;
-                        $notWordData[$key]['son']['us_audio']      = $us_audio . $v['us_audio'];
-                    }
-
+                    $notWordData[$key]['son']['answer']        = explode(',', $notWordData[$key]['son']['answer']);
+                    $notWordData[$key]['son']['options']       = json_decode($notWordData[$key]['son']['options'], true);
+                    $notWordData[$key]['son']['sentence']      = json_decode($notWordData[$key]['son']['sentence'], true);
+                    $notWordData[$key]['son']['currentNumber'] = $currentNumber + $key;
+                    $notWordData[$key]['son']['us_audio']      = $us_audio . $notWordData[$key]['son']['us_audio'];
                 }
                 return $notWordData;
         }

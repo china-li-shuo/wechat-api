@@ -166,6 +166,12 @@ class Activity
                 ->field('stage,group')
                 ->find();
         }
+        if (empty($arr)){
+            throw new MissException([
+                'msg'=>'你还没有收藏过任何单词',
+                'errorCode' => 50000
+            ]);
+        }
         //根据用户id和阶段id查出此用户所有的
         $data = $this->collectStageGroup($uid, $arr);
         return json($data);
