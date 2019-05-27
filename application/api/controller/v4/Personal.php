@@ -1,6 +1,6 @@
 <?php
 /**
- * Created by PhpStorm.
+ * Created by 空城旧梦狂啸当歌
  * User: 李硕
  * Date: 2019/4/15
  * Time: 15:34
@@ -12,6 +12,7 @@ use app\api\model\Post;
 use app\api\model\User;
 use app\api\service\Token;
 use app\lib\exception\MissException;
+use think\Db;
 
 class Personal
 {
@@ -53,5 +54,42 @@ class Personal
             $data[$key]['nick_name'] = urlDecodeNickName($val['nick_name']);
         }
         return json($data);
+    }
+
+    /**
+     * 我的班级
+     */
+    public function getMyClass()
+    {
+        $uid  = Token::getCurrentTokenVar('uid');
+        //查看这个用户下加入的所有班级
+        $userInfo = Db::table('yx_user_class')
+            ->alias('uc')
+            ->join('yx_class c','c.id=uc.class_id')
+            ->where('uc.user_id',$uid)
+            ->where('uc.status',1)
+            ->field('uc.class_id,c.class_name')
+            ->select();
+        //今日打卡条件
+        $beginToday = mktime(0, 0, 0, date('m'), date('d'), date('Y'));
+        $endToday   = mktime(0, 0, 0, date('m'), date('d') + 1, date('Y')) - 1;
+        $where[]    = ['create_time', 'between time', [$beginToday, $endToday]];
+
+        //已有多少人打卡
+        foreach ($userInfo as $key=>$val){
+            $userInfo[$key]['number'] = Db::table('yx_post')
+                ->where($where)
+                ->where('class_id',$val['class_id'])
+                ->group('user_id')
+                ->count();
+        }
+
+        if(empty($userInfo)){
+            throw new MissException([
+                'msg'=>'我的班级信息查询失败',
+                'errorCode'=>50000
+            ]);
+        }
+        return json($userInfo);
     }
 }
