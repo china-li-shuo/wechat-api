@@ -6,12 +6,12 @@
  * Time: 10:21
  */
 
-namespace app\api\controller\v4;
+namespace app\api\controller\v6;
 
 use app\api\controller\BaseController;
-use app\api\model\Group;
-use app\api\model\Stage;
-use app\api\model\UserClass;
+use app\api\dao\Group;
+use app\api\dao\Stage;
+use app\api\dao\UserClass;
 use app\api\service\Token;
 use app\api\validate\ClassID;
 use app\lib\exception\MissException;

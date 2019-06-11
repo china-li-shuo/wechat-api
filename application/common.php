@@ -215,3 +215,19 @@ function urlDecodeNickName($str)
 {
     return !empty(urldecode($str)) ? urldecode($str) : $str;
 }
+
+function todayWhere()
+{
+    $beginToday = mktime(0, 0, 0, date('m'), date('d'), date('Y'));
+    $endToday   = mktime(0, 0, 0, date('m'), date('d') + 1, date('Y')) - 1;
+    $where[]    = ['p.create_time', 'between time', [$beginToday, $endToday]];
+    return $where;
+}
+
+function whereTime()
+{
+    $beginToday = mktime(0, 0, 0, date('m'), date('d'), date('Y'));
+    $endToday   = mktime(0, 0, 0, date('m'), date('d') + 1, date('Y')) - 1;
+    $where[]    = ['create_time', 'between time', [$beginToday, $endToday]];
+    return $where;
+}

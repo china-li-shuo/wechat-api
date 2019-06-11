@@ -1,20 +1,20 @@
 <?php
 /**
- * Created by PhpStorm.
- * User: 李硕
- * Date: 2019/4/13
- * Time: 10:11
+ * Create by: PhpStorm.
+ * Author: 李硕
+ * 微信公号：空城旧梦狂啸狂啸当歌
+ * Date: 2019/6/3
+ * Time: 11:57
  */
 
-namespace app\api\controller\v4;
+namespace app\api\controller\v6;
 
-use app\api\model\EnglishWord;
-use app\api\model\LearnedHistory;
-use app\api\model\Post;
-use app\api\model\Stage;
-use app\api\model\User;
-use app\api\model\UserClass;
-use app\api\model\UserIntention;
+use app\api\dao\LearnedHistory;
+use app\api\dao\Post;
+use app\api\dao\Stage;
+use app\api\dao\User;
+use app\api\dao\UserClass;
+use app\api\dao\UserIntention;
 use app\api\service\Token;
 use app\api\validate\ClassID;
 use app\lib\enum\ScopeEnum;
@@ -61,11 +61,10 @@ class Circle
         $recordStage = cache('record_stage' . $uid);
         try {
             $classDetail        = UserClass::getClassDetail($data['class_id']);
+
             $todayLearnedNumber = LearnedHistory::getTodayLearnedNumber($uid);
-            $LearnedData        = LearnedHistory::UserLearned($uid);
-            $stageName          = Stage::getStageNameByLearnedNumber($LearnedData);
-            $wordCount          = EnglishWord::count();
-            $surplusWord        = $wordCount - $UserInfo['already_number'];
+            //根据最后一个单词的组的类型进行返回不同的数据
+            $stageName          = Stage::getStageNameByStageID($UserInfo['now_stage']);  //当前所属的阶段名称
             $data = [
                 'nick_name'            => urlDecodeNickName($UserInfo['nick_name']),
                 'user_name'            => &$UserInfo['user_name'],
@@ -78,7 +77,6 @@ class Circle
                 'punch_days'           => &$UserInfo['punch_days'],
                 'today_learned_number' => &$todayLearnedNumber,
                 'already_number'       => &$UserInfo['already_number'],
-                'surplus_word'         => &$surplusWord,
                 'status'               => $status,
                 'is_pay'               => $classDetail['is_pay'],
                 'record_stage'         => !empty($recordStage) ? $recordStage : ''

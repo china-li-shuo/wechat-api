@@ -1,28 +1,17 @@
 <?php
 /**
- * Created by PhpStorm.
- * User: 李硕
- * Date: 2019/4/11
- * Time: 10:40
+ * Create by: PhpStorm.
+ * Author: 李硕
+ * 微信公众号：空城旧梦狂啸狂啸当歌
+ * Date: 2019/6/11
+ * Time: 11:33
  */
+
 
 namespace app\api\model;
 
 
-use think\Db;
-
-class UnitClass
+class UnitClass extends BaseModel
 {
-    public static function selectUnidClass($unid)
-    {
-        return Db::name('unid_class')
-            ->alias('uc')
-            ->join('unit u','uc.unid=u.unid')
-            ->join('class c','uc.class_id=c.id')
-            ->field('u.unid,u.unitname,uc.class_id,c.class_name')
-            ->order('c.sort')
-            ->where('uc.unid',$unid)
-            ->select();
-    }
 
 }

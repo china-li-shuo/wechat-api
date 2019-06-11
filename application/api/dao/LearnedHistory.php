@@ -6,7 +6,7 @@
  * Time: 15:59
  */
 
-namespace app\api\model;
+namespace app\api\dao;
 
 
 use app\lib\exception\MissException;

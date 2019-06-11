@@ -8,15 +8,20 @@
 
 namespace app\api\model;
 
-
-use think\Db;
-
-class Unit
+class Unit extends BaseModel
 {
-    public static function selectUnitData()
+    protected $pk = 'unid';
+    // 定义时间戳字段名
+    protected $createTime = 'createtime';
+    protected $updateTime = 'edittime';
+    protected $hidden = ['createtime', 'edittime', 'seq'];
+
+
+    public static function getUnitData()
     {
-        return Db::name('unit')
-            ->field('unid,unitname,status')
-            ->select();
+        $unit = self::order('status','desc')
+            ->order('unid','asc')
+            ->all();
+        return $unit;
     }
 }
