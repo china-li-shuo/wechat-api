@@ -9,7 +9,6 @@
 namespace app\api\dao;
 
 
-use app\lib\exception\MissException;
 use think\Db;
 use think\Model;
 

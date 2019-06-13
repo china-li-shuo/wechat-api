@@ -1,41 +1,17 @@
 <?php
 /**
- * Created by PhpStorm.
- * User: 李硕
- * Date: 2019/4/15
- * Time: 14:58
+ * Create by: PhpStorm.
+ * Author: 李硕
+ * 微信公众号：空城旧梦狂啸当歌
+ * Date: 2019/6/13
+ * Time: 10:24
  */
+
 
 namespace app\api\model;
 
 
-use app\lib\exception\MissException;
-use think\Db;
-
-class UserIntention
+class UserIntention extends BaseModel
 {
-    public static function addUserIntention($data)
-    {
-        $arr = Db::name('user_intention')
-            ->where('user_id',$data['user_id'])
-            ->where('class_id',$data['class_id'])
-            ->find();
-        if(!empty($arr) &&$arr['status']==2){
-            throw new MissException([
-                'msg'=>'你已经申请过此班级了,待管理员审核',
-                'errorCode'=>50000
-            ]);
-        }
-        $res = Db::name('user_intention')
-            ->insert($data);
-        if($res){
-            $lastID = Db::name('user_intention')
-                ->getLastInsID();
-            return Db::name('user_intention')
-                ->where('id',$lastID)
-                ->field('status')
-                ->find();
-        }
-        return false;
-    }
+
 }

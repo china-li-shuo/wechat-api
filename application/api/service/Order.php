@@ -3,14 +3,13 @@
 namespace app\api\service;
 
 
+use app\api\model\Order as OrderModel;
 use app\api\model\OrderProduct;
 use app\api\model\Product;
-use app\api\model\Order as OrderModel;
 use app\api\model\UserAddress;
 use app\lib\enum\OrderStatusEnum;
 use app\lib\exception\OrderException;
 use app\lib\exception\UserException;
-use think\Db;
 use think\Exception;
 
 /**

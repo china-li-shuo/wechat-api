@@ -2,7 +2,7 @@
 /**
  * Create by: PhpStorm.
  * Author: 李硕
- * 微信公号：空城旧梦狂啸狂啸当歌
+ * 微信公号：空城旧梦狂啸当歌
  * Date: 2019/6/3
  * Time: 11:57
  */
@@ -10,7 +10,7 @@
 namespace app\api\controller\v6;
 
 
-use app\api\dao\User;
+use app\api\model\User;
 use app\api\model\Cls;
 use app\api\model\Post;
 use app\api\model\Unit;
@@ -100,12 +100,6 @@ class Home
      * @return int
      */
     public function getRankingList($token = ''){
-        if (!$token) {
-            throw new MissException([
-                'msg'       => 'token不允许为空',
-                'errorCode' => 60000
-            ]);
-        }
         $res = Token::verifyToken($token);
         if(!$res){
             throw new TokenException();
@@ -113,16 +107,17 @@ class Home
 
         //进行查询排行榜信息，先从缓存中读取，两小时更新一次
         $rankingData = cache('home_ranking');
-        if(!empty($rankingData)){
+        if($rankingData){
             return json($rankingData);
         }
         //进行查询排行榜
-        $rankingData = User::getRankingData();
-        foreach ($rankingData as $key=>$val){
-            $rankingData[$key]['nick_name'] = urlDecodeNickName($val['nick_name']);
+        $pagingData = User::getSummaryByPage();
+        $pagingData = $pagingData->toArray();
+        foreach ($pagingData['data'] as $key=>&$val){
+            $val['nick_name'] = urlDecodeNickName($val['nick_name']);
         }
-        cache('home_ranking',$rankingData,7200);
-        return json($rankingData);
+        cache('home_ranking',$pagingData['data'],7200);
+        return json($pagingData['data']);
     }
 
     /**

@@ -9,83 +9,90 @@
 
 namespace app\api\controller\v6;
 
-use app\api\dao\Post;
-use app\api\dao\User;
+use app\api\model\Post;
+use app\api\model\User;
+use app\api\model\UserClass;
 use app\api\service\Token;
+use app\api\validate\PagingParameter;
 use app\lib\exception\MissException;
-use think\Db;
 
 class Personal
 {
 
-
     /**
-     *用户个人信息
+     * 用户个人信息
+     * @return \think\response\Json
+     * @throws MissException
      */
     public function getPersonalInfo()
     {
-        $uid = Token::getCurrentTokenVar('uid');
-        $userInfo = User::field('user_name,nick_name,avatar_url,mobile')->get($uid)->toArray();
-        $userInfo['mobile'] = substr_replace($userInfo['mobile'], '****', 3, 4);
-        $userInfo['nick_name'] = urlDecodeNickName($userInfo['nick_name']);
-        if(empty($userInfo)){
+        $uid = Token::getCurrentUid();
+        $user = User::field('user_name,nick_name,avatar_url,mobile')->get($uid);
+        $user->mobile = substr_replace($user->mobile, '****', 3, 4);
+        $user->nick_name = urlDecodeNickName($user->nick_name);
+        if(!$user){
             throw new MissException([
                 'msg'=>'个人信息查询失败',
                 'errorCode'=>50000
             ]);
         }
-        return json($userInfo);
+        return json($user);
     }
 
     /**
      * 我的打卡
+     * @param int $page
+     * @param int $size
+     * @return \think\response\Json
      */
-    public function getMyPunchCard()
+    public function getMyPunchCard($page = 1, $size = 20)
     {
-        $uid  = Token::getCurrentTokenVar('uid');
-        $data = Post::getMyPost($uid);
-        if (empty($data)) {
-            throw new MissException([
-                'msg'       => '你还暂时没有打卡记录，赶快去打卡吧！',
-                'errorCode' => 50000
+        $uid  = Token::getCurrentUid();
+        (new PagingParameter())->goCheck();
+        //查询今日发帖信息
+        $pagingPosts = Post::getSummaryByUser($uid, $page, $size);
+        if ($pagingPosts->isEmpty())
+        {
+            return json([
+                'current_page' => $pagingPosts->currentPage(),
+                'data' => []
             ]);
         }
-        foreach ($data as $key => $val) {
-            $data[$key]['content']   = json_decode($val['content']);
-            $data[$key]['nick_name'] = urlDecodeNickName($val['nick_name']);
+
+        $data = $pagingPosts->hidden(['id', 'user_id', 'class_id'])
+            ->toArray();
+
+        foreach ($data['data'] as $key=>&$val) {
+            $val['content']   = json_decode($val['content']);
+            $val['nick_name'] = urlDecodeNickName($val['nick_name']);
         }
-        return json($data);
+
+        return json([
+            'current_page' => $pagingPosts->currentPage(),
+            'data' => $data['data']
+        ]);
     }
 
     /**
      * 我的班级
+     * @return \think\response\Json
+     * @throws MissException
      */
     public function getMyClass()
     {
-        $uid  = Token::getCurrentTokenVar('uid');
+        $uid  = Token::getCurrentUid();
         //查看这个用户下加入的所有班级
-        $userInfo = Db::table('yx_user_class')
-            ->alias('uc')
-            ->join('yx_class c','c.id=uc.class_id')
-            ->where('uc.user_id',$uid)
-            ->where('uc.status',1)
-            ->field('uc.class_id,c.class_name')
-            ->select();
-        //今日打卡条件
-        $beginToday = mktime(0, 0, 0, date('m'), date('d'), date('Y'));
-        $endToday   = mktime(0, 0, 0, date('m'), date('d') + 1, date('Y')) - 1;
-        $where[]    = ['create_time', 'between time', [$beginToday, $endToday]];
-
+        $userClass = UserClass::getUserClass($uid);
+        $userInfo = $userClass->hidden(['id', 'user_id', 'status'])
+            ->toArray();
         //已有多少人打卡
-        foreach ($userInfo as $key=>$val){
-            $userInfo[$key]['number'] = Db::table('yx_post')
-                ->where($where)
-                ->where('class_id',$val['class_id'])
+        foreach ($userInfo as $key=>&$val){
+            $val['number'] = Post::where('class_id','=',$val['class_id'])
+                ->where(whereTime())
                 ->group('user_id')
                 ->count();
         }
-
-        if(empty($userInfo)){
+        if(!$userInfo){
             throw new MissException([
                 'msg'=>'我的班级信息查询失败',
                 'errorCode'=>50000

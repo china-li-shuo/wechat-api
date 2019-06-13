@@ -2,14 +2,14 @@
 /**
  * Create by: PhpStorm.
  * Author: 李硕
- * 微信公号：空城旧梦狂啸狂啸当歌
+ * 微信公号：空城旧梦狂啸当歌
  * Date: 2019/6/3
  * Time: 11:57
  */
 
 namespace app\api\controller\v6;
 
-use app\api\dao\User;
+use app\api\model\User;
 use app\api\service\AppToken;
 use app\api\service\Token as TokenService;
 use app\api\service\UserToken;
@@ -34,12 +34,12 @@ class Token
     {
         $validate = new TokenGet();
         $validate->goCheck();
-        $data        = $validate->getDataByRule(input('post.'));
+        $data = $validate->getDataByRule(input('post.'));
         $data['nick_name'] = urlencode($data['nick_name']);
-        $wx          = new UserToken($data['code']);
-        $token       = $wx->get();
-        $mobile_bind = User::addUserInfo($data, $token);
-        return json_encode([
+        $wx = new UserToken($data['code']);
+        $token = $wx->get();
+        $mobile_bind = User::updateUserInfo($data, $token);
+        return json([
             'token'       => $token,
             'mobile_bind' => $mobile_bind
         ]);
@@ -58,7 +58,7 @@ class Token
         (new AppTokenGet())->goCheck();
         $app   = new AppToken();
         $token = $app->get($ac, $se);
-        return json_encode([
+        return json([
             'token' => $token
         ]);
     }
@@ -73,7 +73,7 @@ class Token
         }
         $valid = TokenService::verifyToken($token);
 
-        return json_encode([
+        return json([
             'isValid' => $valid
         ]);
     }

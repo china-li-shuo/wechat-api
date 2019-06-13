@@ -2,11 +2,10 @@
 /**
  * Create by: PhpStorm.
  * Author: 李硕
- * 微信公号：空城旧梦狂啸狂啸当歌
+ * 微信公号：空城旧梦狂啸当歌
  * Date: 2019/6/3
  * Time: 11:57
  */
-
 namespace app\api\controller\v6;
 
 use app\api\dao\Collection;
