@@ -612,7 +612,6 @@ class LearnedHistory extends Model
 
             $data[$key]['stage_name'] = &$stage['stage_name'];
         }
-        //print_r($data);
         //获取阶段下所有组
         foreach ($data as $k => $v) {
             $group = Db::table('yx_learned_history')

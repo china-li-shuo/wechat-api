@@ -1,5 +1,5 @@
 <?php
-
+use app\api\model\Stage;
 /**
  * @param string $url post请求地址
  * @param array $params
@@ -230,4 +230,20 @@ function whereTime()
     $endToday   = mktime(0, 0, 0, date('m'), date('d') + 1, date('Y')) - 1;
     $where[]    = ['create_time', 'between time', [$beginToday, $endToday]];
     return $where;
+}
+
+function cpStages($userInfo)
+{
+    //获取与班级相关联
+    $stages =  Stage::getCpStage($userInfo['class_id'], $userInfo['p_stage_id']);
+    $stages = $stages->toArray();
+    foreach ($stages as $key=>&$val){
+        if(empty($val['cp']))
+        {
+            unset($stages[$key]);
+        }
+        unset($val['cp']);
+    }
+    $stages = array_values($stages);
+    return $stages;
 }

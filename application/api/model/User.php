@@ -14,6 +14,12 @@ class User extends BaseModel
 {
     protected $autoWriteTimestamp = true;
     protected $hidden = ['openid', 'create_time', 'update_time'];
+
+    public function groupType()
+    {
+        return $this->hasOne('Group','id','now_group')->bind(['type']);
+    }
+
     /**
      * 用户是否存在
      * 存在返回uid，不存在返回0
@@ -27,7 +33,8 @@ class User extends BaseModel
 
     public static function getByUid($uid)
     {
-        $user = self::get($uid)
+        $user = self::with('groupType')
+            ->get($uid)
             ->hidden(['mobile_bind','mobile']);
         $user->nick_name = urlDecodeNickName($user->nick_name);
         return $user;

@@ -42,7 +42,7 @@ class Circle
         //当前所属的阶段名称
         $stage = Stage::field('stage_name')
             ->get($user['now_stage']);
-        $data['stage_name'] = $stage->stage_name;
+        $data['stage_name'] = $stage ? $stage->stage_name : NULL;
         return $data;
     }
 

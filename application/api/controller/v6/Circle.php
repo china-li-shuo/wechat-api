@@ -9,6 +9,7 @@
 
 namespace app\api\controller\v6;
 
+use app\api\model\ClassPermission;
 use app\api\model\Cls;
 use app\api\model\Post;
 use app\api\model\User;
@@ -16,11 +17,51 @@ use app\api\model\UserClass;
 use app\api\service\Circle as CircleService;
 use app\api\service\Token;
 use app\api\validate\ClassID;
+use app\api\model\Stage;
 use app\api\validate\PagingParameter;
 use app\lib\exception\MissException;
 
 class Circle
 {
+
+    /**
+     * 切换模块信息
+     * @return \think\response\Json
+     * @throws MissException
+     * @throws \app\lib\exception\ParameterException
+     */
+    public function getModule()
+    {
+        (new ClassID())->goCheck();
+        $class_id = input('post.class_id/d');
+        $permit = ClassPermission::getPermitStage($class_id);
+        if($permit->isEmpty()){
+            throw new MissException([
+                'msg'=>'此班级没有分配任何模块权限',
+                'errorCode'=>50000
+            ]);
+        }
+        $permit = $permit->hidden(['id','class_id','groups'])
+            ->toArray();
+        $arr = array_column($permit,'stage');
+        $stage = Stage::where('id','in',$arr)
+            ->field('parent_id')
+            ->group('parent_id')
+            ->select();
+        if($stage->isEmpty()){
+            throw new MissException([
+                'msg'=>'此班级没有分配任何模块权限',
+                'errorCode'=>50000
+            ]);
+        }
+        $stage = $stage->toArray();
+        $ids = array_column($stage,'parent_id');
+        $data = Stage::where('id','in',$ids)
+            ->field('id,stage_name')
+            ->select();
+        return json($data);
+    }
+
     /**
      * 班级首页信息
      * @return \think\response\Json

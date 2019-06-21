@@ -8,143 +8,131 @@
  */
 namespace app\api\controller\v6;
 
-use app\api\controller\BaseController;
-use app\api\dao\Collection as CollectionModel;
-use app\api\dao\EnglishWord;
-use app\api\dao\ErrorBook;
-use app\api\dao\Group;
-use app\api\dao\GroupWord;
-use app\api\dao\LearnedChild;
-use app\api\dao\LearnedHistory as LearnedHistoryModel;
-use app\api\dao\Stage;
+
+
+
+use app\api\model\User;
 use app\api\service\Token;
+use app\api\model\ErrorBook;
 use app\api\validate\ClassID;
+use app\api\validate\CollectionSentence;
+use app\api\validate\LearnedSentence;
+use app\api\validate\StageID;
+use app\api\model\LearnedChild;
 use app\api\validate\Collection;
 use app\api\validate\LearnedHistory;
 use app\lib\exception\MissException;
 use app\lib\exception\SuccessMessage;
+use app\api\service\Learned as LearnedService;
+use app\api\model\Collection as CollectionModel;
+use app\api\model\LearnedHistory as LearnedHistoryModel;
+use app\api\model\LearnedSentence as LearnedSentenceModel;
+use app\api\model\CollectionSentence as CollectionSentenceModel;
 
-class Learned extends BaseController
+class Learned
 {
     /**
      * 开始学习
-     * @return \think\response\Json
      * @throws MissException
-     * @throws SuccessMessage
      * @throws \app\lib\exception\ParameterException
-     * @throws \app\lib\exception\TokenException
-     * @throws \think\Exception
      */
     public function getList()
     {
-        //先根据token获取用户的uid
-        //根据uid去学习记录表中查询用户最后一次学到了第几组的第几个单词
-        $uid = Token::getCurrentTokenVar('uid');
-        $validate = new ClassID();
-        $validate->goCheck();
-        $data = $validate->getDataByRule(input('post.'));
-        cache('record_stage' . $uid, 1);
-        //查询用户最后一次学习的单词记录
-        $LearnedData = LearnedHistoryModel::UserLastLearnedData($uid,$data['class_id']);
-        //如果用户没有学习记录，直接查询第一阶段下，第一组单词
-        if (empty($LearnedData)) {
-            //查询符合班级权限的第一个阶段ID
-            $stageID = Stage::firstStageIDByClassPermissions($data['class_id']);
-            if(empty($stageID)){
-                throw new MissException([
-                    'msg'=>'此班级下没有查到任何阶段有权限',
-                    'errorCode'=>50000
-                ]);
-            }
-            //查询符合班级权限的组ID
-            $arr['group'] = '';
-            $arr['class_id'] = $data['class_id'];
-            $arr['stage'] =$stageID;
-            $groupID = Group::nextGroupIDByClassPermissions($arr);
-            //进行查看着以分组下所有单词的详情
-            $notLearnedData = GroupWord::selectGroupWord($groupID);
-            if (empty($notLearnedData)) {
-                throw new MissException([
-                    'msg'       => '本组单词为空，请联系管理员进行添加',
-                    'errorCode' => 50000
-                ]);
-            }
-            //进行确定组的阶段和组的类型
-            $notLearnedData = Group::correspondingStage($notLearnedData);
-            //根据类型查找不同的单词表
-            $notWordData = EnglishWord::selectNotWordData($notLearnedData);
-            //判断该用户单词是否收藏过
-            $notWordData = CollectionModel::isCollection($uid, $notWordData);
-            //根据不同的类型把单词格式进行转换
-            $notLearnedData = EnglishWord::conversionByTypeFormat($notWordData, 1);
-            $notLearnedData['count'] = count($notLearnedData);
-            return json($notLearnedData);
+        $uid = Token::getCurrentUid();
+        (new ClassID()) -> goCheck();
+        (new StageID()) -> goCheck();
+        //查询用户当前学习的阶段、组、组类型
+        $userInfo = User::getByUid($uid)
+            ->toArray();
+        $userInfo['class_id'] = input('post.class_id/d');
+        $userInfo['p_stage_id'] = input('post.stage/d');//父阶段id;
+        $stages = cpStages($userInfo); //符合班级权限的所有阶段并且是已切换的模块
+        $userInfo = $this->getLearnedInfo($userInfo,$stages);
+        //进行查询用户学习记录表最后
+        $learned = new LearnedService();
+
+        if (empty($userInfo['now_stage'])) {
+            //如果用户没有学习记录
+            //直接查询符合选择切换的父阶段下
+            //合班级权限的第一个子阶段ID，第一组单词
+            $notWordData = $learned->first($userInfo);
+            return json($notWordData);
         }
 
-        //用户最后一次学习第几组共有多少单词
-        $allData = Group::getAllData($LearnedData);   //25
-        //用户还未学习的组信息
-        $notLearnedData = Group::getGroupData($LearnedData);  //23
-        //如果当前组已经学完，则进行下一组单词
-        if (empty($notLearnedData)) {
-            //读取下一组缓存数据
-            $wordDetail = cache('nextGroupInfo'.$LearnedData['group']);
-            if(!empty($wordDetail)){
-                return json($wordDetail);
-            }
-            //进行查找下一组单词，传递当前组参数信息
-            $wordDetail = $this->nextGroupInfo($LearnedData,$uid);
-            //缓存下一组单词数据
-            cache('nextGroupInfo'.$LearnedData['group'],$wordDetail,3600*7*24);
-            return json($wordDetail);
-        }
-        //查询此组对应的阶段和当前组的类型
-        $notLearnedData = Group::correspondingStage($notLearnedData);
-
-        //用户已学习这组下的第几个数量
-        $currentNumber = LearnedHistoryModel::userLearnedCurrentNumber($LearnedData);  //2
-
-        //用户还没有学习单词的详情
-        $notWordData = EnglishWord::selectNotWordData($notLearnedData);
-
-        $notWordData = CollectionModel::isCollection($uid, $notWordData);
-
-        if (empty($notWordData)) {
-            throw new MissException([
-                'msg'       => '没有查到此分组下单词详情',
-                'errorCode' => 50000
-            ]);
-        }
-
-        $notWordData = EnglishWord::conversionByTypeFormat($notWordData, $currentNumber + 1);
-        $notWordData['count'] = count($allData);
+        //继续上一次学习记录进行学习
+        $notWordData = $learned->continueStudy($userInfo);
         return json($notWordData);
+    }
+
+    private function getLearnedInfo($userInfo,$stages)
+    {
+        $word = [];
+        foreach ($stages as $key=>$val){
+            $arr = LearnedHistoryModel::where([
+                'user_id'=>$userInfo['id'],
+                'stage'=>$val['id']
+            ])
+                ->order('create_time desc')
+                ->find();
+            if(!empty($arr)){
+                array_push($word,$arr->toArray());
+            }
+        }
+
+        if(!empty($word)){
+            // 取得列的列表
+            foreach ($word as $key => $row) {
+                $edition[$key] = $row['create_time'];
+            }
+
+            array_multisort($edition, SORT_DESC, $word);
+            $userInfo['now_stage'] = empty($word[0]['stage']) ? '' : $word[0]['stage'];
+            $userInfo['now_group'] = empty($word[0]['group']) ? '' : $word[0]['group'];
+            return $userInfo;
+        }
+
+        $sentence = [];
+        foreach ($stages as $key=>$val){
+            $arr = LearnedSentenceModel::where([
+                'user_id'=>$userInfo['id'],
+                'stage'=>$val['id']
+            ])
+                ->order('create_time desc')
+                ->find();
+            if(!empty($arr)){
+                array_push($sentence,$arr->toArray());
+            }
+        }
+
+        foreach ($sentence as $key => $row) {
+            $edition[$key] = $row['create_time'];
+        }
+
+        array_multisort($edition, SORT_DESC, $sentence);
+        $userInfo['now_stage'] = empty($sentence[0]['stage']) ? '' : $sentence[0]['stage'];
+        $userInfo['now_group'] = empty($sentence[0]['group']) ? '' : $sentence[0]['group'];
+        return $userInfo;
     }
 
     /**
      * 点击下一个，记录用户学习记录
-     * @throws MissException   错误信息
-     * @throws SuccessMessage   成功信息
+     * 传递参数（token,type,class_id,group,stage,word_id,useropt）
+     * 根据用户选项判断用户答案是否正确
+     * 如果用户答错，则把错误信息写入数据库
+     * 然后把用户答题活动记录写入数据库，如果已存在这条记录进行修改，否则添加
+     * @throws MissException
+     * @throws SuccessMessage
      * @throws \app\lib\exception\ParameterException
-     * @throws \app\lib\exception\TokenException    token过期异常
-     * @throws \think\Exception
-     * @throws \think\db\exception\DataNotFoundException
-     * @throws \think\db\exception\ModelNotFoundException
-     * @throws \think\exception\DbException
-     * @throws \think\exception\PDOException
      */
     public function clickNext()
     {
-        //传递参数（token,class_id,group,stage,word_id,useropt）
-        //根据用户选项判断用户答案是否正确
-        //如果用户答错，则把错误信息写入数据库
-        //然后把用户答题活动记录写入数据库，如果已存在这条记录进行修改，否则添加
-        $uid = Token::getCurrentTokenVar('uid');
+        $uid = Token::getCurrentUid();
         $validate = new LearnedHistory();
         $validate->goCheck();
         $data = $validate->getDataByRule(input('post.'));
         //根据分组进行查询答案是否正确
-        $answerResult = EnglishWord::answerResult($data);
+        $learned = new LearnedService();
+        $answerResult = $learned->answerResult($data);
         //如果答题正确，判断错题本有没有此条记录，如果有则删除
         if ($answerResult == 1) {
             ErrorBook::deleteErrorBook($uid, $data);
@@ -172,6 +160,28 @@ class Learned extends BaseController
     }
 
     /**
+     * 长难句点击下一个
+     * @throws MissException
+     * @throws SuccessMessage
+     * @throws \app\lib\exception\ParameterException
+     */
+    public function clickSentence()
+    {
+        $uid = Token::getCurrentUid();
+        $validate = new LearnedSentence();
+        $validate->goCheck();
+        $data = $validate->getDataByRule(input('post.'));
+        $res = LearnedSentenceModel::addSentence($uid, $data);
+        if(empty($res)){
+            throw new MissException([
+                'msg'=>'操作失败',
+                'errorCode'=>50000
+            ]);
+        }
+        throw new SuccessMessage();
+    }
+
+    /**
      * 收藏
      * @return \think\response\Json
      * @throws MissException
@@ -179,7 +189,7 @@ class Learned extends BaseController
      */
     public function collection()
     {
-        $uid      = Token::getCurrentTokenVar('uid');
+        $uid      = Token::getCurrentUid();
         $validate = new Collection();
         $validate->goCheck();
         $data = $validate->getDataByRule(input('post.'));
@@ -206,80 +216,38 @@ class Learned extends BaseController
         return json(['msg' => '收藏成功', 'code' => 200]);
     }
 
-
     /**
-     * 下一组单词
-     * @param $LearnedData 当前阶段组信息
-     * @return mixed
+     * 收藏
+     * @return \think\response\Json
      * @throws MissException
-     * @throws SuccessMessage
+     * @throws \app\lib\exception\ParameterException
      */
-    private function nextGroupInfo($LearnedData,$uid)
+    public function sentenceCollection()
     {
-        //获取下一组的组id,并且是符合此班级权限的下一组ID
-        $nextGroupID = Group::nextGroupIDByClassPermissions($LearnedData);
-        if (empty($nextGroupID)) {
-            //如果当前阶段没有下一组了，去找下一阶段,第一组单词
-            $nextStageID = Stage::nextStageIDByClassPermissions($LearnedData);
-
-            if (empty($nextStageID)) {
-                throw new SuccessMessage([
-                    'msg'       => '你太厉害了，所有阶段都已经通关了',
+        $uid      = Token::getCurrentUid();
+        $validate = new CollectionSentence();
+        $validate->goCheck();
+        $data = $validate->getDataByRule(input('post.'));
+        //is_collection  1  为收藏  2为未收藏
+        if ($data['is_collection'] == 2) {
+            $res = CollectionSentenceModel::deleteCollection($uid, $data);
+            if (!$res) {
+                throw new MissException([
+                    'msg'       => '你已经取消收藏该句子',
                     'errorCode' => 50000
                 ]);
             }
-            //如果不为空，去找下一阶段的符合权限第一组id
-            $LearnedData['stage'] = $nextStageID;
-            $LearnedData['group'] = '';
-            $nextStageFirstGroupID = Group::nextGroupIDByClassPermissions($LearnedData);
-
-            if (empty($nextStageFirstGroupID)) {
-                throw new SuccessMessage([
-                    'msg'       => '亲，暂你已经学完所有单词了，因为下一阶段，没有任何分组哦！',
-                    'errorCode' => 50000
-                ]);
-            }
-            $wordDetail = $this->getWordDetail($nextStageFirstGroupID,$uid);
-            return $wordDetail;      //这个是return array  数据
+            return json(['msg' => '取消收藏成功', 'code' => 200]);
         }
-        $wordDetail = $this->getWordDetail($nextGroupID,$uid);
-        return $wordDetail;          //这个是return array  数据
-    }
 
-    /**
-     * 获取单词详情
-     * @param $LastGroupID
-     * @param $uid
-     * @return mixed
-     * @throws MissException
-     */
-    private function getWordDetail($LastGroupID, $uid)
-    {
-        $groupWord = GroupWord::selectGroupWord($LastGroupID);
-        if (empty($groupWord)) {
+        $res = CollectionSentenceModel::addCollection($uid, $data);
+
+        if (!$res) {
             throw new MissException([
-                'msg'       => '亲，此小组下没有任何单词(⊙o⊙)哦',
+                'msg'       => '你已经取消收藏该句子',
                 'errorCode' => 50000
             ]);
         }
-
-        //进行确定组的阶段和组的类型
-        $groupWord = Group::correspondingStage($groupWord);
-        //根据类型查找不同的单词表
-        $notWordData = EnglishWord::selectNotWordData($groupWord);
-        //判断该用户单词是否收藏过
-        $notWordData = CollectionModel::isCollection($uid, $notWordData);
-        //根据不同的类型把单词格式进行转换
-        $notLearnedData = EnglishWord::conversionByTypeFormat($notWordData, 1);
-        $notLearnedData['count'] = count($notLearnedData);
-
-        if ($notLearnedData['count'] == 0) {
-            throw new MissException([
-                'msg'       => '此小组下没有任何单词',
-                'errorCode' => 50000
-            ]);
-        }
-
-        return $notLearnedData;
+        return json(['msg' => '收藏成功', 'code' => 200]);
     }
 }

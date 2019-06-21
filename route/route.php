@@ -9,20 +9,19 @@ Route::post('api/:version/sms/mobile', 'api/:version.Sms/sendSms');
 Route::post('api/:version/sms/bind', 'api/:version.Sms/bindMobile');
 
 //学习阶段
-Route::post('api/:version/stage/info', 'api/:version.Stage/getStages');
 Route::post('api/:version/stage/all', 'api/:version.Stage/getAllStage');
 Route::post('api/:version/stage/detail', 'api/:version.Stage/getDetail');
 Route::post('api/:version/stage/record', 'api/:version.Stage/recordStage');
-Route::post('api/:version/stage/alert', 'api/:version.Stage/alertMsg');
 
 //分享打卡
 Route::post('api/:version/share/punch', 'api/:version.Share/punchCard');
 
 //开始学习
 Route::post('api/:version/learned/list', 'api/:version.Learned/getList');
-Route::post('api/:version/learned/common', 'api/:version.Learned/commonList');
+Route::post('api/:version/learned/sentence', 'api/:version.Learned/clickSentence');
 Route::post('api/:version/learned/click', 'api/:version.Learned/clickNext');
 Route::post('api/:version/learned/collection', 'api/:version.Learned/collection');
+Route::post('api/:version/learned/sc', 'api/:version.Learned/sentenceCollection');
 
 
 //单词本
@@ -57,6 +56,7 @@ Route::post('api/:version/teacher/status', 'api/:version.Teacher/getClassStatus'
 Route::post('api/:version/teacher/screen', 'api/:version.Teacher/getScreenInfo');
 
 //圈子
+Route::post('api/:version/circle/module', 'api/:version.Circle/getModule');
 Route::post('api/:version/circle/info', 'api/:version.Circle/getCircleInfo');
 Route::post('api/:version/circle/today_punch', 'api/:version.Circle/getPunchCardToday');
 Route::post('api/:version/circle/ranking', 'api/:version.Circle/getRankingList');
