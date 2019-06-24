@@ -22,6 +22,7 @@ Route::post('api/:version/learned/sentence', 'api/:version.Learned/clickSentence
 Route::post('api/:version/learned/click', 'api/:version.Learned/clickNext');
 Route::post('api/:version/learned/collection', 'api/:version.Learned/collection');
 Route::post('api/:version/learned/sc', 'api/:version.Learned/sentenceCollection');
+Route::post('api/:version/learned/search', 'api/:version.Learned/wordSearch');
 
 
 //单词本

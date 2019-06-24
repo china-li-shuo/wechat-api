@@ -25,6 +25,13 @@ class LearnedSentence extends BaseModel
         if(empty($sentence)){
             $data['user_id'] = $uid;
             $res = self::create($data);
+            $userInfo = User::get($uid);
+            $sentence_number = $userInfo->sentence_number + 1;
+            User::where('id',$uid)->update([
+                'sentence_number'=>$sentence_number,
+                'now_stage'=>$data['stage'],
+                'now_group'=>$data['group'],
+            ]);
             return $res->id;
         }
         //否则进行修改

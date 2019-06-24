@@ -87,4 +87,14 @@ class UserClass extends BaseModel
             ->select();
         return $userClass;
     }
+
+    public static function getAllMembersOfClass($class_id)
+    {
+        $member = self::where([
+            'class_id'=>$class_id,
+            'status'=>1
+        ]) ->field('user_id,class_id')
+           ->select();
+       return $member;
+    }
 }

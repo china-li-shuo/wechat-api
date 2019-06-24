@@ -42,6 +42,7 @@ class Learned
         $notLearnedData = GroupWord::where('group',$groupID)
             ->select()
             ->toArray();
+
         if (empty($notLearnedData)) {
             throw new MissException([
                 'msg'       => '本组单词为空，请联系管理员进行添加',
@@ -50,9 +51,9 @@ class Learned
         }
         //查询此组对应的阶段和当前组的类型
         $notLearnedData = $this->correspondingStage($notLearnedData);
-        $notWordData = $this->detail($userInfo, $notLearnedData);
+        $notWordData = $this->detail($notLearnedData);
         $notWordData = Collection::isCollection($userInfo['id'], $notWordData);
-        $notWordData = $this->handleData($userInfo['type'],$notWordData, 1);
+        $notWordData = $this->handleData($notWordData, 1);
         $notWordData['count'] = count($notLearnedData);
         return $notWordData;
     }
@@ -94,9 +95,9 @@ class Learned
         }
         //查询此组对应的阶段和当前组的类型
         $notLearnedData = $this->correspondingStage($notLearnedData);
-        $notWordData = $this->detail($userInfo, $notLearnedData);
+        $notWordData = $this->detail($notLearnedData);
         $notWordData = Collection::isCollection($userInfo['id'], $notWordData);
-        $notWordData = $this->handleData($userInfo['type'],$notWordData, $currentNumber+1);
+        $notWordData = $this->handleData($notWordData, $currentNumber+1);
         $notWordData['count'] = $sumNumber;
         return $notWordData;
     }
@@ -187,9 +188,9 @@ class Learned
      * @param $notLearnedData
      * @return mixed
      */
-    public function detail($userInfo,$notLearnedData)
+    public function detail($notLearnedData)
     {
-        switch ($userInfo['type']) {
+        switch ($notLearnedData[0]['type']) {
             case 1:
                 foreach ($notLearnedData as $key => &$val) {
                     $data = English::field('id,english_word,chinese_word,options,answer,sentence,us_audio,us_phonetic')
@@ -232,12 +233,12 @@ class Learned
     /**
      * 进行数据的处理
      */
-    public function handleData($type, $notWordData, $currentNumber)
+    public function handleData($notWordData, $currentNumber)
     {
         //单词表已的音频路径
         $us_audio = config('setting.audio_prefix');
         //根据类型进行不同的格式转换，1、普通类型；2、同义词；3、一次多义；4、熟词僻义
-        switch ($type) {
+        switch ($notWordData[0]['type']) {
             case 1://普通类型
                 foreach ($notWordData as $key => &$val) {
                     $val['son']['chinese_word']  = explode('@', $val['son']['chinese_word']);
@@ -270,8 +271,8 @@ class Learned
                     $val['son']['word_parsing']  = json_decode($val['son']['word_parsing'], true);
                     $val['son']['sentence_splitting'] = json_decode($val['son']['sentence_splitting'], true);
                     $val['son']['currentNumber'] = $currentNumber + $key;
-                    foreach ($val['word_parsing'] as $k=>&$v){
-                        $v['son']['us_audio']      = $us_audio . $v['son']['us_audio'];
+                    foreach ($val['son']['word_parsing'] as $k=>&$v){
+                        $v['us_audio']      = $us_audio . $v['us_audio'];
                     }
 
                 }
@@ -417,6 +418,9 @@ class Learned
             ['class_id'=>$userInfo['class_id'], 'stage'=>$userInfo['now_stage']
             ])->field('groups')
             ->find();
+        if(empty($permission)){
+            return NULL;
+        }
         $groups = explode(',',$permission->groups);
         //找出符合此班级权限下的所有分组
         if(!empty($data) && !empty($groups)){
@@ -446,7 +450,7 @@ class Learned
     /**
      * 给对应的组加上对应的阶段和组对应的类型，用于判断是什么类型
      */
-    private function correspondingStage($notLearnedData)
+    public function correspondingStage($notLearnedData)
     {
         $data = Group::field('stage_id,type')
             ->get($notLearnedData[0]['group']);
@@ -476,10 +480,10 @@ class Learned
         }
         //查询此组对应的阶段和当前组的类型
         $notLearnedData = $this->correspondingStage($groupWord);
-        $notWordData = $this->detail($userInfo, $notLearnedData);
+        $notWordData = $this->detail($notLearnedData);
         //判断该用户单词是否收藏过
         $notWordData = Collection::isCollection($userInfo['id'], $notWordData);
-        $notWordData = $this->handleData($userInfo['type'],$notWordData, 1);
+        $notWordData = $this->handleData($notWordData, 1);
         $notWordData['count'] = $sumNumber;
         return $notWordData;
     }

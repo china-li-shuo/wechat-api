@@ -9,18 +9,17 @@
 namespace app\api\controller\v6;
 
 
-
-
+use app\api\model\English;
 use app\api\model\User;
 use app\api\service\Token;
-use app\api\model\ErrorBook;
 use app\api\validate\ClassID;
-use app\api\validate\CollectionSentence;
-use app\api\validate\LearnedSentence;
-use app\api\validate\StageID;
+use app\api\model\ErrorBook;
 use app\api\model\LearnedChild;
 use app\api\validate\Collection;
+use app\api\validate\CollectionSentence;
 use app\api\validate\LearnedHistory;
+use app\api\validate\LearnedSentence;
+use app\api\validate\ModuleCode;
 use app\lib\exception\MissException;
 use app\lib\exception\SuccessMessage;
 use app\api\service\Learned as LearnedService;
@@ -40,18 +39,17 @@ class Learned
     {
         $uid = Token::getCurrentUid();
         (new ClassID()) -> goCheck();
-        (new StageID()) -> goCheck();
+        (new ModuleCode()) -> goCheck();
         //查询用户当前学习的阶段、组、组类型
         $userInfo = User::getByUid($uid)
             ->toArray();
         $userInfo['class_id'] = input('post.class_id/d');
-        $userInfo['p_stage_id'] = input('post.stage/d');//父阶段id;
+        $userInfo['p_stage_id'] = input('post.module_code/d');//父阶段id;
         $stages = cpStages($userInfo); //符合班级权限的所有阶段并且是已切换的模块
-        $userInfo = $this->getLearnedInfo($userInfo,$stages);
+        $user = $this->getLearnedInfo($userInfo,$stages);
         //进行查询用户学习记录表最后
         $learned = new LearnedService();
-
-        if (empty($userInfo['now_stage'])) {
+        if (empty($user['now_stage'])) {
             //如果用户没有学习记录
             //直接查询符合选择切换的父阶段下
             //合班级权限的第一个子阶段ID，第一组单词
@@ -60,7 +58,7 @@ class Learned
         }
 
         //继续上一次学习记录进行学习
-        $notWordData = $learned->continueStudy($userInfo);
+        $notWordData = $learned->continueStudy($user);
         return json($notWordData);
     }
 
@@ -78,7 +76,6 @@ class Learned
                 array_push($word,$arr->toArray());
             }
         }
-
         if(!empty($word)){
             // 取得列的列表
             foreach ($word as $key => $row) {
@@ -103,15 +100,16 @@ class Learned
                 array_push($sentence,$arr->toArray());
             }
         }
+        if(!empty($sentence)){
+            foreach ($sentence as $key => $row) {
+                $edition[$key] = $row['create_time'];
+            }
 
-        foreach ($sentence as $key => $row) {
-            $edition[$key] = $row['create_time'];
+            array_multisort($edition, SORT_DESC, $sentence);
+            $userInfo['now_stage'] = empty($sentence[0]['stage']) ? '' : $sentence[0]['stage'];
+            $userInfo['now_group'] = empty($sentence[0]['group']) ? '' : $sentence[0]['group'];
+            return $userInfo;
         }
-
-        array_multisort($edition, SORT_DESC, $sentence);
-        $userInfo['now_stage'] = empty($sentence[0]['stage']) ? '' : $sentence[0]['stage'];
-        $userInfo['now_group'] = empty($sentence[0]['group']) ? '' : $sentence[0]['group'];
-        return $userInfo;
     }
 
     /**
@@ -249,5 +247,36 @@ class Learned
             ]);
         }
         return json(['msg' => '收藏成功', 'code' => 200]);
+    }
+
+    /**
+     * 单词搜索
+     * @throws MissException
+     */
+    public function wordSearch()
+    {
+        Token::getCurrentUid();
+        $english_word = input('post.english_word');
+        if(empty($english_word)){
+            throw new MissException([
+                'msg'=>'english_word不能为空',
+                'errorCode'=>50000
+            ]);
+        }
+        $data = English::where('english_word',$english_word)->find();
+        if(empty($data)){
+            throw new MissException([
+                'msg'=>'没有搜索到此单词的信息',
+                'errorCode'=>50001
+            ]);
+        }
+        $us_audio = config('setting.audio_prefix');
+        //根据类型进行不同的格式转换
+        $data['chinese_word']  = explode('@', $data['chinese_word']);
+        $data['answer']        = explode(',', $data['answer']);
+        $data['options']       = json_decode($data['options'], true);
+        $data['sentence']      = json_decode($data['sentence'], true);
+        $data['us_audio']      = $us_audio .$data['us_audio'];
+        return json($data);
     }
 }

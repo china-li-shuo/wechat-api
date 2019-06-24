@@ -97,4 +97,49 @@ class LearnedHistory extends BaseModel
 
         return true;
     }
+
+    /**
+     * 获取自己在班级成员在这阶段这一组的正确率
+     */
+    public static function getClassTrueRate($classData, $data)
+    {
+        $childData= LearnedChild::where([
+            'class_id'=>$data['class_id'],
+            'group'=>$data['group'],
+            'stage'=>$data['stage'],
+        ]) ->field('user_id,mastered_number')
+           ->select();
+        if (!empty($childData)){
+            $childData = $childData->toArray();
+        }
+        foreach ($classData as $key=>$val){
+            foreach ($childData as $k=>$v){
+                if($val['user_id'] == $v['user_id']){
+                    $classData[$key]['mastered_number'] = $v['mastered_number'];
+                    continue;
+                }
+            }
+        }
+
+        foreach ($classData as $key=>$val){
+            if (empty($val['mastered_number'])){
+                $classData[$key]['mastered_number'] =0;
+            }
+        }
+
+        // 取得列的列表
+        foreach ($classData as $key => $row) {
+            $edition[$key] = $row['mastered_number'];
+        }
+
+        array_multisort($edition, SORT_ASC, $classData);
+
+        foreach ($classData as $x => $y) {
+            if ($y['user_id'] == $data['user_id']) {
+                $nowNum = $x + 1;
+            }
+        }
+        $count = count($classData);
+        return round($nowNum / $count * 100, 2) . "%";
+    }
 }

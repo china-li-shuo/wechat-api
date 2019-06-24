@@ -65,4 +65,77 @@ class Post extends BaseModel
             ->paginate($size, true, ['page' => $page]);
         return $pagingData ;
     }
+
+    /**
+     * 发帖子的状态
+     */
+    public static function postStatus($uid, $data)
+    {
+        $status = self::where([
+            'class_id'=>$data['class_id'],
+            'user_id'=>$uid,
+            'stage'=>$data['stage'],
+            'group'=>$data['group'],
+        ])->count();
+        return $status;
+    }
+
+    /**
+     * 进行记录发帖，并记录发帖天数
+     * @param $data
+     */
+    public static function addPost($uid, $data)
+    {
+        //先进行判断此阶段组的发帖状态
+        $clockStatusData = self::postStatus($uid, $data);
+        if($clockStatusData === 0){
+            $learnedChildData = [
+                'user_id'=>$uid,
+                'class_id'=>$data['class_id'],
+                'stage'=>$data['stage'],
+                'group'=>$data['group'],
+            ];
+            $res = LearnedChild::create($learnedChildData);
+            if ($res){
+                $clockStatusData = self::postStatus($uid, $data);
+            }
+        }
+        //如果已经发过帖子
+        if($clockStatusData >= 1){
+            return false;
+        }
+        //如果没有打卡记录，或者打卡状态为0，能够进行发帖子
+
+        $data = [
+            'user_id'=>$uid,
+            'class_id'=>&$data['class_id'],
+            'stage'=>&$data['stage'],
+            'group'=>&$data['group'],
+            'content'=>json_encode($data['content']),
+            'create_time'=>time()
+        ];
+        //修改用户表打卡天数
+        self::create($data);
+        LearnedChild::where([
+            'class_id'=>$data['class_id'],
+            'stage'=>$data['stage'],
+            'group'=>$data['group'],
+            'user_id'=>$uid,
+        ])->update(['clock_status'=>1]);
+
+        //如果今天打卡天数小于1进行修改
+        $num = self::where([
+            'class_id'=>$data['class_id'],
+            'user_id'=>$uid,
+        ])->where(whereTime())->count();
+
+        if($num > 1){
+            return true;
+        }
+
+        $userInfo = User::field('punch_days')->get($uid);
+        User::where('id',$uid)->update(['punch_days'=>$userInfo['punch_days']+1]);
+        return true;
+    }
+
 }
