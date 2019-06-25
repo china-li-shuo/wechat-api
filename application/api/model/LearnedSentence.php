@@ -13,6 +13,10 @@ namespace app\api\model;
 
 class LearnedSentence extends BaseModel
 {
+    public function sentenceInfo()
+    {
+        return $this->hasOne('Sentences','id','sentence_id');
+    }
 
     public static function addSentence($uid, $data)
     {
@@ -42,5 +46,15 @@ class LearnedSentence extends BaseModel
         ])->update($data);
 
         return $res;
+    }
+
+    public static function getSummaryByUid($uid, $page, $size)
+    {
+        $pagingData = self::with('sentenceInfo')
+             ->where('user_id',$uid)
+            ->order('create_time desc')
+            ->visible(['sentence_id', 'stage', 'group', 'translation', 'sentence_info'])
+            ->paginate($size, true, ['page' => $page]);
+        return $pagingData ;
     }
 }

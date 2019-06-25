@@ -13,6 +13,7 @@ namespace app\api\service;
 use app\api\model\ClassPermission;
 use app\api\model\Group;
 use app\api\model\LearnedHistory;
+use app\api\model\LearnedSentence;
 use app\api\model\Stage as StageModel;
 use app\lib\exception\MissException;
 
@@ -66,18 +67,37 @@ class Stage
     }
 
     /**
-     * 用户各个阶段所需单词数量
-     * @param $uid
-     * @param $stages
+     * 用户各个阶段所学单词数量
      */
     public function getAlreadyNumberByStage($uid, $stages)
     {
+        $i = 0;
         foreach ($stages[0]['son'] as $key => &$val) {
                 $count = LearnedHistory::where(
                     ['stage'=>$val['id'],
                     'user_id'=>$uid
                 ])->count();
+                $i += $count;
                 $val['alreadyNum'] = $count;
+        }
+        //如果没有学习单词，进行查询有没有学习长难句
+        if($i==0){
+            return $this->getAlreadySentenceByStage($uid, $stages);
+        }
+        return $stages;
+    }
+
+    /**
+     * 用户各个阶段所学长难句数量
+     */
+    private function getAlreadySentenceByStage($uid, $stages)
+    {
+        foreach ($stages[0]['son'] as $key => &$val) {
+            $count = LearnedSentence::where(
+                ['stage'=>$val['id'],
+                 'user_id'=>$uid
+                ])->count();
+            $val['alreadyNum'] = $count;
         }
         return $stages;
     }
@@ -87,10 +107,6 @@ class Stage
      * 获取用户已练习多少组，已练习多少单词
      * 展示此阶段下共有哪几组单词(组名称)，每个组下有多少单词，用户每组学了多少单词
      * 用户是否获取此勋章称号
-     * @param $uid
-     * @param $stage_id
-     * @param $class_id
-     * @return mixed
      */
     public function detail($uid, $stage_id, $class_id)
     {
@@ -99,8 +115,36 @@ class Stage
             ->hidden(['sort','parent_id','create_time']);
         //用户此阶段下学过的组id
         $historyGroupData = LearnedHistory::getGroupByStageID($uid, $stage_id);
+        //如果没有单词的学习记录进行查看有没有长难句的学习记录
+        if($historyGroupData->isEmpty()){
+            $historyGroupData = LearnedSentence::where(
+                ['user_id'=>$uid,
+                 'stage'=>$stage_id])
+                ->field('group')
+                ->group('group')
+                ->select();
+            //用户此阶段共学习了多少组
+            $historyGroupCount = count($historyGroupData);
+
+            //用户此阶段共学习了多少单词
+            $historyWordCount = LearnedSentence::where(
+                ['user_id'=>$uid,
+                 'stage'=>$stage_id])
+                ->count();
+            //班级下此阶段组的权限
+            $eachGroupData = $this->groupPermission($stage_id,$class_id);
+            //每组已经学过的单词
+            $eachGroupData = $this->sentenceGroupData($uid, $historyGroupData, $eachGroupData, $historyWordCount);
+
+            $stageData['history_group_count'] = $historyGroupCount;
+            $stageData['history_word_count'] = $historyWordCount;
+            $stageData['each_group_data'] = $eachGroupData;
+            return $stageData;
+        }
+
         //用户此阶段共学习了多少组
         $historyGroupCount = count($historyGroupData);
+
         //用户此阶段共学习了多少单词
         $historyWordCount = LearnedHistory::where(
             ['user_id'=>$uid,
@@ -145,10 +189,42 @@ class Stage
         return $eachGroupData;
     }
 
+    //单词每组的数据
     private function eachGroupData($uid, $historyGroupData, $eachGroupData, $historyWordCount)
     {
         foreach ($historyGroupData as $key => $val) {
             $alreadyGroupNum = LearnedHistory::where(
+                ['user_id'=>$uid,
+                 'group'=>$val['group']])->count();
+            $historyGroupData[$key]['already_group_num'] = $alreadyGroupNum;
+        }
+        //查看此阶段下，每组学习下多少个单词
+        if ($eachGroupData && $historyGroupData) {
+            foreach ($eachGroupData as $key=>&$val) {
+                foreach ($historyGroupData as $k=>$v) {
+                    if ($val['id'] == $v['group']) {
+                        $val['already_group_num'] = $v['already_group_num'];
+                    }
+                }
+                if (!array_key_exists('already_group_num', $val)) {
+                    $val['already_group_num'] = 0;
+                }
+            }
+        }
+        //如果没有学习记录 则每组学习0个单词
+        if ($historyWordCount==0) {
+            foreach ($eachGroupData as $key => $val) {
+                $eachGroupData[$key]['already_group_num'] = 0;
+            }
+        }
+        return $eachGroupData;
+    }
+
+    //长难句每组的数据
+    private function sentenceGroupData($uid, $historyGroupData, $eachGroupData, $historyWordCount)
+    {
+        foreach ($historyGroupData as $key => $val) {
+            $alreadyGroupNum = LearnedSentence::where(
                 ['user_id'=>$uid,
                  'group'=>$val['group']])->count();
             $historyGroupData[$key]['already_group_num'] = $alreadyGroupNum;

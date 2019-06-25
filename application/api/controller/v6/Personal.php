@@ -100,4 +100,5 @@ class Personal
         }
         return json($userInfo);
     }
+
 }

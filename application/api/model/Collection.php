@@ -19,7 +19,7 @@ class Collection extends BaseModel
      */
     public static function isCollection($uid, $notWordData)
     {
-        if($notWordData[0]['type'] == 1){
+        if($notWordData[0]['type'] == 5){
             $notWordData = CollectionSentence::isCollection($uid, $notWordData);
             return $notWordData;
         }

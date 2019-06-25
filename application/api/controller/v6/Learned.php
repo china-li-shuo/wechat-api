@@ -87,7 +87,6 @@ class Learned
             $userInfo['now_group'] = empty($word[0]['group']) ? '' : $word[0]['group'];
             return $userInfo;
         }
-
         $sentence = [];
         foreach ($stages as $key=>$val){
             $arr = LearnedSentenceModel::where([

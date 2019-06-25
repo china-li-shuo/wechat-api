@@ -18,4 +18,6 @@ class Sentences extends  BaseModel
 
     //设置当前模型的数据库链接
     protected $connection = 'db_config_2';
+
+    protected $hidden = ['create_time', 'update_time'];
 }

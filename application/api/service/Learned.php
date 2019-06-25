@@ -18,6 +18,7 @@ use app\api\model\English2;
 use app\api\model\Group;
 use app\api\model\GroupWord;
 use app\api\model\LearnedHistory;
+use app\api\model\LearnedSentence;
 use app\api\model\Sentences;
 use app\api\model\Stage as StageModel;
 use app\api\model\Synonym;
@@ -67,12 +68,23 @@ class Learned
         $groupWord = GroupWord::where('group',$userInfo['now_group'])
             ->select()
             ->toArray();
+
+        //查询此组对应的阶段和当前组的类型
+        $typeData = $this->correspondingStage($groupWord);
         $sumNumber = count($groupWord);  //50  这一组单词的总数量
-        //用户这组已经学习的单词信息
-        $learnedData = LearnedHistory::where(['user_id'=>$userInfo['id'],'group'=>$userInfo['now_group']])
-            ->field('group,word_id')
-            ->select()
-            ->toArray();
+        //如果是长难句，查询长难句学习记录
+        if($typeData[0]['type'] == 5){
+            $learnedData = LearnedSentence::where(['user_id'=>$userInfo['id'],'group'=>$userInfo['now_group']])
+                ->field('group,sentence_id as word_id')
+                ->select()
+                ->toArray();
+        }else{
+            //用户这组已经学习的单词信息
+            $learnedData = LearnedHistory::where(['user_id'=>$userInfo['id'],'group'=>$userInfo['now_group']])
+                ->field('group,word_id')
+                ->select()
+                ->toArray();
+        }
         $currentNumber = count($learnedData); //17  这一组单词的已经学过的数量
 
         //用户这组剩余的没有学习的单词信息
@@ -85,7 +97,6 @@ class Learned
         }
         //这组未学单词信息
         $notLearnedData = array_values($groupWord);
-
         //如果当前组已经学完，则进行下一组单词
         if (empty($notLearnedData)) {
             //进行查找下一组单词，传递当前组参数信息
@@ -93,6 +104,7 @@ class Learned
             //缓存下一组单词数据
             return $notWordData;
         }
+
         //查询此组对应的阶段和当前组的类型
         $notLearnedData = $this->correspondingStage($notLearnedData);
         $notWordData = $this->detail($notLearnedData);
@@ -452,10 +464,11 @@ class Learned
      */
     public function correspondingStage($notLearnedData)
     {
-        $data = Group::field('stage_id,type')
+        $data = Group::field('group_name,stage_id,type')
             ->get($notLearnedData[0]['group']);
 
         foreach ($notLearnedData as $key => $val) {
+            $notLearnedData[$key]['group_name'] = $data['group_name'];
             $notLearnedData[$key]['stage'] = $data['stage_id'];
             $notLearnedData[$key]['type'] = $data['type'];
         }

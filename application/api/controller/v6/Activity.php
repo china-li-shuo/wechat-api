@@ -8,32 +8,42 @@
  */
 namespace app\api\controller\v6;
 
-use app\api\dao\Collection;
-use app\api\dao\EnglishWord;
-use app\api\dao\ErrorBook;
-use app\api\dao\Group;
-use app\api\dao\LearnedHistory;
-use app\api\service\Token;
-use app\api\validate\ErrorBook as ErrorBookValidate;
-use app\lib\exception\MissException;
+
+use app\api\model\CollectionSentence;
+use app\api\model\LearnedSentence;
+use app\api\validate\PagingParameter;
 use think\Db;
+use app\api\service\Token;
+use app\api\model\ErrorBook;
+use app\api\service\Learned;
+use app\api\model\Collection;
+use app\api\model\LearnedHistory;
+use app\lib\exception\MissException;
+use app\api\service\Activity as ActivityService;
+use app\api\validate\ErrorBook as ErrorBookValidate;
 
 class Activity
 {
+    protected $activity;
+    protected $learned;
+    public function __construct()
+    {
+        $this->activity = new ActivityService();
+        $this->learned = new Learned();
+    }
+
     /**
      * 已学习首页(筛选)
-     * @return \think\response\Json
      * @throws MissException
      */
     public function alreadyStudied()
     {
         //根据token获取用户学习所有阶段,每个阶段下所有组
-        $uid         = Token::getCurrentTokenVar('uid');
-        $historyData = LearnedHistory::learnedInfo($uid);
-
+        $uid = Token::getCurrentUid();
+        $historyData = $this->activity->learnedInfo($uid);
         if (empty($historyData)) {
             throw new MissException([
-                'msg'       => '你还有任何学习记录呢,请开始你的表演',
+                'msg'       => '没有查询到你的学习记录',
                 'errorCode' => 50000
             ]);
         }
@@ -42,16 +52,15 @@ class Activity
 
     /**
      * 错题本首页（筛选）
-     * @return \think\response\Json
      * @throws MissException
      */
     public function errorBook()
     {
-        $uid  = Token::getCurrentTokenVar('uid');
-        $data = ErrorBook::errorInfo($uid);
+        $uid = Token::getCurrentUid();
+        $data = $this->activity->errorInfo($uid);
         if (empty($data)) {
             throw new MissException([
-                'msg'       => '学霸，还没有答错任何题呢',
+                'msg'       => '没有查询到你的错题记录',
                 'errorCode' => 50000
             ]);
         }
@@ -60,21 +69,24 @@ class Activity
     }
 
     /**
-     * 已收藏 首页
+     * 已收藏首页（筛选）
+     * @throws MissException
      */
     public function collection()
     {
-        $uid  = Token::getCurrentTokenVar('uid');
-        $data = Collection::collectionInfo($uid);
+        $uid = Token::getCurrentUid();
+        $data = $this->activity->collectionInfo($uid);
         if (empty($data)) {
             throw new MissException([
-                'msg'       => '空空如也，请先收藏单词(⊙o⊙)哦',
+                'msg'       => '没有查询到你的收藏记录',
                 'errorCode' => 50000
             ]);
         }
 
         return json($data);
     }
+
+
     /**
      * 已学习详情,根据条件进行筛选指定阶段和组的单词详情
      * @return \think\response\Json
@@ -86,8 +98,7 @@ class Activity
         $uid = Token::getCurrentTokenVar('uid');
         $arr = input('post.');
         if (empty($arr['stage']) || empty($arr['group'])) {
-            $arr = Db::table('yx_learned_history')
-                ->where('user_id',$uid)
+            $arr = LearnedHistory::where('user_id',$uid)
                 ->order('create_time desc')
                 ->field('stage,group')
                 ->find();
@@ -206,11 +217,12 @@ class Activity
                 'group_name'  => $groupData['group_name'],
                 'create_time' => date('Y-m-d', $data[0]['create_time'])
             ];
-            //进行确定组的阶段和组的类型
-            $data = Group::correspondingStage($data);
-            $notWordData = EnglishWord::selectNotWordData($data);
-            //根据不同的类型把单词格式进行转换
-            $new_arr['word'] = EnglishWord::conversionByTypeFormat($notWordData, 1);
+
+            //查询此组对应的阶段和当前组的类型
+            $notLearnedData =  $this->learned->correspondingStage($data);
+            $notWordData =  $this->learned->detail($notLearnedData);
+            $notWordData = Collection::isCollection($uid, $notWordData);
+            $new_arr['word'] =  $this->learned->handleData($notWordData, 1);
             return $new_arr;
         } catch (\Exception $e) {
             throw new MissException([
@@ -250,11 +262,11 @@ class Activity
                 'group_name'  => $groupData['group_name'],
                 'create_time' => date('Y-m-d', $data[0]['create_time'])
             ];
-            //进行确定组的阶段和组的类型
-            $data = Group::correspondingStage($data);
-            $notWordData = EnglishWord::selectNotWordData($data);
-            //根据不同的类型把单词格式进行转换
-            $new_arr['word'] = EnglishWord::conversionByTypeFormat($notWordData, 1);
+            //查询此组对应的阶段和当前组的类型
+            $notLearnedData =  $this->learned->correspondingStage($data);
+            $notWordData =  $this->learned->detail($notLearnedData);
+            $notWordData = Collection::isCollection($uid, $notWordData);
+            $new_arr['word'] =  $this->learned->handleData($notWordData, 1);
             return $new_arr;
         } catch (\Exception $e) {
             throw new MissException([
@@ -293,11 +305,11 @@ class Activity
                 'group_name'  => $groupData['group_name'],
                 'create_time' => date('Y-m-d', $data[0]['create_time'])
             ];
-            //进行确定组的阶段和组的类型
-            $data = Group::correspondingStage($data);
-            $notWordData = EnglishWord::selectNotWordData($data);
-            //根据不同的类型把单词格式进行转换
-            $new_arr['word'] = EnglishWord::conversionByTypeFormat($notWordData, 1);
+            //查询此组对应的阶段和当前组的类型
+            $notLearnedData =  $this->learned->correspondingStage($data);
+            $notWordData =  $this->learned->detail($notLearnedData);
+            $notWordData = Collection::isCollection($uid, $notWordData);
+            $new_arr['word'] =  $this->learned->handleData($notWordData, 1);
             return $new_arr;
         } catch (\Exception $e) {
             throw new MissException([
@@ -307,5 +319,71 @@ class Activity
         }
     }
 
+    /**
+     * 已学长难句
+     */
+    public function alreadySentence($page = 1, $size = 20)
+    {
+        $uid = Token::getCurrentUid();
+        (new PagingParameter())->goCheck();
+        //查询已学习长难句
+        $pagingSentences = LearnedSentence::getSummaryByUid($uid, $page, $size);
+        if ($pagingSentences->isEmpty())
+        {
+            return json([
+                'current_page' => $pagingSentences->currentPage(),
+                'data' => []
+            ]);
+        }
+        $pagingSentence = $pagingSentences->toArray();
+        //进行处理长难句数据格式
+        $data = $this->Handle($pagingSentence);
+        return json([
+            'current_page' => $pagingSentences->currentPage(),
+            'data' => $data
+        ]);
+    }
 
+    /**
+     * 长难句已收藏
+     */
+    public function collectionSentence($page = 1, $size = 20)
+    {
+        $uid = Token::getCurrentUid();
+        (new PagingParameter())->goCheck();
+        //查询已学习长难句
+        $pagingSentences = CollectionSentence::getSummaryByUid($uid, $page, $size);
+        if ($pagingSentences->isEmpty())
+        {
+            return json([
+                'current_page' => $pagingSentences->currentPage(),
+                'data' => []
+            ]);
+        }
+        $pagingSentence = $pagingSentences->toArray();
+        //进行处理长难句数据格式
+        $data = $this->Handle($pagingSentence);
+        return json([
+            'current_page' => $pagingSentences->currentPage(),
+            'data' => $data
+        ]);
+    }
+
+    /**
+     * 处理长难句的数据
+     */
+    private function Handle($pagingSentence)
+    {
+        //单词表已的音频路径
+        $us_audio = config('setting.audio_prefix');
+
+        foreach ($pagingSentence['data'] as $key=>&$val){
+            $val['sentence_info']['word_parsing']  = json_decode($val['sentence_info']['word_parsing'], true);
+            $val['sentence_info']['sentence_splitting'] = json_decode($val['sentence_info']['sentence_splitting'], true);
+            foreach ($val['sentence_info']['word_parsing'] as $k=>&$v){
+                $v['us_audio'] = $us_audio . $v['us_audio'];
+            }
+        }
+        return $pagingSentence['data'];
+    }
 }

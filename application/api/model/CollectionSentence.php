@@ -13,6 +13,12 @@ namespace app\api\model;
 
 class CollectionSentence extends BaseModel
 {
+
+    public function sentenceInfo()
+    {
+        return $this->hasOne('Sentences','id','sentence_id');
+    }
+
     public static function isCollection($uid, $notWordData)
     {
         foreach ($notWordData as $key => $val) {
@@ -71,5 +77,15 @@ class CollectionSentence extends BaseModel
             return $collection->delete();
         }
         return false;
+    }
+
+    public static function getSummaryByUid($uid, $page, $size)
+    {
+        $pagingData = self::with('sentenceInfo')
+            ->where('user_id',$uid)
+            ->order('create_time desc')
+            ->visible(['sentence_id', 'stage', 'group', 'translation', 'sentence_info'])
+            ->paginate($size, true, ['page' => $page]);
+        return $pagingData ;
     }
 }

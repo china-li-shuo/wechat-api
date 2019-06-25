@@ -33,6 +33,8 @@ Route::post('api/:version/activity/list', 'api/:version.Activity/errorDetail');
 Route::post('api/:version/activity/remove', 'api/:version.Activity/errorRemove');
 Route::post('api/:version/activity/collection', 'api/:version.Activity/collection');
 Route::post('api/:version/activity/info', 'api/:version.Activity/collectionDetail');
+Route::post('api/:version/activity/asen', 'api/:version.Activity/alreadySentence');
+Route::post('api/:version/activity/csen', 'api/:version.Activity/collectionSentence');
 
 //首页信息
 Route::post('api/:version/index/info', 'api/:version.Index/getUserInfo');
@@ -67,6 +69,5 @@ Route::post('api/:version/circle/intention', 'api/:version.Circle/addUserIntenti
 Route::post('api/:version/personal/punch', 'api/:version.Personal/getMyPunchCard');
 Route::post('api/:version/personal/info', 'api/:version.Personal/getPersonalInfo');
 Route::post('api/:version/personal/class', 'api/:version.Personal/getMyClass');
-
 
 

@@ -13,7 +13,6 @@ namespace app\api\model;
 
 class ErrorBook extends BaseModel
 {
-
     /**
      * 添加用户错题本
      */
