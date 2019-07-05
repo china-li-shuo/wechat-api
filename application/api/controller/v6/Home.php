@@ -10,16 +10,22 @@
 namespace app\api\controller\v6;
 
 
+use app\api\model\Comment;
 use app\api\model\User;
 use app\api\model\Cls;
 use app\api\model\Post;
 use app\api\model\Unit;
 use app\api\model\UserClass;
+use app\api\model\Zan;
 use app\api\service\Token;
 use app\api\validate\IDMustBePositiveInt;
 use app\api\validate\PagingParameter;
+use app\lib\enum\ZanStatusEnum;
 use app\lib\exception\MissException;
+use app\lib\exception\SuccessMessage;
 use app\lib\exception\TokenException;
+use app\api\validate\Comment as CommentValidate;
+use app\api\service\Comment as CommentService;
 
 class Home
 {
@@ -47,9 +53,9 @@ class Home
 
     /**
      * 查询分校下各个班级下打卡人数
+     * @param $id      分校id
      * @return \think\response\Json
      * @throws MissException
-     * @throws \app\lib\exception\ParameterException
      */
     public function getUnitClass($id)
     {
@@ -71,15 +77,20 @@ class Home
 
     /**
      * 获取全部今日打卡信息（分页）
+     * @param string $token
      * @param int $page
      * @param int $size
-     * @return json
-     * @throws \app\lib\exception\ParameterException
+     * @return \think\response\Json
+     * @throws MissException
+     * @throws TokenException
      */
-    public function getPunchCardToday($page = 1, $size = 20){
+    public function getPunchCardToday($id = 1, $page = 1, $size = 20)
+    {
+        $uid = Token::getCurrentUid();
         (new PagingParameter())->goCheck();
+        (new IDMustBePositiveInt())->goCheck();
         //查询今日发帖信息
-        $pagingPosts = Post::getSummaryByPage($page,$size);
+        $pagingPosts = Post::getSummaryByPage($id,$page,$size);
         if ($pagingPosts->isEmpty())
         {
             return json([
@@ -87,8 +98,9 @@ class Home
                 'data' => []
             ]);
         }
-        //获取今日打卡的班级另外三个头像
-        $data = $this->getClassImg($pagingPosts->toArray());
+        //获取今日打卡的班级另外三个头像,以及评论回复和点赞
+        $data = $this->getClassImg($pagingPosts->toArray(),$uid);
+
         return json([
             'current_page' => $pagingPosts->currentPage(),
             'data' => $data
@@ -97,9 +109,11 @@ class Home
 
     /**
      * 排行榜
-     * @return int
+     * @param string $token
+     * @throws TokenException
      */
-    public function getRankingList($token = ''){
+    public function getRankingList($token = '')
+    {
         $res = Token::verifyToken($token);
         if(!$res){
             throw new TokenException();
@@ -148,15 +162,15 @@ class Home
 
     /**
      * 获取班级头像
+     * 评论回复和点赞数量
      * @param $data
      * @return mixed
+     * @throws MissException
      */
-    private function getClassImg($data)
+    private function getClassImg($data,$uid)
     {
         $data = $data['data'];
         foreach ($data as $key=>&$val){
-            $val['nick_name'] = urlDecodeNickName($val['nick_name']);
-            $val['content'] = json_decode($val['content']);
             $classImgData = UserClass::getClassImgByID($val['class_id']);
             $classImgData = $classImgData->toArray();
             foreach ($classImgData as $k=>$v){
@@ -167,6 +181,80 @@ class Home
             }
             $data[$key]['images'] = array_values($classImgData);
         }
+
+        //进行查找帖子的评论和回复功能
+        $comment = new CommentService();
+        $data = $comment->getCommentInfo($data,$uid);
         return $data;
+    }
+
+    /**
+     * 进行 评论、回复
+     * @throws MissException
+     * @throws \app\lib\exception\ParameterException
+     */
+    public function respondComment()
+    {
+        $uid = Token::getCurrentUid();
+        (new CommentValidate())->goCheck();
+        $data = input('post.');
+        if(empty($data['parent_id'])){
+            $data['parent_id'] = 0;
+        }
+        $userInfo = User::getByUid($uid);
+        $userInfo = $userInfo->visible(['nick_name','avatar_url'])
+            ->toArray();
+        $data['nick_name'] = $userInfo['nick_name'];
+        $data['avatar_url'] = $userInfo['avatar_url'];
+        $data['user_id'] = $uid;
+        $data['content'] = json_encode($data['content']);
+        $res = Comment::create($data);
+        if(!$res){
+           throw new MissException([
+               'msg'=>'帖子评论失败',
+               'errorCode'=>50000
+           ]);
+        }
+        $comment = Comment::get($res->id)->toArray();
+        $comment['content'] = json_decode($comment['content']);
+        return json($comment);
+    }
+
+    /**
+     * 帖子点赞
+     * @param string $id
+     * @throws MissException
+     * @throws SuccessMessage
+     */
+    public function clickZan($id = '')
+    {
+        $uid = Token::getCurrentUid();
+        (new IDMustBePositiveInt())->goCheck();
+        $zan = Zan::where(['user_id' => $uid, 'post_id' => $id])->find();
+        //如果没有点过赞，则新增记录，否则进行修改点赞状态
+        if (empty($zan)) {
+            $userInfo            = User::getByUid($uid);
+            $userInfo            = $userInfo->visible(['nick_name', 'avatar_url'])
+                ->toArray();
+            $userInfo['post_id'] = $id;
+            $userInfo['user_id'] = $uid;
+            $userInfo['status']  = ZanStatusEnum::VALID;
+            $res                 = Zan::create($userInfo);
+        } else {
+            if ($zan->status == ZanStatusEnum::VALID) {
+                $res = Zan::where(['user_id' => $uid, 'post_id' => $id])
+                    ->update(['status' => ZanStatusEnum::CANCEL]);
+            } else {
+                $res = Zan::where(['user_id' => $uid, 'post_id' => $id])
+                    ->update(['status' => ZanStatusEnum::VALID]);
+            }
+        }
+        if (!$res) {
+            throw new MissException([
+                'msg'       => '帖子点赞失败',
+                'errorCode' => 50000
+            ]);
+        }
+        throw new SuccessMessage();
     }
 }

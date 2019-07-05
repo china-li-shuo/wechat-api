@@ -42,6 +42,8 @@ Route::post('api/:version/home/school', 'api/:version.Home/getBranchSchool');
 Route::post('api/:version/home/unitclass', 'api/:version.Home/getUnitClass');
 Route::post('api/:version/home/today_punch', 'api/:version.Home/getPunchCardToday');
 Route::post('api/:version/home/ranking', 'api/:version.Home/getRankingList');
+Route::post('api/:version/home/comment', 'api/:version.Home/respondComment');
+Route::post('api/:version/home/zan', 'api/:version.Home/clickZan');
 
 //背单词结算
 Route::post('api/:version/settlement/info', 'api/:version.Settlement/getSettlementInfo');
@@ -59,6 +61,7 @@ Route::post('api/:version/teacher/status', 'api/:version.Teacher/getClassStatus'
 Route::post('api/:version/teacher/screen', 'api/:version.Teacher/getScreenInfo');
 
 //圈子
+Route::post('api/:version/circle/verify', 'api/:version.Circle/verifyClass');
 Route::post('api/:version/circle/module', 'api/:version.Circle/getModule');
 Route::post('api/:version/circle/info', 'api/:version.Circle/getCircleInfo');
 Route::post('api/:version/circle/today_punch', 'api/:version.Circle/getPunchCardToday');

@@ -15,6 +15,7 @@ use app\api\model\UserClass;
 use app\api\service\Token;
 use app\api\validate\PagingParameter;
 use app\lib\exception\MissException;
+use app\api\service\Comment as CommentService;
 
 class Personal
 {
@@ -44,6 +45,7 @@ class Personal
      * @param int $page
      * @param int $size
      * @return \think\response\Json
+     * @throws MissException
      */
     public function getMyPunchCard($page = 1, $size = 20)
     {
@@ -59,17 +61,15 @@ class Personal
             ]);
         }
 
-        $data = $pagingPosts->hidden(['id', 'user_id', 'class_id'])
+        $data = $pagingPosts->hidden(['user_id', 'class_id'])
             ->toArray();
-
-        foreach ($data['data'] as $key=>&$val) {
-            $val['content']   = json_decode($val['content']);
-            $val['nick_name'] = urlDecodeNickName($val['nick_name']);
-        }
+        //进行查找帖子的评论和回复功能
+        $comment = new CommentService();
+        $data = $comment->getCommentInfo($data['data'],$uid);
 
         return json([
             'current_page' => $pagingPosts->currentPage(),
-            'data' => $data['data']
+            'data' => $data
         ]);
     }
 

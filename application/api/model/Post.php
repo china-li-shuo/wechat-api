@@ -20,7 +20,10 @@ class Post extends BaseModel
         ]);
 
     }
-
+    public function unitcls()
+    {
+        return $this->hasMany('Unit_class','class_id','class_id');
+    }
     public function user()
     {
         return $this->hasOne('User','id','user_id')->bind([
@@ -31,6 +34,11 @@ class Post extends BaseModel
         ]);
     }
 
+    public function comment()
+    {
+        return $this->hasMany('Comment','post_id','id');
+    }
+
     public static function getPostByToday()
     {
         $post = self::where(whereTime())
@@ -39,8 +47,9 @@ class Post extends BaseModel
         return $post;
     }
 
-    public static function getSummaryByPage($page=1, $size=20){
-        $pagingData = self::with('cls,user')
+    public static function getSummaryByPage($id,$page=1, $size=20){
+        $pagingData = self::hasWhere('unitcls', ['unid'=>$id])
+            ->with('cls,user,comment')
             ->where(whereTime())
             ->order('create_time desc')
             ->paginate($size, true, ['page' => $page]);
@@ -49,7 +58,7 @@ class Post extends BaseModel
 
     public static function getSummaryByUser($uid, $page=1, $size=20)
     {
-        $pagingData = self::with('cls,user')
+        $pagingData = self::with('cls,user,comment')
             ->where('user_id', '=', $uid)
             ->order('create_time desc')
             ->paginate($size, true, ['page' => $page]);
@@ -58,7 +67,7 @@ class Post extends BaseModel
 
     public static function getSummaryByClass($class_id, $page=1, $size=20)
     {
-        $pagingData = self::with('cls,user')
+        $pagingData = self::with('cls,user,comment')
             ->where(whereTime())
             ->where('class_id', '=', $class_id)
             ->order('create_time desc')

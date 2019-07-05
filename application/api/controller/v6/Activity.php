@@ -337,7 +337,7 @@ class Activity
         }
         $pagingSentence = $pagingSentences->toArray();
         //进行处理长难句数据格式
-        $data = $this->Handle($pagingSentence);
+        $data = $this->Handle($uid, $pagingSentence);
         return json([
             'current_page' => $pagingSentences->currentPage(),
             'data' => $data
@@ -362,7 +362,7 @@ class Activity
         }
         $pagingSentence = $pagingSentences->toArray();
         //进行处理长难句数据格式
-        $data = $this->Handle($pagingSentence);
+        $data = $this->Handle($uid,$pagingSentence);
         return json([
             'current_page' => $pagingSentences->currentPage(),
             'data' => $data
@@ -372,18 +372,23 @@ class Activity
     /**
      * 处理长难句的数据
      */
-    private function Handle($pagingSentence)
+    private function Handle($uid, $pagingSentence)
     {
         //单词表已的音频路径
         $us_audio = config('setting.audio_prefix');
-
+        $pagingSentence['data'] = CollectionSentence::isCollection($uid,$pagingSentence['data']);
         foreach ($pagingSentence['data'] as $key=>&$val){
-            $val['sentence_info']['word_parsing']  = json_decode($val['sentence_info']['word_parsing'], true);
-            $val['sentence_info']['sentence_splitting'] = json_decode($val['sentence_info']['sentence_splitting'], true);
-            foreach ($val['sentence_info']['word_parsing'] as $k=>&$v){
-                $v['us_audio'] = $us_audio . $v['us_audio'];
+            if($val['sentence_info']){
+                $val['sentence_info']['word_parsing']  = json_decode($val['sentence_info']['word_parsing'], true);
+                $val['sentence_info']['sentence_splitting'] = json_decode($val['sentence_info']['sentence_splitting'], true);
+                foreach ($val['sentence_info']['word_parsing'] as $k=>&$v){
+                    $v['us_audio'] = $us_audio . $v['us_audio'];
+                }
+            }else{
+                unset($pagingSentence['data'][$key]);
+                continue;
             }
         }
-        return $pagingSentence['data'];
+        return array_values($pagingSentence['data']);
     }
 }

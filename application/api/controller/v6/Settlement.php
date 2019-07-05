@@ -144,11 +144,12 @@ class Settlement
     }
 
     /**
-     * 下一组单词
+     *  * 下一组单词
      * @param $LearnedData 当前阶段组信息
-     * @return mixed
+     * @return \think\response\Json
      * @throws MissException
      * @throws SuccessMessage
+     * @throws \app\lib\exception\ParameterException
      */
     public function nextGroupInfo()
     {

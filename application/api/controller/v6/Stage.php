@@ -19,7 +19,7 @@ class Stage
 {
     /**
      * 根据班级查询对应的阶段
-     * @return \think\response\Json
+     * @throws MissException
      * @throws \app\lib\exception\ParameterException
      */
     public function getAllStage()

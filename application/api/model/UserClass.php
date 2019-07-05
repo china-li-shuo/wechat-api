@@ -69,6 +69,7 @@ class UserClass extends BaseModel
         $userClass = self::with('user')
             ->where(['class_id'=>$class_id,'status'=>1])
             ->orderRand('user_id')
+            ->limit(50)
             ->select();
         return $userClass;
     }
@@ -88,6 +89,21 @@ class UserClass extends BaseModel
         return $userClass;
     }
 
+    /**
+     *根据已掌握长难句的数量倒叙排序
+     */
+    public static function alreadySenDescByID($class_id,$limit = 20)
+    {
+        $userClass = self::withJoin([
+            'user'=>['nick_name', 'user_name', 'punch_days', 'avatar_url', 'already_number', 'sentence_number']
+        ])
+            ->where(['class_id'=>$class_id,'status'=>1])
+            ->order('sentence_number desc')
+            ->limit($limit)
+            ->select();
+        return $userClass;
+    }
+
     public static function getAllMembersOfClass($class_id)
     {
         $member = self::where([
@@ -96,5 +112,21 @@ class UserClass extends BaseModel
         ]) ->field('user_id,class_id')
            ->select();
        return $member;
+    }
+
+
+    public static function verifyClass($uid, $class_id)
+    {
+        $exist = self::where([
+            'user_id'=>$uid,
+            'class_id'=>$class_id,
+            'status'=>1
+        ])->find();
+        if($exist){
+            return true;
+        }
+        else{
+            return false;
+        }
     }
 }

@@ -39,6 +39,8 @@ class BaseController extends Controller
 
     /**
      * 所有人都拥有的权限
+     * @throws \app\lib\exception\ForbiddenException
+     * @throws \app\lib\exception\TokenException
      */
     protected function checkAllPeopleScope()
     {

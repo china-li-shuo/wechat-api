@@ -45,6 +45,10 @@ class LearnedSentence extends BaseModel
             'sentence_id' => $data['sentence_id']
         ])->update($data);
 
+        User::where('id',$uid)->update([
+            'now_stage'=>$data['stage'],
+            'now_group'=>$data['group'],
+        ]);
         return $res;
     }
 
@@ -56,5 +60,25 @@ class LearnedSentence extends BaseModel
             ->visible(['sentence_id', 'stage', 'group', 'translation', 'sentence_info'])
             ->paginate($size, true, ['page' => $page]);
         return $pagingData ;
+    }
+
+    /**
+     * 查看班级下某个用户今天所学多少个单词
+     * @param $classData
+     */
+    public static function getUserTodayLearnedNumber($classData)
+    {
+        foreach ($classData as &$val) {
+            $count =self::where('user_id', $val['user_id'])
+                ->where(whereTime())
+                ->count();
+            $val['today_learned_number'] = $count;
+        }
+        // 取得列的列表
+        foreach ($classData as $key => $row) {
+            $edition[$key] = $row['today_learned_number'];
+        }
+        array_multisort($edition, SORT_DESC, $classData);
+        return $classData;
     }
 }

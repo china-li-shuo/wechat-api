@@ -12,14 +12,16 @@ namespace app\api\controller\v6;
 use app\api\model\ClassPermission;
 use app\api\model\Cls;
 use app\api\model\Post;
+use app\api\model\Stage;
 use app\api\model\User;
 use app\api\model\UserClass;
-use app\api\service\Circle as CircleService;
 use app\api\service\Token;
 use app\api\validate\ClassID;
-use app\api\model\Stage;
+use app\api\validate\ModuleCode;
 use app\api\validate\PagingParameter;
 use app\lib\exception\MissException;
+use app\api\service\Circle as CircleService;
+use app\api\service\Comment as CommentService;
 
 class Circle
 {
@@ -65,19 +67,22 @@ class Circle
     /**
      * 班级首页信息
      * @return \think\response\Json
+     * @throws MissException
      * @throws \app\lib\exception\ParameterException
      */
     public function getCircleInfo()
     {
         (new ClassID())->goCheck();
+        (new ModuleCode())->goCheck();
         $class_id = input('post.class_id/d');
+        $stage = input('post.module_code/d');
         $uid = Token::getCurrentUid();
         //获取用户基本信息
         $user = User::getByUid($uid);
         //班级基本信息
         $class = Cls::getByID($class_id);
         $circle = new CircleService();
-        $data = $circle->info($user, $class);
+        $data = $circle->info($user, $class, $stage);
         return json($data);
     }
 
@@ -86,12 +91,14 @@ class Circle
      * @param int $page   页码
      * @param int $size   每页展示条数
      * @return \think\response\Json
+     * @throws MissException
      * @throws \app\lib\exception\ParameterException
      */
     public function getPunchCardToday($page = 1, $size = 20)
     {
         (new PagingParameter())->goCheck();
         (new ClassID())->goCheck();
+        $uid = Token::getCurrentUid();
         $class_id = input('post.class_id/d');
         $pagingPosts = Post::getSummaryByClass($class_id, $page, $size);
         if ($pagingPosts->isEmpty())
@@ -102,13 +109,12 @@ class Circle
             ]);
         }
         $post = $pagingPosts->toArray();
-        foreach ($post['data'] as &$val){
-            $val['nick_name'] = urlDecodeNickName($val['nick_name']);
-            $val['content'] = json_decode($val['content']);
-        }
+        //进行查找帖子的评论和回复功能
+        $comment = new CommentService();
+        $data = $comment->getCommentInfo($post['data'],$uid);
         return json([
             'current_page' => $pagingPosts->currentPage(),
-            'data' => $post['data']
+            'data' => $data
         ]);
     }
 
@@ -121,7 +127,9 @@ class Circle
     public function getRankingList()
     {
         (new ClassID())->goCheck();
+        (new ModuleCode())->goCheck();
         $class_id = input('post.class_id/d');
+        $stage = input('post.module_code/d');
         $uid      = Token::getCurrentUid();
         $is_today = empty(input('post.is_today/d')) ? 1 : input('post.is_today/d');
         $userClass = UserClass::getUserClassByUCid($uid, $class_id);
@@ -134,7 +142,7 @@ class Circle
         }
         $circle = new CircleService();
         //获取班级的排行榜信息
-        $rankList = $circle->getClassRanKing($class_id, $is_today);
+        $rankList = $circle->getClassRanKing($class_id, $is_today, $stage);
         if(empty($rankList)){
             throw new MissException([
                 'msg'       => '暂时没有人进行学习，快来抢沙发呀！',
@@ -142,5 +150,24 @@ class Circle
             ]);
         }
         return json($rankList);
+    }
+
+
+    /**
+     * 验证是否是班级的成员
+     * @return \think\response\Json
+     * @throws \app\lib\exception\ParameterException
+     */
+    public function verifyClass()
+    {
+        $uid = Token::getCurrentUid();
+        (new ClassID())->goCheck();
+        $class_id = input('post.class_id/d');
+
+        $valid = UserClass::verifyClass($uid, $class_id);
+
+        return json([
+            'isValid' => $valid
+        ]);
     }
 }

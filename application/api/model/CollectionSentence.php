@@ -19,9 +19,17 @@ class CollectionSentence extends BaseModel
         return $this->hasOne('Sentences','id','sentence_id');
     }
 
+    public function learned()
+    {
+        return $this->hasOne('LearnedSentence','sentence_id','sentence_id')
+            ->bind(['translation']);
+    }
     public static function isCollection($uid, $notWordData)
     {
         foreach ($notWordData as $key => $val) {
+            if(array_key_exists('sentence_id',$val)){
+                $val['wid'] = $val['sentence_id'];
+            }
             $collection = self::where(
                 [
                     'user_id'=>$uid,
@@ -31,6 +39,8 @@ class CollectionSentence extends BaseModel
                 ])->find();
             if (!empty($collection)) {
                 $notWordData[$key]['is_collection'] = 1;
+            }else{
+                $notWordData[$key]['is_collection'] = 2;
             }
         }
         return $notWordData;
@@ -81,7 +91,7 @@ class CollectionSentence extends BaseModel
 
     public static function getSummaryByUid($uid, $page, $size)
     {
-        $pagingData = self::with('sentenceInfo')
+        $pagingData = self::with('sentenceInfo,learned')
             ->where('user_id',$uid)
             ->order('create_time desc')
             ->visible(['sentence_id', 'stage', 'group', 'translation', 'sentence_info'])

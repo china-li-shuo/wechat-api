@@ -63,6 +63,11 @@ class Token
         ]);
     }
 
+    /**
+     * @param string $token
+     * @return \think\response\Json
+     * @throws MissException
+     */
     public function verifyToken($token = '')
     {
         if (!$token) {

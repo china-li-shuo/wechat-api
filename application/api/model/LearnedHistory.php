@@ -90,7 +90,7 @@ class LearnedHistory extends BaseModel
             ->update($arr);
 
         self::where([
-                'user_id'=>$uid, 'group'=>$data['group']
+                'user_id'=>$uid,'group'=>$data['group'],'word_id'=> $data['word_id'],
             ])->update([
                 'is_true' => $answerResult,
                 'create_time'=>time()]);

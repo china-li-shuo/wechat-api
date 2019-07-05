@@ -134,6 +134,9 @@ function createTreeBySon($data, $parent_id = 0)
     foreach ($data as $key => $val) {
         if ($val['parent_id'] == $parent_id) {
             $new_arr[$key]        = $val;
+            if(array_key_exists('content',$val)){
+                $new_arr[$key]['content'] = json_decode($val['content']);
+            }
             $new_arr[$key]['son'] = createTreeBySon($data, $val['id']);
         }
     }
@@ -149,39 +152,6 @@ function errorUrl()
 {
     $request = \think\facade\Request::instance();
     return $request->url();
-}
-
-function isTeacher($uid)
-{
-    $data = [
-        0 => [
-            'msg'       => '公共阶段已经学完，请选择学员通道开始学习',
-            'errorCode' => 0
-        ],
-        1 => [
-            'msg'       => '公共阶段已经学完，如需继续学习，请进行购买',
-            'errorCode' => 50000
-        ]
-    ];
-    //如果公共词汇没有了下一组了，判断用户是不是学员或者是不是会员，如果不是此阶段会员也不是学员则提示购买
-    $isTeacher = \think\Db::name('user')
-        ->field('is_teacher')
-        ->where('id', $uid)
-        ->find();
-    switch ($isTeacher['is_teacher']) {
-        case 0:
-            $userMember = \think\Db::name('user_member')->where('user_id', $uid)->select();
-            if (empty($userMember)) {
-                return $data[1];
-            }
-            return $data[0];
-        case 1:
-            return $data[0];
-        case 2:
-            return $data[0];
-        default:
-            return $data[1];
-    }
 }
 
 function dailyQuotations($key)
