@@ -20,10 +20,7 @@ class Post extends BaseModel
         ]);
 
     }
-    public function unitcls()
-    {
-        return $this->hasMany('Unit_class','class_id','class_id');
-    }
+
     public function user()
     {
         return $this->hasOne('User','id','user_id')->bind([
@@ -47,10 +44,18 @@ class Post extends BaseModel
         return $post;
     }
 
-    public static function getSummaryByPage($id,$page=1, $size=20){
-        $pagingData = self::hasWhere('unitcls', ['unid'=>$id])
-            ->with('cls,user,comment')
+    public static function getSummaryByPage($id, $page=1, $size=20){
+        //查询地区下的班级
+        $unit = UnitClass::where('unid',$id)
+            ->select();
+        if(empty($unit)){
+            return false;
+        }
+        $classIDS = array_column($unit->toArray(),'class_id');
+        //此地区下的今日打卡情况
+        $pagingData = self::with('cls,user,comment')
             ->where(whereTime())
+            ->where('class_id','in',$classIDS)
             ->order('create_time desc')
             ->paginate($size, true, ['page' => $page]);
         return $pagingData ;
