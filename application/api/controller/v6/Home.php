@@ -11,6 +11,7 @@ namespace app\api\controller\v6;
 
 
 use app\api\model\Comment;
+use app\api\model\UnitClass;
 use app\api\model\User;
 use app\api\model\Cls;
 use app\api\model\Post;
@@ -20,23 +21,29 @@ use app\api\model\Zan;
 use app\api\service\Token;
 use app\api\validate\IDMustBePositiveInt;
 use app\api\validate\PagingParameter;
+use app\lib\enum\ClassEnum;
+use app\lib\enum\UnitEnum;
 use app\lib\enum\ZanStatusEnum;
 use app\lib\exception\MissException;
 use app\lib\exception\SuccessMessage;
 use app\lib\exception\TokenException;
 use app\api\validate\Comment as CommentValidate;
 use app\api\service\Comment as CommentService;
+use think\Db;
 
 class Home
 {
     /**
-     * 获取所有分校的信息
-     * @throws MissException 错误异常
+     *  获取所有分校的信息
+     * @param string $id  分校id
+     * @return \think\response\Json
+     * @throws MissException
      */
-    public function getBranchSchool()
+    public function getBranchSchool($id = '')
     {
         $uid = Token::getCurrentUid();
         $userInfo = User::field('mobile_bind')->get($uid);
+        $unid = $this->checkUnit($uid, $id);
         //查询分校的信息
         $unit = Unit::getUnitData();
         if(!$unit){
@@ -47,6 +54,7 @@ class Home
         }
         return json([
             'mobile_bind'=>$userInfo->mobile_bind,
+            'unid'=>$unid,
             'data'=>$unit
         ]);
     }
@@ -57,11 +65,13 @@ class Home
      * @return \think\response\Json
      * @throws MissException
      */
-    public function getUnitClass($id)
+    public function getUnitClass($id = '')
     {
-        (new IDMustBePositiveInt())->goCheck();
+        $uid = Token::getCurrentUid();
+        //进行查看用户属于哪个分校
+        $unid = $this->checkUnit($uid,$id);
         //查询分校下的班级信息
-        $unitClass = Cls::getUnitClass($id);
+        $unitClass = Cls::getUnitClass($unid);
         if(!$unitClass){
             throw new MissException([
                 'msg'=>'分校下班级信息查询失败',
@@ -69,9 +79,15 @@ class Home
             ]);
         }
         //查询今日发帖信息和发帖人对应的班级
-        $post = Post::getPostByToday();
-        $res = $this->postCountByClass($unitClass->toArray(), $post->toArray());
-        return json($res);
+        //$post = Post::getPostByToday();
+        //$res = $this->postCountByClass($unitClass->toArray(), $post->toArray());
+        //跟着需求改代码
+        $unitClass = $unitClass->toArray();
+        foreach ($unitClass as &$val){
+            $val['count'] = UserClass::where(['class_id'=>$val['id'],'status'=>1])
+                ->count();
+        }
+        return json($unitClass);
     }
 
 
@@ -84,13 +100,13 @@ class Home
      * @throws MissException
      * @throws TokenException
      */
-    public function getPunchCardToday($id = 1, $page = 1, $size = 20)
+    public function getPunchCardToday($id = '', $page = 1, $size = 20)
     {
         $uid = Token::getCurrentUid();
         (new PagingParameter())->goCheck();
-        (new IDMustBePositiveInt())->goCheck();
+        $unid = $this->checkUnit($uid,$id);
         //查询今日发帖信息
-        $pagingPosts = Post::getSummaryByPage($id,$page,$size);
+        $pagingPosts = Post::getSummaryByPage($unid,$page,$size);
         if ($pagingPosts->isEmpty())
         {
             return json([
@@ -108,30 +124,59 @@ class Home
     }
 
     /**
-     * 排行榜
-     * @param string $token
-     * @throws TokenException
+     * 分校下  排行榜
+     * @param string $id
+     * @return \think\response\Json
+     * @throws MissException
      */
-    public function getRankingList($token = '')
+    public function getRankingList($id = '')
     {
-        $res = Token::verifyToken($token);
-        if(!$res){
-            throw new TokenException();
-        }
-
+        $uid = Token::getCurrentUid();
+        $unid = $this->checkUnit($uid,$id);
         //进行查询排行榜信息，先从缓存中读取，两小时更新一次
-        $rankingData = cache('home_ranking');
+        $rankingData = cache('home_ranking'.$unid);
         if($rankingData){
             return json($rankingData);
         }
         //进行查询排行榜
-        $pagingData = User::getSummaryByPage();
+        $pagingData = $this->unitRanking($unid);
+        //$pagingData = User::getSummaryByPage();
+        if(empty($pagingData)){
+            throw new MissException([
+                'msg'=>'分校排行榜查询失败',
+                'errorCode'=>50000
+            ]);
+        }
         $pagingData = $pagingData->toArray();
         foreach ($pagingData['data'] as $key=>&$val){
             $val['nick_name'] = urlDecodeNickName($val['nick_name']);
         }
-        cache('home_ranking',$pagingData['data'],7200);
+        cache('home_ranking'.$unid,$pagingData['data'],7200);
         return json($pagingData['data']);
+    }
+
+    /**
+     * 根据地区查询个地区的排行榜
+     * 模型的多表联查，没整明白，先用Db吧
+     * @param $unid     分校id
+     * @param int $page
+     * @param int $size
+     * @return \think\Paginator
+     */
+    private function unitRanking($unid, $page=1, $size=20)
+    {
+        $data = Db::table('yx_unit_class')
+            ->alias('unitc')
+            ->join('yx_user_class userc','userc.class_id=unitc.class_id')
+            ->join('yx_user u','userc.user_id=u.id')
+            ->field('u.user_name,u.nick_name,u.avatar_url,u.already_number,u.sentence_number,u.punch_days')
+            ->order('u.punch_days','desc')
+            ->group('u.id')
+            ->where('userc.status','=',1)
+            ->where('userc.class_id','<>',ClassEnum::MiniKnifeClass)
+            ->where('unitc.unid','=',$unid)
+            ->paginate($size, true, ['page' => $page]);
+        return $data;
     }
 
     /**
@@ -159,7 +204,28 @@ class Home
         return $data;
     }
 
-
+    /**
+     * @param $uid 用户id
+     * @param $id  分校地区id
+     * @return int|mixed
+     */
+    private function checkUnit($uid, $id)
+    {
+        if(empty($id)){
+            $userClass = UserClass::where(['user_id'=>$uid])
+                ->where('class_id','<>',ClassEnum::MiniKnifeClass)
+                ->find();
+            if(empty($userClass)){
+                $id = UnitEnum::Beijing;
+            }else{
+                $unitClass = UnitClass::where('class_id',$userClass->class_id)->find();
+                $id = $unitClass->unid;
+            }
+        }else{
+            (new IDMustBePositiveInt()) -> goCheck();
+        }
+        return $id;
+    }
     /**
      * 获取班级头像
      * 评论回复和点赞数量

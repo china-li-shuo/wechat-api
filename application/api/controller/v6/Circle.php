@@ -81,6 +81,12 @@ class Circle
         $user = User::getByUid($uid);
         //班级基本信息
         $class = Cls::getByID($class_id);
+       if(empty($class)){
+           throw new MissException([
+               'msg'=>'暂不是班级成员',
+               'errorCode'=>50000
+           ]);
+       }
         $circle = new CircleService();
         $data = $circle->info($user, $class, $stage);
         return json($data);

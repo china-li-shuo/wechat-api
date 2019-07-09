@@ -33,6 +33,10 @@ class User extends BaseModel
 
     public static function getByUid($uid)
     {
+        $user = User::get($uid);
+        if(empty($user->now_group)){
+            self::where('id',$uid)->update(['now_group'=>23]);
+        }
         $user = self::with('groupType')
             ->get($uid)
             ->hidden(['mobile_bind','mobile']);
@@ -47,13 +51,21 @@ class User extends BaseModel
         $userInfo = self::where('id','=',$arr['uid'])
             ->field('mobile_bind')
             ->find();
-
+        //进行更新用户的昵称和头像信息
         self::where('id', $arr['uid'])->update(
             [
                 'nick_name'  => $data['nick_name'],
                 'avatar_url' => $data['avatar_url']
             ]);
-
+        //查看是否是小试牛刀班级
+        $userClass = UserClass::where(['user_id'=>$arr['uid'],'class_id'=>9])
+            ->find();
+        //如果不是，则默认进行新增
+        if(empty($userClass)){
+            UserClass::create(['user_id'=>$arr['uid'], 'status'=>1, 'class_id'=>9]);
+        }else{
+            UserClass::where(['user_id'=>$arr['uid'], 'class_id'=>9])->update(['status'=>1]);
+        }
         return $userInfo->mobile_bind;
 
     }
@@ -65,7 +77,7 @@ class User extends BaseModel
             ->field('id,user_name,mobile,is_teacher')
             ->find();
         //互联网用户直接关联手机号
-        if (!$user) {
+        if (empty($user)) {
             $res = self::where('id','=', $uid)
                 ->update(['mobile' => $mobile, 'mobile_bind' => 1]);
             return $res;
@@ -77,7 +89,7 @@ class User extends BaseModel
             'mobile_bind' => 1,
             'is_teacher'  => $user->is_teacher,
         ];
-        UserClass::where('user_id','=',$uid)
+        UserClass::where('user_id','=',$user->id)
             ->update(['user_id' => $uid, 'status'=>1, 'create_time'=>time()]);
         $user->delete();
         self::where('id','=', $uid)

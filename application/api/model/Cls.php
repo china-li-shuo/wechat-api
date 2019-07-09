@@ -25,6 +25,9 @@ class Cls extends BaseModel
     public static function getByID($id)
     {
         $class = self::get($id);
+        if(empty($class)){
+            return false;
+        }
         $class->class_src = config('setting.img_prefix').$class->class_src;
         return $class;
     }
