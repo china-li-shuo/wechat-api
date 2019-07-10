@@ -135,7 +135,6 @@ class Stage
             $eachGroupData = $this->groupPermission($stage_id,$class_id);
             //每组已经学过的单词
             $eachGroupData = $this->sentenceGroupData($uid, $historyGroupData, $eachGroupData, $historyWordCount);
-
             $stageData['history_group_count'] = $historyGroupCount;
             $stageData['history_word_count'] = $historyWordCount;
             $stageData['each_group_data'] = $eachGroupData;
@@ -213,8 +212,8 @@ class Stage
         }
         //如果没有学习记录 则每组学习0个单词
         if ($historyWordCount==0) {
-            foreach ($eachGroupData as $key => $val) {
-                $eachGroupData[$key]['already_group_num'] = 0;
+            foreach ($eachGroupData as &$val) {
+                $val['already_group_num'] = 0;
             }
         }
         return $eachGroupData;
@@ -229,6 +228,7 @@ class Stage
                  'group'=>$val['group']])->count();
             $historyGroupData[$key]['already_group_num'] = $alreadyGroupNum;
         }
+
         //查看此阶段下，每组学习下多少个单词
         if ($eachGroupData && $historyGroupData) {
             foreach ($eachGroupData as $key=>&$val) {
@@ -242,10 +242,11 @@ class Stage
                 }
             }
         }
+
         //如果没有学习记录 则每组学习0个单词
         if ($historyWordCount==0) {
-            foreach ($eachGroupData as $key => $val) {
-                $eachGroupData[$key]['already_group_num'] = 0;
+            foreach ($eachGroupData as &$val) {
+                $val['already_group_num'] = 0;
             }
         }
         return $eachGroupData;
