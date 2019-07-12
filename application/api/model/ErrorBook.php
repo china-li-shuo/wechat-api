@@ -25,7 +25,6 @@ class ErrorBook extends BaseModel
                 'stage'=>$data['stage'],
                 'group'=>$data['group']
             ])->find();
-
         if (empty($errorData)) {
             $arr = [
                 'user_id'     => $uid,

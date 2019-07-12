@@ -120,20 +120,38 @@ class Activity
      * @throws MissException
      * @throws \app\lib\exception\ParameterException
      */
-    public function errorDetail()
+    public function errorDetail($page = 1, $size = 50)
     {
+        (new PagingParameter())->goCheck();
         $uid = Token::getCurrentTokenVar('uid');
-        $arr = input('post.');
-        if (empty($arr['stage']) || empty($arr['group'])) {
-          $arr = Db::table('yx_error_book')
-              ->where('user_id',$uid)
-              ->order('create_time desc')
-              ->field('stage,group')
-              ->find();
+        $type = input('post.type/d') ? input('post.type/d') : 1;
+        $pagingError = Db::table('yx_error_book')
+            ->alias('eb')
+            ->join('yx_question.yx_group g','eb.group=g.id')
+            ->where('g.type','=',$type)
+            ->where('eb.user_id','=',$uid)
+            ->order('eb.create_time','desc')
+            ->paginate($size, true, ['page' => $page]);
+        if ($pagingError->isEmpty())
+        {
+            return json([
+                'current_page' => $pagingError->currentPage(),
+                'data' => []
+            ]);
         }
-        //根据用户id和阶段id查出此用户所有的
-        $data = $this->errorStageGroup($uid, $arr);
-        return json($data);
+        $errorData = $pagingError->toArray();
+        foreach ($errorData['data'] as &$val){
+            $val['wid'] = $val['word_id'];
+            unset($val['word_id']);
+            continue;
+        }
+        $notWordData = $this->learned->detail($errorData['data']);
+        $notWordData = Collection::isCollection($uid, $notWordData);
+        $notWordData = $this->learned->handleData($notWordData, 1);
+        return json([
+            'current_page' => $pagingError->currentPage(),
+            'word' => $notWordData
+        ]);
     }
 
     /**
@@ -245,49 +263,6 @@ class Activity
     {
         try {
             $data = Db::table('yx_collection')
-                ->where('user_id', $uid)
-                ->where('stage', $arr['stage'])
-                ->where('group', $arr['group'])
-                ->field('id,stage,group,word_id as wid,create_time')
-                ->order('create_time desc')
-                ->select();
-            $groupData = Db::table(YX_QUESTION . 'group')
-                ->alias('g')
-                ->join('yx_question.yx_stage s','g.stage_id = s.id')
-                ->field('g.group_name,s.stage_name')
-                ->where('g.id', $arr['group'])
-                ->find();
-            $new_arr['data'] = [
-                'stage_name'  => $groupData['stage_name'],
-                'group_name'  => $groupData['group_name'],
-                'create_time' => date('Y-m-d', $data[0]['create_time'])
-            ];
-            //查询此组对应的阶段和当前组的类型
-            $notLearnedData =  $this->learned->correspondingStage($data);
-            $notWordData =  $this->learned->detail($notLearnedData);
-            $notWordData = Collection::isCollection($uid, $notWordData);
-            $new_arr['word'] =  $this->learned->handleData($notWordData, 1);
-            return $new_arr;
-        } catch (\Exception $e) {
-            throw new MissException([
-                'msg'       => $e->getMessage(),
-                'errorCode' => 50000
-            ]);
-        }
-    }
-
-
-    /**
-     * 错题本详情
-     * @param $uid
-     * @param $arr
-     * @return mixed
-     * @throws MissException
-     */
-    private function errorStageGroup($uid, $arr)
-    {
-        try {
-            $data = Db::table('yx_error_book')
                 ->where('user_id', $uid)
                 ->where('stage', $arr['stage'])
                 ->where('group', $arr['group'])

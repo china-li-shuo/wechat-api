@@ -264,16 +264,16 @@ class Learned
             case 2://同义词，则需查找关联表
                 foreach ($notWordData as $key => &$val) {
                     unset($val['son']['sentence']);
-                    unset($notWordData[$key]['son']['us_audio']);
+                    unset($val['son']['us_audio']);
                     unset($val['son']['us_phonetic']);
                     $val['son']['answer']  = explode('@', $val['son']['answer']);
                     $val['son']['options'] = json_decode($val['son']['options'], true);
                     $val['son']['currentNumber'] = $currentNumber + $key;
                     $val['son']['detail']  = Synonym::getInfo( $val['son']['id'])->toArray();
                     foreach ($notWordData[$key]['son']['detail'] as $k => &$v) {
-                        $v['son']['detail'][$k]['chinese_word'] = explode('@', $v['chinese_word']);
-                        $v['son']['detail'][$k]['sentence']     = json_decode($v['sentence'], true);
-                        $v['son']['detail'][$k]['us_audio']     = $us_audio . $v['us_audio'];
+                        $v['chinese_word'] = explode('@', $v['chinese_word']);
+                        $v['sentence']     = json_decode($v['sentence'], true);
+                        $v['us_audio']     = $us_audio . $v['us_audio'];
                     }
                     continue;
                 }
@@ -474,7 +474,6 @@ class Learned
         }
         return $notLearnedData;
     }
-
     /**
      * @throws MissException
      */

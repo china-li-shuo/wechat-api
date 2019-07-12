@@ -44,6 +44,9 @@ class Home
         $uid = Token::getCurrentUid();
         $userInfo = User::field('mobile_bind')->get($uid);
         $unid = $this->checkUnit($uid, $id);
+        $userClass = UserClass::where(['user_id'=>$uid])
+            ->where('class_id','<>',ClassEnum::MiniKnifeClass)
+            ->find();
         //查询分校的信息
         $unit = Unit::getUnitData();
         if(!$unit){
@@ -55,6 +58,7 @@ class Home
         return json([
             'mobile_bind'=>$userInfo->mobile_bind,
             'unid'=>$unid,
+            'class_id'=>empty($userClass) ? ClassEnum::MiniKnifeClass : $userClass->class_id,
             'data'=>$unit
         ]);
     }
