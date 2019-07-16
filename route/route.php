@@ -72,5 +72,7 @@ Route::post('api/:version/circle/intention', 'api/:version.Circle/addUserIntenti
 Route::post('api/:version/personal/punch', 'api/:version.Personal/getMyPunchCard');
 Route::post('api/:version/personal/info', 'api/:version.Personal/getPersonalInfo');
 Route::post('api/:version/personal/class', 'api/:version.Personal/getMyClass');
+Route::post('api/:version/personal/msg', 'api/:version.Personal/getUnreadMessage');
+Route::post('api/:version/personal/read', 'api/:version.Personal/readMyMessage');
 
 

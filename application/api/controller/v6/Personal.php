@@ -101,4 +101,49 @@ class Personal
         return json($userInfo);
     }
 
+    /**
+     * 获取用户最近的未读的消息
+     */
+    public function getUnreadMessage()
+    {
+        $uid  = Token::getCurrentUid();
+        set_time_limit(0);//无限请求超时时间
+        while(true){
+            $unreadMessage = cache($uid . 'message');
+            if($unreadMessage){//如果有数据直接返回
+                return json($unreadMessage);
+            }
+            //否则 后台进行阻塞进行，过0.3秒继续请求，根据服务器性能来
+            sleep(0.3);
+        }
+    }
+
+    /**
+     * 进行读取我的消息有关的帖子最新动态
+     * @return \think\response\Json
+     * @throws MissException
+     */
+    public function readMyMessage()
+    {
+        $uid  = Token::getCurrentUid();
+        $postIDS = input('post.post_ids');
+        if(empty($postIDS)){
+            throw new MissException([
+                'msg'=>'post_ids参数不允许为空',
+                'errorCode'=>50000
+            ]);
+        }
+        $posts = Post::getDesignatedPosts($postIDS);
+        if ($posts->isEmpty())
+        {
+            return json(['data' => []]);
+        }
+        //进行查找帖子的评论和回复功能
+        $comment = new CommentService();
+        $data = $comment->getCommentInfo($posts->toArray(),$uid);
+        cache($uid.'message',null);
+        return json([
+            'data' => $data
+        ]);
+    }
 }

@@ -279,6 +279,7 @@ class Home
         $data['user_id'] = $uid;
         $data['content'] = json_encode($data['content']);
         $res = Comment::create($data);
+        $this->setCommentCache($uid, $data['post_id'],$res->id);
         if(!$res){
            throw new MissException([
                'msg'=>'帖子评论失败',
@@ -303,13 +304,14 @@ class Home
         $zan = Zan::where(['user_id' => $uid, 'post_id' => $id])->find();
         //如果没有点过赞，则新增记录，否则进行修改点赞状态
         if (empty($zan)) {
-            $userInfo            = User::getByUid($uid);
-            $userInfo            = $userInfo->visible(['nick_name', 'avatar_url'])
+            $userInfo = User::getByUid($uid);
+            $userInfo = $userInfo->visible(['nick_name', 'avatar_url'])
                 ->toArray();
             $userInfo['post_id'] = $id;
+            $this->setZanCache($uid, $id);
             $userInfo['user_id'] = $uid;
             $userInfo['status']  = ZanStatusEnum::VALID;
-            $res                 = Zan::create($userInfo);
+            $res = Zan::create($userInfo);
         } else {
             if ($zan->status == ZanStatusEnum::VALID) {
                 $res = Zan::where(['user_id' => $uid, 'post_id' => $id])
@@ -326,5 +328,79 @@ class Home
             ]);
         }
         throw new SuccessMessage();
+    }
+
+    /**
+     * 缓存这篇帖子作者的最新点赞动态
+     * @param $uid
+     * @param $post_id
+     * @return bool|mixed
+     */
+    private function setZanCache($uid, $post_id)
+    {
+        //先进行查看这个发帖人的id
+        $post = Post::get($post_id);
+        if(empty($post)){
+            return true;
+        }
+        $data = cache($post->user_id.'message');
+        //如果有人点赞信息存入了缓存
+        if($data){
+            //如果是同一个人点赞
+            foreach ($data as $val){
+                if(array_key_exists('zan_user_id',$val)) {
+                    if ($val['post_id'] == $post_id && $val['zan_user_id'] == $uid) {
+                        return true;
+                    }
+                }
+            }
+            //并且不是同一个人
+            //进行追加新的点赞信息
+            array_push($data,['post_id'=>$post_id,'zan_user_id'=>$uid]);
+            return cache($post->user_id.'message',$data);
+        }
+        //如果首次进行点赞
+        $arr = [];
+        array_push($arr,['post_id'=>$post_id,'zan_user_id'=>$uid]);
+        //缓存发帖人 的点赞信息
+        return cache($post->user_id.'message',$arr);
+    }
+
+    /**
+     * 缓存这篇帖子作者的最新评论动态
+     * @param $uid
+     * @param $post_id
+     * @return bool|mixed
+     */
+    private function setCommentCache($uid, $post_id,$comment_id)
+    {
+        //先进行查看这个发帖人的id
+        $post = Post::get($post_id);
+        if(empty($post)){
+            return true;
+        }
+        $data = cache($post->user_id.'message');
+        //如果有人评论信息存入了缓存
+        if($data){
+            //如果是同一个人评论,但是不是同一条评论
+            foreach ($data as $val){
+                if(array_key_exists('comment_user_id',$val)){
+                    if( array_key_exists('comment_id',$val)){
+                        if($val['post_id'] == $post_id && $val['comment_user_id'] == $uid && $val['comment_id'] == $comment_id){
+                            return true;
+                        }
+                    }
+                }
+            }
+            //是同一个人但是不是同一个评论
+            //进行追加新的评论信息
+            array_push($data,['post_id'=>$post_id,'comment_user_id'=>$uid,'comment_id'=>$comment_id]);
+            return cache($post->user_id.'message',$data);
+        }
+        //如果首次进行评论
+        $arr = [];
+        array_push($arr,['post_id'=>$post_id,'comment_user_id'=>$uid,'comment_id'=>$comment_id]);
+        //缓存发帖人 的点赞信息
+        return cache($post->user_id.'message',$arr);
     }
 }

@@ -61,6 +61,15 @@ class Post extends BaseModel
         return $pagingData ;
     }
 
+    //返回指定帖子的数据
+    public static function getDesignatedPosts($postIDS)
+    {
+        $post = self::with('cls,user,comment')
+            ->where('id','in',$postIDS)
+            ->select();
+        return $post;
+    }
+
     public static function getSummaryByUser($uid, $page=1, $size=20)
     {
         $pagingData = self::with('cls,user,comment')
