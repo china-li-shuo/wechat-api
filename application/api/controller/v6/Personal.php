@@ -103,18 +103,53 @@ class Personal
 
     /**
      * 获取用户最近的未读的消息
+     * @return \think\response\Json
+     * @throws MissException
      */
     public function getUnreadMessage()
     {
         $uid  = Token::getCurrentUid();
         set_time_limit(0);//无限请求超时时间
+        $requestNumber = input('post.request_number/d');
+        $unreadMessage = cache($uid . 'message');
+        //如果是2 直接断开服务器连接状态
+        if($requestNumber == 2){
+            throw new MissException([
+                'code'=>201,
+                'msg'=>'这是退出请求信息',
+                'errorCode'=>50000
+            ]);
+        }
+        //如果是用户首次进入小程序请求接口，并且有上次未读信息，直接返回未读消息
+        if($requestNumber == 1 && $unreadMessage){
+            return json($unreadMessage);
+        }
+        //如果有未读信息，进行把未读信息的条数存储到变量
+        if($unreadMessage){
+            $number = count($unreadMessage);
+        }else{
+            $number = 0;
+        }
+        $i = 1;
         while(true){
             $unreadMessage = cache($uid . 'message');
-            if($unreadMessage){//如果有数据直接返回
-                return json($unreadMessage);
+            if($unreadMessage){
+                $count = count($unreadMessage);
+                //如果首次没有信息，知道获取最新的信息就会返回
+                //数据发生改变 将数据响应客户端
+                if($number != $count){
+                    return json($unreadMessage);
+                }
             }
-            //否则 后台进行阻塞进行，过0.3秒继续请求，根据服务器性能来
-            sleep(0.3);
+            //否则 后台进行阻塞进行，过1秒继续请求，根据服务器性能来
+            sleep(1);
+            $i++;
+            if($i > 59){
+               throw new MissException([
+                   'msg'=>'还没有最新未读信息',
+                   'errorCode'=>50000
+               ]);
+            }
         }
     }
 

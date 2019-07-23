@@ -32,10 +32,11 @@ class Cls extends BaseModel
         return $class;
     }
 
-    public static function getUnitClass($id)
+    public static function getUnitClass($id,$reference_date)
     {
         $unitClass = self::hasWhere('uclass', ['unid'=>$id])
             ->order('sort')
+            ->where('reference_date',$reference_date)
             ->select();
         return $unitClass;
     }

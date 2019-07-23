@@ -74,8 +74,10 @@ class Home
         $uid = Token::getCurrentUid();
         //进行查看用户属于哪个分校
         $unid = $this->checkUnit($uid,$id);
+        //查看属于哪一年备考年份的信息
+        $reference_date = $this->getReferenceDate($uid);
         //查询分校下的班级信息
-        $unitClass = Cls::getUnitClass($unid);
+        $unitClass = Cls::getUnitClass($unid,$reference_date);
         if(!$unitClass){
             throw new MissException([
                 'msg'=>'分校下班级信息查询失败',
@@ -93,7 +95,6 @@ class Home
         }
         return json($unitClass);
     }
-
 
     /**
      * 获取全部今日打卡信息（分页）
@@ -211,6 +212,7 @@ class Home
     /**
      * @param $uid 用户id
      * @param $id  分校地区id
+     * 检测用户同一个城市
      * @return int|mixed
      */
     private function checkUnit($uid, $id)
@@ -230,6 +232,25 @@ class Home
         }
         return $id;
     }
+
+    /**
+     * 获取用户属于的备考年份
+     */
+    private function getReferenceDate($uid)
+    {
+        $userClass = UserClass::where(['user_id'=>$uid])
+            ->where('class_id','<>',ClassEnum::MiniKnifeClass)
+            ->find();
+        if($userClass){
+            $class = Cls::get($userClass->class_id);
+            if($class){
+                return $class->reference_date;//返回备考年份标识
+            }
+            return 0;//0代表备战2020年
+        }
+        return 0;//0代表备战2020年
+    }
+
     /**
      * 获取班级头像
      * 评论回复和点赞数量
@@ -279,7 +300,6 @@ class Home
         $data['user_id'] = $uid;
         $data['content'] = json_encode($data['content']);
         $res = Comment::create($data);
-        $this->setCommentCache($uid, $data['post_id'],$res->id);
         if(!$res){
            throw new MissException([
                'msg'=>'帖子评论失败',
@@ -287,6 +307,7 @@ class Home
            ]);
         }
         $comment = Comment::get($res->id)->toArray();
+//        $this->setCommentCache($uid, $data['post_id'],$comment);
         $comment['content'] = json_decode($comment['content']);
         return json($comment);
     }
@@ -308,7 +329,7 @@ class Home
             $userInfo = $userInfo->visible(['nick_name', 'avatar_url'])
                 ->toArray();
             $userInfo['post_id'] = $id;
-            $this->setZanCache($uid, $id);
+//            $this->setZanCache($uid, $id);
             $userInfo['user_id'] = $uid;
             $userInfo['status']  = ZanStatusEnum::VALID;
             $res = Zan::create($userInfo);
@@ -346,18 +367,30 @@ class Home
         $data = cache($post->user_id.'message');
         //如果有人点赞信息存入了缓存
         if($data){
-            //如果是同一个人点赞
-            foreach ($data as $val){
-                if(array_key_exists('zan_user_id',$val)) {
-                    if ($val['post_id'] == $post_id && $val['zan_user_id'] == $uid) {
-                        return true;
-                    }
+
+                //如果是作者本人给自己的帖子点赞,不进行提醒信息
+                if($uid == $post->user_id){
+                    return true;
                 }
+                //如果是同一个人点赞,不进行提醒信息
+                foreach ($data as $val){
+                    if(array_key_exists('zan_user_id',$val)) {
+                        if ($val['post_id'] == $post_id && $val['zan_user_id'] == $uid) {
+                            return true;
+                        }
+                    }
+
+
+                //否则作者，进行追加新的点赞信息
+                array_push($data,['post_id'=>$post_id,'zan_user_id'=>$uid]);
             }
-            //并且不是同一个人
-            //进行追加新的点赞信息
-            array_push($data,['post_id'=>$post_id,'zan_user_id'=>$uid]);
+
             return cache($post->user_id.'message',$data);
+        }
+
+        //如果是作者本人给自己的帖子点赞,不进行提醒信息
+        if($uid == $post->user_id){
+            return true;
         }
         //如果首次进行点赞
         $arr = [];
@@ -368,25 +401,110 @@ class Home
 
     /**
      * 缓存这篇帖子作者的最新评论动态
+     * 作者评论自己不提醒
+     * 别人评论作者 提醒作者
+     * 作者回复评论人 提醒评论人和参与评论的所有人
      * @param $uid
      * @param $post_id
      * @return bool|mixed
      */
-    private function setCommentCache($uid, $post_id,$comment_id)
+    private function setCommentCache($uid, $post_id,$comment)
     {
         //先进行查看这个发帖人的id
         $post = Post::get($post_id);
         if(empty($post)){
             return true;
         }
+
+        //这是与这个帖子有关的所有人
+        $commentUser = Comment::where('post_id',$post_id)
+            ->field('user_id')
+            ->group('user_id')
+            ->select();
+        if(!empty($commentUser)){
+            $commentUser = $commentUser->toArray();
+        }else{
+            return false;
+        }
+
+        //如果是作者自己评论，则自己不通知最近消息，进行通知参与评论的所有人
+        if($uid == $post->user_id){
+            foreach ($commentUser as &$value){
+                $data = cache($value['user_id'].'message');
+
+                //如果有人评论信息存入了缓存
+                if($data){
+                    //如果是同一个人评论,但是不是同一条评论，不进行追加提醒
+                    foreach ($data as $val){
+                        if(array_key_exists('comment_user_id',$val)){
+                            if( array_key_exists('comment_id',$val)){
+                                if($val['post_id'] == $post_id && $val['comment_user_id'] == $uid && $val['comment_id'] == $comment['id']){
+                                    return true;
+                                }
+                            }
+                        }
+                    }
+                    //是同一个人但是不是同一个评论
+                    //进行追加新的评论信息
+                    array_push($data,['post_id'=>$post_id,'comment_user_id'=>$uid,'comment_id'=>$comment['id']]);
+                    //除了自己只要参与的都要有提示信息
+                    if($value['user_id'] != $post->user_id){
+                       cache($value['user_id'].'message',$data);
+                    }
+                }else{
+                    //如果首次进行评论
+                    if($value['user_id'] != $post->user_id){
+                        $arr = [];
+                        array_push($arr,['post_id'=>$post_id,'comment_user_id'=>$uid,'comment_id'=>$comment['id']]);
+                        //缓存发帖人 的点赞信息
+                        cache($value['user_id'].'message',$arr);
+                    }
+                }
+            }
+            return true;
+        }
+
+
+        //如果不是评论是回复，则还要通知被回复的人
+        if($comment['parent_id'] != 0){
+            $toUserData = Comment::where('id',$comment['parent_id'])
+                ->field('user_id')
+                ->find();
+            $data = cache($toUserData->user_id.'message');
+            //如果有人评论信息存入了缓存
+            if($data){
+                //如果是同一个人评论,但是不是同一条评论，不进行追加提醒
+                foreach ($data as $val){
+                    if(array_key_exists('comment_user_id',$val)){
+                        if( array_key_exists('comment_id',$val)){
+                            if($val['post_id'] == $post_id && $val['comment_user_id'] == $uid && $val['comment_id'] == $comment['id']){
+                                return true;
+                            }
+                        }
+                    }
+                }
+                //是同一个人但是不是同一个评论
+                //进行追加新的评论信息
+                array_push($data,['post_id'=>$post_id,'comment_user_id'=>$uid,'comment_id'=>$comment['id']]);
+                cache($toUserData->user_id.'message',$data);
+            }else{
+                //如果首次进行评论
+                $arr = [];
+                array_push($arr,['post_id'=>$post_id,'comment_user_id'=>$uid,'comment_id'=>$comment['id']]);
+                //缓存发帖人 的点赞信息
+                cache($toUserData->user_id.'message',$arr);
+            }
+        }
+
+        //如果不是作者自己评论自己，则所有评论通知作者
         $data = cache($post->user_id.'message');
         //如果有人评论信息存入了缓存
         if($data){
-            //如果是同一个人评论,但是不是同一条评论
+            //如果是同一个人评论,但是不是同一条评论，不进行追加提醒
             foreach ($data as $val){
                 if(array_key_exists('comment_user_id',$val)){
                     if( array_key_exists('comment_id',$val)){
-                        if($val['post_id'] == $post_id && $val['comment_user_id'] == $uid && $val['comment_id'] == $comment_id){
+                        if($val['post_id'] == $post_id && $val['comment_user_id'] == $uid && $val['comment_id'] == $comment['id']){
                             return true;
                         }
                     }
@@ -394,13 +512,15 @@ class Home
             }
             //是同一个人但是不是同一个评论
             //进行追加新的评论信息
-            array_push($data,['post_id'=>$post_id,'comment_user_id'=>$uid,'comment_id'=>$comment_id]);
+            array_push($data,['post_id'=>$post_id,'comment_user_id'=>$uid,'comment_id'=>$comment['id']]);
             return cache($post->user_id.'message',$data);
         }
+
         //如果首次进行评论
         $arr = [];
-        array_push($arr,['post_id'=>$post_id,'comment_user_id'=>$uid,'comment_id'=>$comment_id]);
+        array_push($arr,['post_id'=>$post_id,'comment_user_id'=>$uid,'comment_id'=>$comment['id']]);
         //缓存发帖人 的点赞信息
         return cache($post->user_id.'message',$arr);
+
     }
 }
