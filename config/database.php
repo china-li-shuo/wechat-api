@@ -60,5 +60,6 @@ return [
     'break_reconnect' => false,
     // 断线标识字符串
     'break_match_str' => [],
-    'db_config_2' => 'mysql://root:success2017+_)(@202.85.213.24:5203/yx_question#utf8',
+    'db_config_2' => 'mysql://root:success2017+_)(@202.85.213.24:5203/yx_question#utf8',//题库数据库
+    'db_config_reading' => 'mysql://root:success2017+_)(@202.85.213.24:5203/xcx_reading#utf8',//英语阅读小程序数据库
 ];
