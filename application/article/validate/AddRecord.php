@@ -15,6 +15,7 @@ class AddRecord extends BaseValidate
 {
     protected $rule = [
         'article_id' => 'require|isPositiveInteger',
-        'game_time' => 'require|isPositiveInteger'
+        'game_time' => 'require|isPositiveInteger',
+        'user_opt' => 'require|isOptNumber'
     ];
 }
