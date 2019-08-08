@@ -10,6 +10,7 @@
 
 namespace app\article\service;
 
+use app\article\model\Sentences;
 use app\article\model\User;
 use app\article\model\Record as RecordModel;
 
@@ -36,5 +37,48 @@ class Record
             $res = $record->force()->save($data);
         }
         return $res;
+    }
+
+    /**
+     * 获取最终的用户学习记录
+     */
+    public function getFinalRecord($data)
+    {
+        foreach ($data as &$val){
+            $val['words'] = json_decode($val['words'], true);
+            if(!empty($val['words'])){
+                $val['words'] = $this->addAudioPrefix($val['words']);
+            }
+            $val['phrase'] = json_decode($val['phrase'], true);
+            if(!empty($val['phrase'])){
+                $val['phrase'] = $this->addAudioPrefix($val['phrase']);
+            }
+            $sentences = Sentences::get($val['sentence_id']);
+            if(!empty($sentences)){
+                $val['cnj'] = $sentences->toArray();
+                $val['cnj']['word_parsing'] = json_decode($val['cnj']['word_parsing'], true);
+                $val['cnj']['judgment_question'] = json_decode($val['judgment_question'],true);
+                if(!empty( $val['cnj']['word_parsing'])){
+                    $val['cnj']['word_parsing'] = $this->addAudioPrefix( $val['cnj']['word_parsing']);
+                }
+                $val['cnj']['sentence_splitting'] = json_decode($val['cnj']['sentence_splitting'], true);
+            }
+            unset($val['judgment_question']);
+            unset($val['sentence_id']);
+            continue;
+        }
+
+        return $data;
+    }
+
+    /**
+     * 添加数据音频前缀
+     */
+    private function addAudioPrefix($data)
+    {
+        foreach ($data as &$val){
+            $val['us_audio'] = config('setting.audio_prefix') . $val['us_audio'];
+        }
+       return $data;
     }
 }
