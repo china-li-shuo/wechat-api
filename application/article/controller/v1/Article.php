@@ -22,14 +22,24 @@ use app\lib\exception\SuccessMessage;
 class Article
 {
     /**
-     *  今日推送文章
+     * 指定文章或者日推送文章
+     * @param string $id
+     * @return \think\response\Json
      * @throws MissException
+     * @throws \app\lib\exception\ParameterException
      */
-    public function getDailyPush()
+    public function getArticleInfo($id = '')
     {
-        $push_date = date('Y-m-d');
-        //获取推送日期的文章
-        $articleInfo = EnglishArticle::getPushDateArticle($push_date);
+        if($id){
+            (new IDMustBePositiveInt())->goCheck();
+            $queryCondition = ['id'=>$id];
+        }else{
+            $push_date = date('Y-m-d');
+            $queryCondition = ['push_date'=>$push_date];
+        }
+
+        //获取符合查询条件的文章
+        $articleInfo = EnglishArticle::getQueryConditionArticle($queryCondition);
         if (empty($articleInfo)) {
             throw new MissException([
                 'errorCode' => 3000,
@@ -63,16 +73,16 @@ class Article
         if (empty($collect)) {
             $res = Collect::create(['user_id' => $uid, 'article_id' => $id, 'status' => 1]);
             if ($res) {
-                throw new SuccessMessage();
+                throw new SuccessMessage(['code'=>201]);
             }
         }
         if ($collect->status == 1) {
-            throw new SuccessMessage(['msg' => '你已经收藏过了', 'error_code' => 2000]);
+            throw new SuccessMessage(['msg' => '你已经收藏过了', 'error_code' => 2000,'code'=>201]);
         }
         $collect->status = 1;
         $res             = $collect->save();
         if ($res) {
-            throw new SuccessMessage();
+            throw new SuccessMessage(['code'=>201]);
         }
     }
 
@@ -89,16 +99,16 @@ class Article
         $collect = Collect::where(['user_id' => $uid, 'article_id' => $id])
             ->field('status')->find();
         if (empty($collect)) {
-            throw new SuccessMessage(['msg' => '你还没进行收藏', 'error_code' => 2001]);
+            throw new SuccessMessage(['msg' => '你还没进行收藏', 'error_code' => 2001,'code'=>201]);
         }
         if ($collect->status == 1) {
             $collect->status = 0;
             $res             = $collect->save();
             if ($res) {
-                throw new SuccessMessage();
+                throw new SuccessMessage(['code'=>201]);
             }
         }
-        throw new SuccessMessage();
+        throw new SuccessMessage(['code'=>201]);
     }
 
     /**

@@ -32,13 +32,14 @@ class EnglishArticle extends BaseModel
     }
 
     /**
-     * 获取推送日期的文章
-     * @param $push_date 推送日期
+     * 获取符合查询条件的文章
+     * @param $queryCondition 查询条件
+     * @return array|false|null|\PDOStatement|string|\think\Model
      */
-    public static function getPushDateArticle($push_date)
+    public static function getQueryConditionArticle($queryCondition)
     {
         $articleInfo = self::with('son,category')
-            ->where('push_date',$push_date)
+            ->where($queryCondition)
             ->find();
         return $articleInfo;
     }

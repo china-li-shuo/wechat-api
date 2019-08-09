@@ -10,6 +10,7 @@
 
 namespace app\article\controller\v1;
 
+use app\article\model\Collect;
 use app\article\service\Token;
 use app\article\model\Record;
 use app\article\validate\PagingParameter;
@@ -19,7 +20,6 @@ class Personal
 {
     /**
      * 用户学习记录
-     * d82460007fb7563923d3e340b779ef94
      * @param int $page
      * @param int $size
      * @return \think\response\Json
@@ -44,6 +44,36 @@ class Personal
         return json([
             'current_page' => $pagingRecords->currentPage(),
             'data' => $recordData
+        ]);
+    }
+
+    /**
+     * 获取我收藏的文章
+     * @param int $page 当前页默认1
+     * @param int $size 没有显示条数默认20
+     * @return \think\response\Json
+     * @throws \app\lib\exception\ParameterException
+     */
+    public function getCollectedArticles($page = 1, $size = 20)
+    {
+        //d82460007fb7563923d3e340b779ef94
+        (new PagingParameter()) -> goCheck();
+        $uid = Token::getCurrentUid();
+        $pagingCollect = Collect::getSummaryByUser($uid, $page, $size);
+        if ($pagingCollect->isEmpty())
+        {
+            return json([
+                'current_page' => $pagingCollect->currentPage(),
+                'data' => []
+            ]);
+        }
+        $collect = $pagingCollect->hidden([
+            'id','user_id','status','create_time','update_time'
+            ])->toArray();
+
+        return json([
+            'current_page' => $pagingCollect->currentPage(),
+            'data' => $collect['data']
         ]);
     }
 }

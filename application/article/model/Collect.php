@@ -18,4 +18,19 @@ class Collect extends BaseModel
 
     //设置当前模型的数据库链接
     protected $connection = 'db_config_reading';
+
+    public function article()
+    {
+        return $this->hasOne('EnglishArticle','id','article_id')
+            ->bind(['title','push_date']);
+    }
+
+    public static function getSummaryByUser($uid, $page, $size)
+    {
+        $collect = self::with('article')
+            ->where(['user_id'=>$uid,'status'=>1])
+            ->order('create_time desc')
+            ->paginate($size, true, ['page' => $page]);
+       return $collect;
+    }
 }
