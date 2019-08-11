@@ -20,8 +20,8 @@ class Personal
 {
     /**
      * 用户学习记录
-     * @param int $page
-     * @param int $size
+     * @param int $page 当前页码默认1
+     * @param int $size 每页显示条数默认5
      * @return \think\response\Json
      * @throws \app\lib\exception\ParameterException
      */
@@ -49,7 +49,7 @@ class Personal
 
     /**
      * 获取我收藏的文章
-     * @param int $page 当前页默认1
+     * @param int $page 当前页码默认1
      * @param int $size 没有显示条数默认20
      * @return \think\response\Json
      * @throws \app\lib\exception\ParameterException

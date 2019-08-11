@@ -43,4 +43,12 @@ class EnglishArticle extends BaseModel
             ->find();
         return $articleInfo;
     }
+
+    public static function getSummaryByPage($page, $size)
+    {
+        $article = self::order('push_date desc')
+            ->visible(['id','title','push_date'])
+            ->paginate($size, true, ['page' => $page]);
+        return $article;
+    }
 }

@@ -16,6 +16,7 @@ use app\article\model\EnglishArticle;
 use app\article\model\EnglishArticleChild;
 use app\article\service\Token;
 use app\article\validate\IDMustBePositiveInt;
+use app\article\validate\PagingParameter;
 use app\lib\exception\MissException;
 use app\lib\exception\SuccessMessage;
 
@@ -133,6 +134,29 @@ class Article
         return json($data);
     }
 
+    /**
+     * 往期文章
+     * @param int $page  当前页码
+     * @param int $size  每页显示条数
+     * @return \think\response\Json
+     * @throws \app\lib\exception\ParameterException
+     */
+    public function getPastArticles($page = 1, $size = 20)
+    {
+        (new PagingParameter())->goCheck();
+        $pagingArticles = EnglishArticle::getSummaryByPage($page, $size);
+        if ($pagingArticles->isEmpty()) {
+            return json([
+                'current_page' => $pagingArticles->currentPage(),
+                'data'         => []
+            ]);
+        }
+        $articles = $pagingArticles->toArray();
+        return json([
+            'current_page' => $pagingArticles->currentPage(),
+            'data'         => $articles['data']
+        ]);
+    }
     /**
      * 处理数据
      * @param $data

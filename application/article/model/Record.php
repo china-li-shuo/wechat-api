@@ -43,9 +43,6 @@ class Record extends BaseModel
         $record = self::with('article,child')
             ->where('user_id', '=', $uid)
             ->paginate($size, true, ['page' => $page]);
-        if(empty($record)){
-            return null;
-        }
        return $record;
     }
 
