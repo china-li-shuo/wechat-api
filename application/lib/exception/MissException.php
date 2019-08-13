@@ -7,7 +7,8 @@ namespace app\lib\exception;
  */
 class MissException extends BaseException
 {
-    public $code = 404;
+    //因为404被重定向了，所以用405代表404
+    public $code = 405;
     public $msg = 'global:your required resource are not found';
     public $errorCode = 10001;
 }

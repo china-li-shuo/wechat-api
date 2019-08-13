@@ -18,4 +18,15 @@ class User extends BaseModel
 
     //设置当前模型的数据库链接
     protected $connection = 'db_config_reading';
+
+    /**
+     * 用户是否存在
+     * 存在返回uid，不存在返回0
+     */
+    public static function getByOpenID($openid)
+    {
+        $user = self::where('openid', '=', $openid)
+            ->find();
+        return $user;
+    }
 }

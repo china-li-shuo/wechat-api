@@ -2,8 +2,7 @@
 
 namespace app\article\service;
 
-use app\api\model\User;
-use app\lib\enum\ScopeEnum;
+use app\article\model\User;
 use app\lib\exception\TokenException;
 use app\lib\exception\WeChatException;
 use think\Exception;
@@ -23,8 +22,8 @@ class UserToken extends Token
     function __construct($code)
     {
         $this->code = $code;
-        $this->wxAppID = config('wx.app_id');
-        $this->wxAppSecret = config('wx.app_secret');
+        $this->wxAppID = config('wx.read_app_id');
+        $this->wxAppSecret = config('wx.read_app_secret');
         $this->wxLoginUrl = sprintf(
             config('wx.login_url'), $this->wxAppID, $this->wxAppSecret, $this->code);
     }
@@ -114,21 +113,21 @@ class UserToken extends Token
         // 此处生成令牌使用的是TP5自带的令牌
         // 如果想要更加安全可以考虑自己生成更复杂的令牌
         // 比如使用JWT并加入盐，如果不加入盐有一定的几率伪造令牌
-        //        $token = Request::instance()->token('token', 'md5');
+        // $token = Request::instance()->token('token', 'md5');
         $openid = $wxResult['openid'];
         $user = User::getByOpenID($openid);
         if (!$user)
             // 借助微信的openid作为用户标识
             // 但在系统中的相关查询还是使用自己的uid
         {
-            $uid = $this->newUser($openid);
+            $userInfo['user_id'] = $this->newUser($openid);
         }
         else {
-            $uid = $user->id;
+            $userInfo['user_id'] = $user->id;
         }
-        $cachedValue = $this->prepareCachedValue($wxResult, $uid);
-        $token = $this->saveToCache($cachedValue);
-        return $token;
+        $cachedValue = $this->prepareCachedValue($wxResult, $userInfo['user_id']);
+        $userInfo['token'] = $this->saveToCache($cachedValue);
+        return $userInfo;
     }
 
 
@@ -136,7 +135,6 @@ class UserToken extends Token
     {
         $cachedValue = $wxResult;
         $cachedValue['uid'] = $uid;
-        $cachedValue['scope'] = ScopeEnum::User;
         return $cachedValue;
     }
 

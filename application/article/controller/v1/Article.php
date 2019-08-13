@@ -38,7 +38,6 @@ class Article
             $push_date = date('Y-m-d');
             $queryCondition = ['push_date'=>$push_date];
         }
-
         //获取符合查询条件的文章
         $articleInfo = EnglishArticle::getQueryConditionArticle($queryCondition);
         if (empty($articleInfo)) {
