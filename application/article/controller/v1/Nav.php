@@ -25,7 +25,6 @@ class Nav
      */
     public function  getNavTempL($sign = '')
     {
-        echo 'hello world123123';die;
         $nav = NaviTempL::where('status', '=', 1)
             ->find();
         if(empty($nav)){
