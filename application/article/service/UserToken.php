@@ -120,13 +120,13 @@ class UserToken extends Token
             // 借助微信的openid作为用户标识
             // 但在系统中的相关查询还是使用自己的uid
         {
-            $userInfo['user_id'] = $this->newUser($openid);
+            $userInfo[0] = $this->newUser($openid);
         }
         else {
-            $userInfo['user_id'] = $user->id;
+            $userInfo[0] = $user->id;
         }
-        $cachedValue = $this->prepareCachedValue($wxResult, $userInfo['user_id']);
-        $userInfo['token'] = $this->saveToCache($cachedValue);
+        $cachedValue = $this->prepareCachedValue($wxResult, $userInfo[0]);
+        $userInfo[1] = $this->saveToCache($cachedValue);
         return $userInfo;
     }
 

@@ -41,7 +41,8 @@ class Token
         $user = User::get($uid);
         $user->save($data);
         return json([
-            'token'=> $token
+            'token'=> $token,
+            'punch_days'=> $user->punch_days,
         ]);
     }
 

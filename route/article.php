@@ -8,7 +8,7 @@
  */
 
 Route::post(':version/token/user', 'article/:version.Token/getToken');//用户授权
-Route::get(':version/token/verify', 'article/:version.Token/verifyToken');//用户授权
+Route::get(':version/token/verify', 'article/:version.Token/verifyToken');//验证用户的时效性
 Route::get(':version/nav', 'article/:version.Nav/getNavTempL');  //获取首页导航模板信息
 Route::get(':version/article/info', 'article/:version.Article/getArticleInfo');  //获取文章信息,指定文章或者日推送文章
 Route::post(':version/collect/add', 'article/:version.Article/addCollect');         //收藏

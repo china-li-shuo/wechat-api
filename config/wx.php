@@ -18,8 +18,8 @@ return [
     'access_token_url' => "https://api.weixin.qq.com/cgi-bin/token?" .
         "grant_type=client_credential&appid=%s&secret=%s",
     // 英语阅读小程序app_id
-    'read_app_id' => 'wx97b569f51f214d52',
+    'read_app_id' => 'wx1b9699bce8a62f79',
     // 英语阅读小程序app_secret
-    'read_app_secret' => '499834472e52c1a8d3bcde649be43193',
+    'read_app_secret' => 'b24eef4a303c0f5db6493702777221a0',
 
 ];
