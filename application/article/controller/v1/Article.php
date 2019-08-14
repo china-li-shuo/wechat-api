@@ -103,7 +103,7 @@ class Article
             throw new SuccessMessage(['msg' => '你还没进行收藏', 'error_code' => 2001,'code'=>201]);
         }
         if ($collect->status == CollectStatusEnum::VALID) {
-            $collect->status = 0;
+            $collect->status = CollectStatusEnum::CANCEL;
             $res             = $collect->save();
             if ($res) {
                 throw new SuccessMessage(['code'=>201]);
