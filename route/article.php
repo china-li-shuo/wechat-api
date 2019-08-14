@@ -11,10 +11,12 @@ Route::post(':version/token/user', 'article/:version.Token/getToken');//用户�
 Route::get(':version/token/verify', 'article/:version.Token/verifyToken');//验证用户的时效性
 Route::get(':version/nav', 'article/:version.Nav/getNavTempL');  //获取首页导航模板信息
 Route::get(':version/article/info', 'article/:version.Article/getArticleInfo');  //获取文章信息,指定文章或者日推送文章
+Route::get(':version/collect/:id/status', 'article/:version.Article/getCollectStatus');         //文章的收藏状态
 Route::post(':version/collect/add', 'article/:version.Article/addCollect');         //收藏
 Route::post(':version/collect/cancel', 'article/:version.Article/cancelCollect');//取消收藏
 Route::get(':version/article/:id/detail', 'article/:version.Article/getArticleChild');//获取某篇文章详情
 Route::post(':version/record/leader_board', 'article/:version.Record/getArticleLeaderBoard');//查看此文章下的排名
+Route::get(':version/personal/punch_days', 'article/:version.Personal/getPunchDays');//我的打卡天数
 Route::get(':version/personal/record', 'article/:version.Personal/getLearningRecords');//我的学习记录
 Route::get(':version/personal/collect', 'article/:version.Personal/getCollectedArticles');//我收藏的文章
 Route::get(':version/article/past', 'article/:version.Article/getPastArticles');//往期文章

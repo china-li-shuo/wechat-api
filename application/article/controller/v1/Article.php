@@ -17,6 +17,7 @@ use app\article\model\EnglishArticleChild;
 use app\article\service\Token;
 use app\article\validate\IDMustBePositiveInt;
 use app\article\validate\PagingParameter;
+use app\lib\enum\CollectStatusEnum;
 use app\lib\exception\MissException;
 use app\lib\exception\SuccessMessage;
 
@@ -156,6 +157,28 @@ class Article
             'data'         => $articles['data']
         ]);
     }
+
+    /**
+     * 文章的收藏状态
+     */
+    public function getCollectStatus($id = '')
+    {
+        (new IDMustBePositiveInt()) -> goCheck();
+        $uid = Token::getCurrentUid();
+        $collect = Collect::where([
+            'user_id'=>$uid,
+            'article_id'=>$id
+        ])->find();
+        if(empty($collect) || $collect->status == CollectStatusEnum::CANCEL){
+            return json([
+                'status'=> CollectStatusEnum::CANCEL
+            ]);
+        }
+        return json([
+            'status'=> CollectStatusEnum::VALID
+        ]);
+    }
+
     /**
      * 处理数据
      * @param $data

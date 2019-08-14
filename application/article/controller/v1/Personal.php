@@ -11,6 +11,7 @@
 namespace app\article\controller\v1;
 
 use app\article\model\Collect;
+use app\article\model\User;
 use app\article\service\Token;
 use app\article\model\Record;
 use app\article\validate\PagingParameter;
@@ -18,6 +19,18 @@ use app\article\service\Record as RecordService;
 
 class Personal
 {
+    /**
+     * 我的打卡天数
+     */
+    public function getPunchDays()
+    {
+        $uid = Token::getCurrentUid();
+        $user = User::get($uid);
+        return json([
+            'punch_days'=>$user->punch_days
+        ]);
+    }
+
     /**
      * 用户学习记录
      * @param int $page 当前页码默认1
@@ -56,7 +69,6 @@ class Personal
      */
     public function getCollectedArticles($page = 1, $size = 20)
     {
-        //d82460007fb7563923d3e340b779ef94
         (new PagingParameter()) -> goCheck();
         $uid = Token::getCurrentUid();
         $pagingCollect = Collect::getSummaryByUser($uid, $page, $size);
