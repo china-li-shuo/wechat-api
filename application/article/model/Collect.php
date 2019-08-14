@@ -11,6 +11,8 @@
 namespace app\article\model;
 
 
+use app\lib\enum\CollectStatusEnum;
+
 class Collect extends BaseModel
 {
     //设置当前模型对应的完整数据表名称
@@ -28,7 +30,7 @@ class Collect extends BaseModel
     public static function getSummaryByUser($uid, $page, $size)
     {
         $collect = self::with('article')
-            ->where(['user_id'=>$uid,'status'=>1])
+            ->where(['user_id'=>$uid,'status'=>CollectStatusEnum::VALID])
             ->order('create_time desc')
             ->paginate($size, true, ['page' => $page]);
        return $collect;
