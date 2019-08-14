@@ -160,6 +160,9 @@ class Article
 
     /**
      * 文章的收藏状态
+     * @param string $id 文章id
+     * @return \think\response\Json
+     * @throws \app\lib\exception\ParameterException
      */
     public function getCollectStatus($id = '')
     {
