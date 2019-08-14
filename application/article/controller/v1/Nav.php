@@ -13,6 +13,7 @@ namespace app\article\controller\v1;
 
 use app\article\model\NaviTempL;
 use app\article\model\User;
+use app\lib\enum\NavStatusEnum;
 use app\lib\exception\MissException;
 use app\article\service\Token;
 
@@ -25,7 +26,7 @@ class Nav
      */
     public function  getNavTempL($sign = '')
     {
-        $nav = NaviTempL::where('status', '=', 1)
+        $nav = NaviTempL::where('status', '=', NavStatusEnum::VALID)
             ->find();
         if(empty($nav)){
             throw new MissException([
