@@ -78,7 +78,11 @@ class Article
             }
         }
         if ($collect->status == CollectStatusEnum::VALID) {
-            throw new SuccessMessage(['msg' => '你已经收藏过了', 'error_code' => 2000,'code'=>201]);
+            throw new SuccessMessage([
+                'msg' => '你已经收藏过了',
+                'error_code' => 2000,
+                'code'=>201
+            ]);
         }
         $collect->status = 1;
         $res             = $collect->save();
@@ -100,7 +104,11 @@ class Article
         $collect = Collect::where(['user_id' => $uid, 'article_id' => $id])
             ->field('status')->find();
         if (empty($collect)) {
-            throw new SuccessMessage(['msg' => '你还没进行收藏', 'error_code' => 2001,'code'=>201]);
+            throw new SuccessMessage([
+                'msg' => '你还没进行收藏',
+                'error_code' => 2001,
+                'code'=>201
+            ]);
         }
         if ($collect->status == CollectStatusEnum::VALID) {
             $collect->status = CollectStatusEnum::CANCEL;
