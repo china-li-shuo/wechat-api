@@ -43,12 +43,16 @@ class Article
         return $data;
     }
 
+    /**
+     *  将连连看单词、词组数据进行处理为一个数组
+     *  并根据对应的ASCLL 来判断答案的一致性
+     */
     private function getNewData($data)
     {
-        $sjz = 97;
+        $sjz = 97;      //十进制数字
         foreach ($data as $key=>$val){
             $answer[$sjz] = $val['answer'];
-            $word[chr($sjz)] = $val['english_word'];
+            $word[chr($sjz)] = $val['english_word'];   //ASCLL 为key
             $sjz++;
         }
 
