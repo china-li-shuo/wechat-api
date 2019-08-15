@@ -20,6 +20,7 @@ use app\article\validate\PagingParameter;
 use app\lib\enum\CollectStatusEnum;
 use app\lib\exception\MissException;
 use app\lib\exception\SuccessMessage;
+use app\article\service\Article as ArticleServer;
 
 class Article
 {
@@ -138,7 +139,8 @@ class Article
         }
         $articleChild = $articleChild->hidden(['sentence_id', 'create_time', 'update_time'])
             ->toArray();
-        $data = $this->handleData($articleChild);
+        $article = new ArticleServer();
+        $data = $article->handleData($articleChild);
         return json($data);
     }
 
@@ -190,30 +192,4 @@ class Article
         ]);
     }
 
-    /**
-     * 处理数据
-     * @param $data
-     * @return mixed
-     */
-    private function handleData($data)
-    {
-        $data['cnj']['judgment_question'] = json_decode( $data['judgment_question'] ,true);
-        unset($data['judgment_question']);
-        $data['words'] = json_decode( $data['words'] ,true);
-        $data['phrase'] = json_decode( $data['phrase'] ,true);
-        $data['cnj']['word_parsing'] = json_decode( $data['cnj']['word_parsing'] ,true);
-        $data['cnj']['sentence_splitting'] = json_decode( $data['cnj']['sentence_splitting'] ,true);
-        foreach ($data['words'] as &$val) {
-            $val['us_audio'] = config('setting.audio_prefix') . $val['us_audio'];
-            $val['chinese_word'] = explode('@', $val['chinese_word']);
-        }
-        foreach ($data['phrase'] as &$val) {
-            $val['us_audio'] = config('setting.audio_prefix') . $val['us_audio'];
-            $val['chinese_word'] = explode('@', $val['chinese_word']);
-        }
-        foreach ($data['cnj']['word_parsing'] as &$val) {
-            $val['us_audio'] = config('setting.audio_prefix') . $val['us_audio'];
-        }
-        return $data;
-    }
 }
