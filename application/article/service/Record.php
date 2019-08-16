@@ -78,6 +78,9 @@ class Record
     {
         foreach ($data as &$val){
             $val['us_audio'] = config('setting.audio_prefix') . $val['us_audio'];
+           if(!is_array($val['chinese_word'])){
+               $val['chinese_word'] = explode('@',$val['chinese_word']);
+           }
         }
        return $data;
     }

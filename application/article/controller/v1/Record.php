@@ -32,7 +32,7 @@ class Record
         if($redis){
             $this->redis = $redis;
         }else{
-            $IP = $_SERVER["REMOTE_ADDR"];
+            $IP = $_SERVER["SERVER_ADDR"];
             $this->redis =new Redis();
             $this->redis->connect($IP,6379);
             if($IP != '127.0.0.1'){
