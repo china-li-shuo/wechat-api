@@ -71,9 +71,14 @@ class Article
         (new IDMustBePositiveInt())->goCheck();
         $uid     = Token::getCurrentUid();
         $collect = Collect::where(['user_id' => $uid, 'article_id' => $id])
-            ->field('status')->find();
+            ->field('status')
+            ->find();
         if (empty($collect)) {
-            $res = Collect::create(['user_id' => $uid, 'article_id' => $id, 'status' => 1]);
+            $res = Collect::create([
+                'user_id' => $uid,
+                'article_id' => $id,
+                'status' => CollectStatusEnum::VALID
+            ]);
             if ($res) {
                 throw new SuccessMessage(['code'=>201]);
             }
@@ -85,7 +90,7 @@ class Article
                 'code'=>201
             ]);
         }
-        $collect->status = 1;
+        $collect->status = CollectStatusEnum::VALID;
         $res             = $collect->save();
         if ($res) {
             throw new SuccessMessage(['code'=>201]);
@@ -103,7 +108,8 @@ class Article
         (new IDMustBePositiveInt())->goCheck();
         $uid     = Token::getCurrentUid();
         $collect = Collect::where(['user_id' => $uid, 'article_id' => $id])
-            ->field('status')->find();
+            ->field('status')
+            ->find();
         if (empty($collect)) {
             throw new SuccessMessage([
                 'msg' => '你还没进行收藏',
