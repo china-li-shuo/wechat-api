@@ -62,4 +62,5 @@ return [
     'break_match_str' => [],
     'db_config_2' => 'mysql://root:success2017+_)(@202.85.213.24:5203/yx_question#utf8',//题库数据库
     'db_config_reading' => 'mysql://root:success2017+_)(@202.85.213.24:5203/xcx_reading#utf8',//英语阅读小程序数据库
+    'db_config_dream' => 'mysql://lishuo_rds:Shuo061388@@rm-wz9o472yw77up4s29fo.mysql.rds.aliyuncs.com:3306/dream#utf8',//英语阅读小程序数据库
 ];
