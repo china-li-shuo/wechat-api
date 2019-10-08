@@ -21,3 +21,15 @@ Route::group('', function () {
         Route::delete('soul/:sid', 'api_dream/v1.Soul/delete');
     });
 });
+
+//期刊
+Route::get('/classic/latest', 'api_dream/v1.Classic/getLatest');
+Route::get('/classic/:index/next', 'api_dream/v1.Classic/next');
+Route::get('/classic/:index/previous', 'api_dream/v1.Classic/previous');
+Route::get('/classic/:type/:id/favor', 'api_dream/v1.Classic/favor');
+Route::get('/classic/:type/:id', 'api_dream/v1.Classic/detail');
+Route::get('/classic/favor', 'api_dream/v1.Classic/myFavor');
+
+//书籍
+
+Route::get('/book/hot_list', 'api_dream/v1.Book/hotList');
