@@ -16,6 +16,6 @@ class Book
     public function hotList()
     {
         $data = curl_get('http://bl.7yue.pro/v1/book/hot_list',['appkey:4x2WjKUkopwFodLP']);
-        print_r($data);die;
+        return json($data);
     }
 }
