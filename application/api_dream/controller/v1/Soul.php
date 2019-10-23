@@ -29,10 +29,11 @@ class Soul
                 'data'         => []
             ]);
         }
-        $articles = $pagingSouls->toArray();
+        $souls = $pagingSouls->toArray();
         return json([
             'current_page' => $pagingSouls->currentPage(),
-            'data'         => $articles['data']
+            'data'         => $souls['data'],
+            'count'        => SoulModel::count()
         ]);
     }
 }
